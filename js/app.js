@@ -843,8 +843,9 @@ const rosterState = {
   editingId: null,
   createdAt: null,
   name: '',
-  members: [], // snapshots: {cardId, name, cardType, pngDataURL, slots}
-  perks: [],   // {name, slots}
+  members: [],    // snapshots: {cardId, name, cardType, pngDataURL, slots}
+  perks: [],      // {name, slots}
+  associates: [], // {name, abilities: [name1, name2]}
 };
 
 const rosterNameInput = document.getElementById('roster-name');
@@ -853,6 +854,9 @@ const rosterMembersEl = document.getElementById('roster-members');
 const rosterMembersEmpty = document.getElementById('roster-members-empty');
 const rosterPerksEl = document.getElementById('roster-perks');
 const rosterPerksEmpty = document.getElementById('roster-perks-empty');
+const rosterAssociatesEl = document.getElementById('roster-associates');
+const rosterAssociatesEmpty = document.getElementById('roster-associates-empty');
+const associateWarningsEl = document.getElementById('associate-warnings');
 const rosterWarningsEl = document.getElementById('roster-warnings');
 const slotMeterFill = document.getElementById('slot-meter-fill');
 const slotMeterLabel = document.getElementById('slot-meter-label');
@@ -881,6 +885,7 @@ rosterPicker.addEventListener('change', async () => {
   rosterState.name = record.name || '';
   rosterState.members = record.members || [];
   rosterState.perks = record.perks || [];
+  rosterState.associates = record.associates || [];
   renderRosterWorkspace();
 });
 
@@ -890,6 +895,7 @@ function resetRosterState() {
   rosterState.name = '';
   rosterState.members = [];
   rosterState.perks = [];
+  rosterState.associates = [];
 }
 
 document.getElementById('roster-save').addEventListener('click', async () => {
@@ -899,6 +905,7 @@ document.getElementById('roster-save').addEventListener('click', async () => {
     name: rosterState.name || 'Untitled League',
     members: rosterState.members,
     perks: rosterState.perks,
+    associates: rosterState.associates,
     createdAt: rosterState.createdAt || Date.now(),
     updatedAt: Date.now(),
   };
@@ -919,7 +926,9 @@ document.getElementById('roster-delete').addEventListener('click', async () => {
 function computeRosterSlots() {
   const memberSlots = rosterState.members.reduce((sum, m) => sum + (m.slots || 0), 0);
   const perkSlots = rosterState.perks.reduce((sum, p) => sum + (p.slots || 0), 0);
-  return { memberSlots, perkSlots, used: memberSlots + perkSlots, remaining: BASE_ROSTER_SLOTS - memberSlots - perkSlots };
+  const associateSlots = rosterState.associates.length * ASSOCIATE_SLOT_COST;
+  const used = memberSlots + perkSlots + associateSlots;
+  return { memberSlots, perkSlots, associateSlots, used, remaining: BASE_ROSTER_SLOTS - used };
 }
 
 function renderRosterWorkspace() {
@@ -971,6 +980,9 @@ function renderRosterWorkspace() {
     });
   });
 
+  // Associates
+  renderAssociates();
+
   // Slot meter
   const { used, remaining } = computeRosterSlots();
   const pct = Math.min(100, (used / BASE_ROSTER_SLOTS) * 100);
@@ -1000,6 +1012,94 @@ function renderRosterWorkspace() {
     warnings.push(`This roster is over its slot budget by ${-remaining} slot${-remaining === 1 ? '' : 's'}.`);
   }
   rosterWarningsEl.innerHTML = warnings.map(w => `<div class="roster-warning">⚠ ${escapeHtml(w)}</div>`).join('');
+}
+
+// ---- Associates (p. 27-28) ----
+document.getElementById('add-associate').addEventListener('click', () => {
+  rosterState.associates.push({ name: '', abilities: ['', ''] });
+  renderRosterWorkspace();
+});
+
+function associateAbilityOptionsHtml(selected) {
+  return ASSOCIATE_ABILITIES.map(a =>
+    `<option value="${escapeAttr(a.name)}"${a.name === selected ? ' selected' : ''}>${escapeHtml(a.name)}</option>`
+  ).join('');
+}
+
+function renderAssociates() {
+  rosterAssociatesEl.innerHTML = '';
+  rosterAssociatesEmpty.style.display = rosterState.associates.length ? 'none' : 'block';
+  rosterState.associates.forEach((a, i) => {
+    const item = document.createElement('div');
+    item.className = 'associate-item';
+    const ability0 = findAssociateAbilityByName(a.abilities[0]);
+    const ability1 = findAssociateAbilityByName(a.abilities[1]);
+    item.innerHTML = `
+      <div class="associate-item-top">
+        <input type="text" class="associate-name-input" placeholder="e.g. The Butler" value="${escapeAttr(a.name)}" data-idx="${i}">
+        <span class="roster-row-slots">1 slot</span>
+        <button type="button" class="roster-row-remove associate-remove" data-idx="${i}" title="Remove">✕</button>
+      </div>
+      <div class="associate-ability-row">
+        <select class="associate-ability-select" data-idx="${i}" data-slot="0">
+          <option value="">— Ability 1 —</option>
+          ${associateAbilityOptionsHtml(a.abilities[0])}
+        </select>
+        ${ability0 ? `<p class="associate-ability-text">${escapeHtml(ability0.text)}</p>` : ''}
+      </div>
+      <div class="associate-ability-row">
+        <select class="associate-ability-select" data-idx="${i}" data-slot="1">
+          <option value="">— Ability 2 —</option>
+          ${associateAbilityOptionsHtml(a.abilities[1])}
+        </select>
+        ${ability1 ? `<p class="associate-ability-text">${escapeHtml(ability1.text)}</p>` : ''}
+      </div>
+    `;
+    rosterAssociatesEl.appendChild(item);
+  });
+
+  rosterAssociatesEl.querySelectorAll('.associate-name-input').forEach(el => {
+    el.addEventListener('input', () => {
+      rosterState.associates[+el.dataset.idx].name = el.value;
+    });
+  });
+  rosterAssociatesEl.querySelectorAll('.associate-ability-select').forEach(el => {
+    el.addEventListener('change', () => {
+      rosterState.associates[+el.dataset.idx].abilities[+el.dataset.slot] = el.value;
+      renderRosterWorkspace();
+    });
+  });
+  rosterAssociatesEl.querySelectorAll('.associate-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rosterState.associates.splice(+btn.dataset.idx, 1);
+      renderRosterWorkspace();
+    });
+  });
+
+  // Warnings (soft — informational, not blocking, matching every other
+  // rules check in the app): the p. 27 starting cap, and the p. 27 "you
+  // cannot take the same Associate Ability more than once per league"
+  // rule (checked both within one Associate's own 2 picks and across
+  // every Associate in the roster).
+  const warnings = [];
+  if (rosterState.associates.length > ASSOCIATE_LEAGUE_CAP) {
+    warnings.push(`A league normally starts with at most ${ASSOCIATE_LEAGUE_CAP} Associates (p. 27) — this roster has ${rosterState.associates.length}. You can earn more as your Reputation grows.`);
+  }
+  const abilityUsage = new Map(); // ability name -> count across the whole roster
+  rosterState.associates.forEach((assoc, i) => {
+    const chosen = assoc.abilities.filter(Boolean);
+    const label = assoc.name.trim() || `Associate ${i + 1}`;
+    if (chosen.length === 2 && chosen[0] === chosen[1]) {
+      warnings.push(`“${label}” has the same Associate Ability picked twice — Associates need 2 different abilities (p. 27).`);
+    }
+    chosen.forEach(name => abilityUsage.set(name, (abilityUsage.get(name) || 0) + 1));
+  });
+  abilityUsage.forEach((count, name) => {
+    if (count > 1) {
+      warnings.push(`“${name}” is used by more than one Associate — you can't take the same Associate Ability more than once per league (p. 27).`);
+    }
+  });
+  associateWarningsEl.innerHTML = warnings.map(w => `<div class="roster-warning">⚠ ${escapeHtml(w)}</div>`).join('');
 }
 
 // ---- Add-colleague picker ----

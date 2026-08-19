@@ -63,6 +63,13 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Perks (p. 22-26) — which permanently cost slots too — and watch the slot
   meter and rule warnings (too many Leaders/Sidekicks, over budget) update
   live. Save multiple named rosters and switch between them.
+- **Associates** (p. 27-28) — non-character support cast (a butler, a
+  bartender, a mentor, and so on) that cost 1 roster slot each. Give each
+  one a name and pick 2 of the 15 official Associate Abilities from the
+  dropdowns — the rules text shows underneath each pick. Warnings (again,
+  informational only) flag more than the normal 2-Associate starting cap,
+  the same ability picked twice on one Associate, or the same Associate
+  Ability reused across different Associates in the league.
 - **Gangs** — pick "Gang" as the Card Type and the Stats section becomes a
   "Current Models" field (default 5) that auto-fills Brawl/Shoot/Might as
   1d6 per 2 models and Dodge/Cunning/Finesse as a flat 1d6, matching the
@@ -133,7 +140,8 @@ js/db.js               IndexedDB wrapper for saved cards + rosters, backup expor
 js/app.js               Form wiring, portrait drag/zoom, gallery, exports, roster logic
 js/abilitiesData.js     Full 131-ability catalog (Level 1-4 + Epic) + 6 Gang-only abilities
 js/perksData.js         Full 36-perk catalog (Background Perks, p. 22-26)
-js/rosterRules.js       League roster slot math (p. 8), incl. Gang cost
+js/associatesData.js    Full 15-ability catalog (Associate Abilities, p. 27-28)
+js/rosterRules.js       League roster slot math (p. 8), incl. Gang + Associate cost
 js/vendor/jspdf.umd.min.js   Bundled PDF export library
 assets/fonts/           Self-hosted woff2 font files
 test/verify.js, verify2.js   Playwright smoke tests (dev-only)

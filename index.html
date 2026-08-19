@@ -196,7 +196,7 @@
         <button id="roster-save" class="btn-primary">💾 Save Roster</button>
       </div>
     </div>
-    <p class="hint">Based on the Pulp Alley 2E League Roster rules (p. 8): every league starts with 10 roster slots. Leader = 0 slots (only 1 per league), Sidekick = 3 slots (normally only 1), Ally = 2 slots, Follower = 1 slot. Perks permanently remove slots from the pool.</p>
+    <p class="hint">Based on the Pulp Alley 2E League Roster rules (p. 8): every league starts with 10 roster slots. Leader = 0 slots (only 1 per league), Sidekick = 3 slots (normally only 1), Ally = 2 slots, Follower = 1 slot. Perks permanently remove slots from the pool. Associates (p. 27) cost 1 slot each.</p>
 
     <div class="field-row">
       <label class="grow">League Name
@@ -228,6 +228,17 @@
         </div>
         <div id="roster-perks" class="roster-list"></div>
         <p id="roster-perks-empty" class="hint">No perks selected. Perks are optional — see the Perk Library to browse all 36.</p>
+      </div>
+
+      <div class="roster-column">
+        <div class="roster-column-header">
+          <h3>Associates</h3>
+          <button type="button" id="add-associate" class="btn-secondary">+ Add Associate</button>
+        </div>
+        <p class="hint">Non-character support cast (p. 27) — a helpful butler, bartender, mentor, and so on. Each costs 1 roster slot and picks 2 different Associate Abilities (p. 28). A league normally starts with at most 2.</p>
+        <div id="associate-warnings" class="roster-warnings"></div>
+        <div id="roster-associates" class="associates-list"></div>
+        <p id="roster-associates-empty" class="hint">No Associates yet.</p>
       </div>
     </div>
   </div>
@@ -315,6 +326,7 @@
 <script src="js/roster.js"></script>
 <script src="js/abilitiesData.js"></script>
 <script src="js/perksData.js"></script>
+<script src="js/associatesData.js"></script>
 <script src="js/rosterRules.js"></script>
 <script src="js/app.js"></script>
 </body>

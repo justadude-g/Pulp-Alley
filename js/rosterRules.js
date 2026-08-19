@@ -23,3 +23,10 @@ const DEFAULT_SLOT_COST = 2;
 function slotCostForType(cardType) {
   return ROSTER_SLOT_COST[cardType] ?? DEFAULT_SLOT_COST;
 }
+
+// Associates (Core Rules p. 27): non-character support cast. Each requires
+// 1 roster slot; a league cannot normally start with more than 2, though
+// that cap grows with Reputation (not modeled here — flagged as a soft
+// warning instead of a hard block, same as everywhere else in the app).
+const ASSOCIATE_SLOT_COST = 1;
+const ASSOCIATE_LEAGUE_CAP = 2;

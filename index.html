@@ -95,7 +95,10 @@
         <legend>Abilities</legend>
         <p class="hint">Start typing a name to autocomplete from all 131 official abilities (Level 1–4 + Epic) — pick one from the list to fill in its rules text.</p>
         <div id="abilities-list"></div>
-        <button type="button" id="add-ability" class="btn-secondary">+ Add Ability</button>
+        <div class="field-row">
+          <button type="button" id="add-ability" class="btn-secondary">+ Add Ability</button>
+          <button type="button" id="open-ability-library" class="btn-secondary">📖 Browse Ability Library</button>
+        </div>
       </fieldset>
 
       <fieldset>
@@ -170,6 +173,28 @@
 </section>
 
 </main>
+
+<!-- ===================== ABILITY LIBRARY MODAL ===================== -->
+<div id="ability-library-modal" class="modal-overlay hidden">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>Ability Library</h2>
+      <button type="button" id="close-ability-library" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-toolbar">
+      <div class="level-filter" id="level-filter">
+        <button type="button" class="level-btn active" data-level="all">All</button>
+        <button type="button" class="level-btn" data-level="1">Level 1</button>
+        <button type="button" class="level-btn" data-level="2">Level 2</button>
+        <button type="button" class="level-btn" data-level="3">Level 3</button>
+        <button type="button" class="level-btn" data-level="4">Level 4</button>
+        <button type="button" class="level-btn" data-level="Epic">Epic</button>
+      </div>
+      <input type="text" id="library-search" placeholder="Search abilities…">
+    </div>
+    <div id="library-list" class="library-list"></div>
+  </div>
+</div>
 
 <script src="js/vendor/jspdf.umd.min.js"></script>
 <script type="module" src="js/app.js"></script>

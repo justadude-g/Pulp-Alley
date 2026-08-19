@@ -14,6 +14,13 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   131 official abilities (Level 1–4 + Epic, transcribed from the Core Rules)
   to fill in its exact rules text automatically. You can still type any
   custom/homebrew ability name — it just won't autocomplete.
+- **Ability Library** — "Browse Ability Library" opens a searchable, filterable
+  catalog of all 131 abilities sorted by level exactly as in the rulebook
+  (Level 1 → 2 → 3 → 4 → Epic). Filter to one level or search by name/text,
+  then hit + on any ability to add it straight to the character card you're
+  building — the library stays open so you can add several in a row. It also
+  won't let you add the same ability to a card twice, matching the rulebook's
+  "No Duplicates" rule.
 - Cards render at true **Standard Playing Card size** — 2.5″ × 3.5″ at 300dpi
   (750×1050px) — so exported PNGs are print-ready.
 - **Light background by default** — designed for home inkjet/laser printing:

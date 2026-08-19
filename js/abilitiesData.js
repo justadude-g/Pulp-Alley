@@ -151,6 +151,9 @@ export const ABILITIES = [
   { name: 'Unspeakable', level: 'Epic', text: 'Lower level enemies suffer a -1 penalty to all skills when they are within 6".' },
 ];
 
+// Display order matching the rulebook's chapter order.
+export const LEVEL_ORDER = [1, 2, 3, 4, 'Epic'];
+
 // Case-insensitive lookup by exact name.
 export function findAbilityByName(name) {
   const n = (name || '').trim().toLowerCase();

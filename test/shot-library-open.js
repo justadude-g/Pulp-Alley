@@ -1,0 +1,20 @@
+const { chromium } = require('playwright');
+const path = require('path');
+const http = require('http');
+const handler = require('serve-handler');
+const PORT = 8818;
+const ROOT = path.join(__dirname, '..');
+(async () => {
+  const server = http.createServer((req, res) => handler(req, res, { public: ROOT }));
+  await new Promise(r => server.listen(PORT, r));
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+  await page.goto(`http://localhost:${PORT}/index.html`);
+  await page.waitForTimeout(400);
+  await page.click('#open-ability-library');
+  await page.click('.level-btn[data-level="3"]');
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: path.join(__dirname, 'shot-library-open.png') });
+  await browser.close();
+  server.close();
+})();

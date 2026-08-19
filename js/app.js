@@ -1,7 +1,7 @@
 import { renderCard, healthSequenceFrom, getPortraitBox, TYPE_PRESETS, CARD_W, CARD_H } from './cardRenderer.js';
 import { saveCard, deleteCard, getAllCards, getCard } from './db.js';
 import { renderRosterSheet, loadImage } from './roster.js';
-import { searchAbilities } from './abilitiesData.js';
+import { ABILITIES, LEVEL_ORDER, searchAbilities } from './abilitiesData.js';
 
 // ---------------- State ----------------
 const state = {
@@ -149,8 +149,103 @@ function applySuggestion(inputEl, idx, ability) {
   updatePreview();
 }
 
+// Adds an ability to the card: reuses a single trailing empty row if one
+// exists (so browsing the library into a fresh card doesn't leave a blank
+// row above what you just added), otherwise appends a new row.
+function addAbilityToCard(ability) {
+  const alreadyOnCard = state.abilities.some(a => a.name.trim().toLowerCase() === ability.name.toLowerCase());
+  if (alreadyOnCard) return false;
+  const last = state.abilities[state.abilities.length - 1];
+  const lastIsEmpty = last && !last.name.trim() && !last.text.trim();
+  if (lastIsEmpty) {
+    state.abilities[state.abilities.length - 1] = { name: ability.name, text: ability.text };
+  } else {
+    state.abilities.push({ name: ability.name, text: ability.text });
+  }
+  renderAbilityRows();
+  updatePreview();
+  return true;
+}
+
 function escapeHtml(s) { return (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+// ---------------- Ability Library modal ----------------
+const libraryModal = document.getElementById('ability-library-modal');
+const libraryList = document.getElementById('library-list');
+const librarySearch = document.getElementById('library-search');
+const levelFilterBar = document.getElementById('level-filter');
+let libraryLevel = 'all';
+
+document.getElementById('open-ability-library').addEventListener('click', () => {
+  libraryModal.classList.remove('hidden');
+  renderLibraryList();
+  librarySearch.focus();
+});
+document.getElementById('close-ability-library').addEventListener('click', closeLibrary);
+libraryModal.addEventListener('click', (e) => {
+  if (e.target === libraryModal) closeLibrary();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !libraryModal.classList.contains('hidden')) closeLibrary();
+});
+function closeLibrary() {
+  libraryModal.classList.add('hidden');
+}
+
+levelFilterBar.addEventListener('click', (e) => {
+  const btn = e.target.closest('.level-btn');
+  if (!btn) return;
+  libraryLevel = btn.dataset.level;
+  levelFilterBar.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b === btn));
+  renderLibraryList();
+});
+librarySearch.addEventListener('input', renderLibraryList);
+
+function renderLibraryList() {
+  const q = librarySearch.value.trim().toLowerCase();
+  const levels = libraryLevel === 'all' ? LEVEL_ORDER : [libraryLevel === 'Epic' ? 'Epic' : +libraryLevel];
+
+  let html = '';
+  let anyResults = false;
+  for (const lvl of levels) {
+    let items = ABILITIES.filter(a => a.level === lvl);
+    if (q) {
+      items = items.filter(a => a.name.toLowerCase().includes(q) || a.text.toLowerCase().includes(q));
+    }
+    if (!items.length) continue;
+    anyResults = true;
+    html += `<div class="library-level-heading">${lvl === 'Epic' ? 'Epic abilities' : 'Level ' + lvl + ' abilities'}</div>`;
+    html += items.map(a => `
+      <div class="library-item">
+        <div class="library-item-body">
+          <span class="library-item-name">${escapeHtml(a.name)}</span><span class="library-item-level">${lvl === 'Epic' ? 'Epic' : 'Lvl ' + lvl}</span>
+          <div class="library-item-text">${escapeHtml(a.text)}</div>
+        </div>
+        <button type="button" class="library-add-btn" data-name="${escapeAttr(a.name)}" title="Add to card">+</button>
+      </div>
+    `).join('');
+  }
+  libraryList.innerHTML = anyResults ? html : '<div class="library-empty">No abilities match your search.</div>';
+
+  libraryList.querySelectorAll('.library-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ability = ABILITIES.find(a => a.name === btn.dataset.name);
+      if (!ability) return;
+      const added = addAbilityToCard(ability);
+      btn.textContent = added ? '✓' : '•';
+      btn.title = added ? 'Added to card' : 'Already on this card';
+      btn.classList.add('added');
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = '+';
+        btn.title = 'Add to card';
+        btn.classList.remove('added');
+        btn.disabled = false;
+      }, 900);
+    });
+  });
+}
 
 // ---------------- Form wiring ----------------
 const form = document.getElementById('card-form');

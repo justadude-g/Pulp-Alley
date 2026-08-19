@@ -177,6 +177,59 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   background: var(--panel-2);
   position: relative;
 }
+
+.ability-name-wrap { position: relative; }
+
+.ability-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 30;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.ability-suggestions .sugg-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.ability-suggestions .sugg-item:last-child { border-bottom: none; }
+.ability-suggestions .sugg-item:hover,
+.ability-suggestions .sugg-item.active {
+  background: rgba(45,212,191,0.14);
+}
+.ability-suggestions .sugg-name { font-weight: 600; font-size: 13px; color: var(--text); }
+.ability-suggestions .sugg-level {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.ability-suggestions .sugg-text {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 400;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ability-suggestions .sugg-empty {
+  padding: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
 .ability-item input, .ability-item textarea {
   background: var(--panel);
   border: 1px solid var(--border);

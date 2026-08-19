@@ -1,6 +1,7 @@
 import { renderCard, healthSequenceFrom, getPortraitBox, TYPE_PRESETS, CARD_W, CARD_H } from './cardRenderer.js';
 import { saveCard, deleteCard, getAllCards, getCard } from './db.js';
 import { renderRosterSheet, loadImage } from './roster.js';
+import { searchAbilities } from './abilitiesData.js';
 
 // ---------------- State ----------------
 const state = {
@@ -34,7 +35,9 @@ function renderAbilityRows() {
     const row = document.createElement('div');
     row.className = 'ability-item';
     row.innerHTML = `
-      <input type="text" placeholder="Ability name (e.g. Marksman)" value="${escapeAttr(a.name)}" data-idx="${i}" data-field="name">
+      <div class="ability-name-wrap">
+        <input type="text" placeholder="Ability name (e.g. Marksman)" value="${escapeAttr(a.name)}" data-idx="${i}" data-field="name" autocomplete="off">
+      </div>
       <textarea placeholder="Ability description..." data-idx="${i}" data-field="text">${escapeHtml(a.text)}</textarea>
       <button type="button" class="ability-remove" data-idx="${i}">Remove</button>
     `;
@@ -45,6 +48,14 @@ function renderAbilityRows() {
       const idx = +el.dataset.idx;
       state.abilities[idx][el.dataset.field] = el.value;
       updatePreview();
+      if (el.dataset.field === 'name') showSuggestions(el, idx);
+    });
+  });
+  abilitiesList.querySelectorAll('input[data-field="name"]').forEach(el => {
+    el.addEventListener('keydown', (e) => handleSuggestionKeydown(e, el));
+    el.addEventListener('blur', () => {
+      // delay so a click on a suggestion registers before the list is removed
+      setTimeout(() => closeSuggestions(el), 150);
     });
   });
   abilitiesList.querySelectorAll('.ability-remove').forEach(btn => {
@@ -61,6 +72,82 @@ document.getElementById('add-ability').addEventListener('click', () => {
   renderAbilityRows();
 });
 renderAbilityRows();
+
+// ---- Ability autocomplete ----
+function closeSuggestions(inputEl) {
+  const wrap = inputEl.closest('.ability-name-wrap');
+  const existing = wrap?.querySelector('.ability-suggestions');
+  if (existing) existing.remove();
+}
+
+function showSuggestions(inputEl, idx) {
+  const wrap = inputEl.closest('.ability-name-wrap');
+  closeSuggestions(inputEl);
+  const results = searchAbilities(inputEl.value, 8);
+  if (!results.length) return;
+
+  const box = document.createElement('div');
+  box.className = 'ability-suggestions';
+  box.innerHTML = results.map((a, i) => `
+    <div class="sugg-item" data-i="${i}">
+      <div>
+        <span class="sugg-name">${escapeHtml(a.name)}</span>
+        <span class="sugg-text">${escapeHtml(a.text)}</span>
+      </div>
+      <span class="sugg-level">${a.level === 'Epic' ? 'Epic' : 'Lvl ' + a.level}</span>
+    </div>
+  `).join('');
+  wrap.appendChild(box);
+
+  box.querySelectorAll('.sugg-item').forEach((item, i) => {
+    item.addEventListener('mousedown', (e) => {
+      // mousedown (not click) fires before the input's blur handler removes the list
+      e.preventDefault();
+      applySuggestion(inputEl, idx, results[i]);
+    });
+  });
+}
+
+function handleSuggestionKeydown(e, inputEl) {
+  const wrap = inputEl.closest('.ability-name-wrap');
+  const box = wrap?.querySelector('.ability-suggestions');
+  if (!box) return;
+  const items = [...box.querySelectorAll('.sugg-item')];
+  if (!items.length) return;
+  let active = items.findIndex(el => el.classList.contains('active'));
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    active = (active + 1) % items.length;
+    items.forEach(el => el.classList.remove('active'));
+    items[active].classList.add('active');
+    items[active].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    active = active <= 0 ? items.length - 1 : active - 1;
+    items.forEach(el => el.classList.remove('active'));
+    items[active].classList.add('active');
+    items[active].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    if (active >= 0) {
+      e.preventDefault();
+      items[active].dispatchEvent(new MouseEvent('mousedown'));
+    }
+  } else if (e.key === 'Escape') {
+    closeSuggestions(inputEl);
+  }
+}
+
+function applySuggestion(inputEl, idx, ability) {
+  state.abilities[idx].name = ability.name;
+  state.abilities[idx].text = ability.text;
+  inputEl.value = ability.name;
+  const row = inputEl.closest('.ability-item');
+  const textEl = row?.querySelector('textarea[data-field="text"]');
+  if (textEl) textEl.value = ability.text;
+  closeSuggestions(inputEl);
+  updatePreview();
+}
 
 function escapeHtml(s) { return (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }

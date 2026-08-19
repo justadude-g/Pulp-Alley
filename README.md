@@ -10,6 +10,10 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Might, Finesse, Cunning as dice pools), any number of Abilities, an optional
   flavor quote, and a starting Health die. Upload your own character artwork,
   then zoom/drag it directly on the live preview to frame it.
+- **Ability autocomplete** — start typing an ability name and pick from all
+  131 official abilities (Level 1–4 + Epic, transcribed from the Core Rules)
+  to fill in its exact rules text automatically. You can still type any
+  custom/homebrew ability name — it just won't autocomplete.
 - Cards render at true **Standard Playing Card size** — 2.5″ × 3.5″ at 300dpi
   (750×1050px) — so exported PNGs are print-ready.
 - **Light background by default** — designed for home inkjet/laser printing:

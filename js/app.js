@@ -39,9 +39,17 @@ function renderAbilityRows() {
   state.abilities.forEach((a, i) => {
     const row = document.createElement('div');
     row.className = 'ability-item';
+    // baseName is set when an ability is picked from autocomplete or the
+    // library (see applySuggestion/addAbilityToCard) and preserved when the
+    // player edits the visible name — i.e. editing `name` alone is a
+    // rename, not a replacement. Rules checks (duplicates, level cap,
+    // no-dice/no-action) key off baseName so a renamed ability still counts
+    // as its official self.
+    const renamed = a.baseName && a.baseName.trim() && a.baseName !== a.name;
     row.innerHTML = `
       <div class="ability-name-wrap">
         <input type="text" placeholder="Ability name (e.g. Marksman)" value="${escapeAttr(a.name)}" data-idx="${i}" data-field="name" autocomplete="off">
+        ${renamed ? `<div class="ability-rename-note">Originally: <strong>${escapeHtml(a.baseName)}</strong> · <a href="#" class="ability-reset-name" data-idx="${i}">reset</a></div>` : ''}
       </div>
       <textarea placeholder="Ability description..." data-idx="${i}" data-field="text">${escapeHtml(a.text)}</textarea>
       <button type="button" class="ability-remove" data-idx="${i}">Remove</button>
@@ -59,8 +67,17 @@ function renderAbilityRows() {
   abilitiesList.querySelectorAll('input[data-field="name"]').forEach(el => {
     el.addEventListener('keydown', (e) => handleSuggestionKeydown(e, el));
     el.addEventListener('blur', () => {
+      const idx = +el.dataset.idx;
       // delay so a click on a suggestion registers before the list is removed
-      setTimeout(() => closeSuggestions(el), 150);
+      setTimeout(() => {
+        closeSuggestions(el);
+        // Update just this row's "Originally: X · reset" note once the
+        // player finishes typing a rename. Deliberately NOT a full
+        // renderAbilityRows() — a delayed full re-render here can yank out
+        // from under the player (or a fast-typing test) whatever other
+        // ability row/field they've since moved on to editing.
+        refreshRenameNote(idx);
+      }, 150);
     });
   });
   abilitiesList.querySelectorAll('.ability-remove').forEach(btn => {
@@ -71,7 +88,48 @@ function renderAbilityRows() {
       updatePreview();
     });
   });
+  abilitiesList.querySelectorAll('.ability-reset-name').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const idx = +link.dataset.idx;
+      state.abilities[idx].name = state.abilities[idx].baseName;
+      renderAbilityRows();
+      updatePreview();
+    });
+  });
 }
+// Incrementally updates a single ability row's "Originally: X · reset" note
+// in place, without rebuilding the abilities list. Used from the blur
+// handler above so a delayed update can't detach elements the player has
+// since moved on to editing in another row.
+function refreshRenameNote(idx) {
+  const input = abilitiesList.querySelector(`input[data-field="name"][data-idx="${idx}"]`);
+  if (!input) return;
+  const wrap = input.closest('.ability-name-wrap');
+  if (!wrap) return;
+  const existingNote = wrap.querySelector('.ability-rename-note');
+  const a = state.abilities[idx];
+  const renamed = a && a.baseName && a.baseName.trim() && a.baseName !== a.name;
+  if (!renamed) {
+    if (existingNote) existingNote.remove();
+    return;
+  }
+  if (existingNote) {
+    existingNote.querySelector('strong').textContent = a.baseName;
+    return;
+  }
+  const note = document.createElement('div');
+  note.className = 'ability-rename-note';
+  note.innerHTML = `Originally: <strong>${escapeHtml(a.baseName)}</strong> · <a href="#" class="ability-reset-name" data-idx="${idx}">reset</a>`;
+  wrap.appendChild(note);
+  note.querySelector('.ability-reset-name').addEventListener('click', (e) => {
+    e.preventDefault();
+    state.abilities[idx].name = state.abilities[idx].baseName;
+    renderAbilityRows();
+    updatePreview();
+  });
+}
+
 document.getElementById('add-ability').addEventListener('click', () => {
   state.abilities.push({ name: '', text: '' });
   renderAbilityRows();
@@ -147,6 +205,7 @@ function handleSuggestionKeydown(e, inputEl) {
 function applySuggestion(inputEl, idx, ability) {
   state.abilities[idx].name = ability.name;
   state.abilities[idx].text = ability.text;
+  state.abilities[idx].baseName = ability.name;
   inputEl.value = ability.name;
   const row = inputEl.closest('.ability-item');
   const textEl = row?.querySelector('textarea[data-field="text"]');
@@ -159,14 +218,17 @@ function applySuggestion(inputEl, idx, ability) {
 // exists (so browsing the library into a fresh card doesn't leave a blank
 // row above what you just added), otherwise appends a new row.
 function addAbilityToCard(ability) {
-  const alreadyOnCard = state.abilities.some(a => a.name.trim().toLowerCase() === ability.name.toLowerCase());
+  // Key the duplicate check off baseName (falling back to the visible name)
+  // so an ability that's been renamed on the card still blocks adding the
+  // same official ability again — renaming doesn't launder a duplicate.
+  const alreadyOnCard = state.abilities.some(a => (a.baseName || a.name).trim().toLowerCase() === ability.name.toLowerCase());
   if (alreadyOnCard) return false;
   const last = state.abilities[state.abilities.length - 1];
   const lastIsEmpty = last && !last.name.trim() && !last.text.trim();
   if (lastIsEmpty) {
-    state.abilities[state.abilities.length - 1] = { name: ability.name, text: ability.text };
+    state.abilities[state.abilities.length - 1] = { name: ability.name, text: ability.text, baseName: ability.name };
   } else {
-    state.abilities.push({ name: ability.name, text: ability.text });
+    state.abilities.push({ name: ability.name, text: ability.text, baseName: ability.name });
   }
   renderAbilityRows();
   updatePreview();
@@ -226,6 +288,11 @@ function renderLibraryList() {
   const order = isGang ? GANG_LEVEL_ORDER : LEVEL_ORDER;
   const q = librarySearch.value.trim().toLowerCase();
   const levels = libraryLevel === 'all' ? order : [libraryLevel === 'Epic' ? 'Epic' : libraryLevel === 'Gang' ? 'Gang' : +libraryLevel];
+  // Level Restriction (p. 9): an ability's level can't exceed the
+  // character's level. Abilities above the current Card Type's cap aren't
+  // blocked here — just visually flagged, matching the app's soft-warning
+  // (not hard-block) approach to rules everywhere else.
+  const maxAbilityLevel = TYPE_PRESETS[cardType]?.maxAbilityLevel;
 
   let html = '';
   let anyResults = false;
@@ -237,15 +304,19 @@ function renderLibraryList() {
     if (!items.length) continue;
     anyResults = true;
     html += `<div class="library-level-heading">${lvl === 'Epic' ? 'Epic abilities' : lvl === 'Gang' ? 'Gang-only abilities' : 'Level ' + lvl + ' abilities'}</div>`;
-    html += items.map(a => `
-      <div class="library-item">
+    html += items.map(a => {
+      const overCap = maxAbilityLevel !== undefined && abilityLevelRank(a.level) > maxAbilityLevel;
+      return `
+      <div class="library-item${overCap ? ' library-item-overcap' : ''}">
         <div class="library-item-body">
           <span class="library-item-name">${escapeHtml(a.name)}</span><span class="library-item-level">${lvl === 'Epic' ? 'Epic' : lvl === 'Gang' ? 'Gang' : 'Lvl ' + lvl}</span>
+          ${overCap ? `<span class="library-item-overcap-tag">Above ${cardType} cap</span>` : ''}
           <div class="library-item-text">${escapeHtml(a.text)}</div>
         </div>
         <button type="button" class="library-add-btn" data-name="${escapeAttr(a.name)}" title="Add to card">+</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
   libraryList.innerHTML = anyResults ? html : (isGang
     ? '<div class="library-empty">No matching abilities. Gangs can only take the 6 Gang-only abilities plus a specific subset of Level 1–2 abilities (p. 22).</div>'
@@ -268,6 +339,92 @@ function renderLibraryList() {
       }, 900);
     });
   });
+}
+
+// ---------------- Ability rules warnings ----------------
+// Core Rules p. 9 "Abilities Rules and Restrictions": No Duplicates, Level
+// Restriction, No-Dice, No-Action — plus the p. 8-9 ability-count table for
+// Leader/Sidekick/Ally/Follower. These are all soft, informational warnings
+// (same philosophy as the League Roster warnings) — nothing here blocks the
+// player from doing it anyway, since homebrew exceptions are common.
+const abilityWarningsEl = document.getElementById('ability-warnings');
+
+function computeAbilityWarnings(cardType, abilities) {
+  const warnings = [];
+  const named = abilities.filter(a => a.name && a.name.trim());
+  if (!named.length) return warnings;
+
+  const preset = TYPE_PRESETS[cardType];
+
+  if (preset && preset.maxAbilities !== undefined && named.length > preset.maxAbilities) {
+    warnings.push(`${cardType}s normally have at most ${preset.maxAbilities} abilit${preset.maxAbilities === 1 ? 'y' : 'ies'} (p. 9) — this card has ${named.length}.`);
+  }
+
+  // Duplicates are keyed by baseName (falling back to the visible name) so
+  // renaming an ability doesn't hide that it's still the same official
+  // ability underneath.
+  const seen = new Map(); // key -> { count, display }
+  const noDiceMap = new Map(); // skill -> [display names]
+  const preventsActionsNames = [];
+
+  named.forEach(a => {
+    const baseName = (a.baseName || a.name).trim();
+    const key = baseName.toLowerCase();
+    const entry = seen.get(key) || { count: 0, display: baseName };
+    entry.count++;
+    seen.set(key, entry);
+
+    const found = findAbilityByName(baseName);
+    if (!found) return;
+
+    if (preset && preset.maxAbilityLevel !== undefined) {
+      const rank = abilityLevelRank(found.level);
+      if (rank > preset.maxAbilityLevel) {
+        const levelLabel = found.level === 'Epic' ? 'an Epic' : `a Level ${found.level}`;
+        warnings.push(`“${a.name}” is ${levelLabel} ability — above the Level ${preset.maxAbilityLevel} cap for a ${cardType} (p. 9, Level Restriction).`);
+      }
+    }
+
+    if (found.noDiceSkills?.length) {
+      found.noDiceSkills.forEach(skill => {
+        if (!noDiceMap.has(skill)) noDiceMap.set(skill, []);
+        noDiceMap.get(skill).push(a.name);
+      });
+    }
+    if (found.preventsActions) {
+      preventsActionsNames.push(a.name);
+    }
+  });
+
+  seen.forEach(entry => {
+    if (entry.count > 1) {
+      warnings.push(`“${entry.display}” appears more than once — a character can't take the same ability twice (p. 9, No Duplicates).`);
+    }
+  });
+
+  noDiceMap.forEach((names, skill) => {
+    if (names.length > 1) {
+      warnings.push(`${names.join(' + ')} both reduce ${skill} to no-dice — only one ability may do that to the same skill (p. 9, No-Dice).`);
+    }
+  });
+
+  if (preventsActionsNames.length > 1) {
+    warnings.push(`${preventsActionsNames.join(' + ')} each prevent taking actions — only one such ability is allowed (p. 9, No-Action).`);
+  }
+
+  return warnings;
+}
+
+function renderAbilityWarnings() {
+  const cardType = document.getElementById('f-cardType').value;
+  const warnings = computeAbilityWarnings(cardType, state.abilities);
+  abilityWarningsEl.innerHTML = warnings.map(w => `<div class="roster-warning">⚠ ${escapeHtml(w)}</div>`).join('');
+}
+
+function updateSkillDiceHint() {
+  const cardType = document.getElementById('f-cardType').value;
+  const preset = TYPE_PRESETS[cardType];
+  document.getElementById('skill-dice-hint').textContent = (preset && preset.skillDiceHint) || '';
 }
 
 // ---------------- Form wiring ----------------
@@ -398,6 +555,8 @@ function updatePreview() {
   data.portraitImg = state.portraitImg;
   data.portraitView = state.portraitView;
   renderCard(canvas, data);
+  updateSkillDiceHint();
+  renderAbilityWarnings();
 }
 
 // ---------------- Portrait upload / zoom / drag ----------------

@@ -92,6 +92,7 @@
 
       <fieldset class="stat-grid">
         <legend>Stats</legend>
+        <p class="hint" id="skill-dice-hint"></p>
         <div class="stat-group-label">Combat</div>
         <div class="stat-group-label">Challenge</div>
         <div class="stat-row" data-stat="brawl"><span>Brawl</span><input type="number" min="0" value="2"><span class="d">d</span><select><option>6</option><option selected>8</option><option>10</option><option>12</option></select></div>
@@ -125,7 +126,8 @@
 
       <fieldset>
         <legend>Abilities</legend>
-        <p class="hint">Start typing a name to autocomplete from all 131 official abilities (Level 1–4 + Epic) — pick one from the list to fill in its rules text. Gang cards see a filtered list of the 6 Gang-only abilities plus the abilities gangs are allowed to take.</p>
+        <p class="hint">Start typing a name to autocomplete from all 131 official abilities (Level 1–4 + Epic) — pick one from the list to fill in its rules text. Gang cards see a filtered list of the 6 Gang-only abilities plus the abilities gangs are allowed to take. Once picked, you can rename an ability (e.g. call Animal "Unarmed" to fit your character) without changing what it does — the original name stays tracked underneath for rules purposes, with a link to reset it.</p>
+        <div id="ability-warnings" class="roster-warnings"></div>
         <div id="abilities-list"></div>
         <div class="field-row">
           <button type="button" id="add-ability" class="btn-secondary">+ Add Ability</button>

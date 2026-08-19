@@ -149,6 +149,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   grid-template-columns: 1fr 1fr;
   gap: 8px 14px;
 }
+.stat-grid .hint { grid-column: 1 / -1; margin: -2px 0 2px; }
+.stat-grid .hint:empty { display: none; }
 .stat-group-label {
   font-size: 11px;
   text-transform: uppercase;
@@ -245,6 +247,14 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   width: 100%;
 }
 .ability-item textarea { resize: vertical; min-height: 44px; }
+.ability-rename-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.ability-rename-note strong { color: var(--text); font-weight: 600; }
+.ability-reset-name { color: var(--accent); text-decoration: none; }
+.ability-reset-name:hover { text-decoration: underline; }
 .ability-remove {
   align-self: flex-end;
   background: transparent;
@@ -565,6 +575,15 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   font-weight: 600;
 }
 .library-item-text { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+.library-item-overcap { opacity: 0.55; }
+.library-item-overcap-tag {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffb4b4;
+  margin-left: 8px;
+  font-weight: 700;
+}
 .library-item-thumb {
   width: 40px;
   height: 56px;

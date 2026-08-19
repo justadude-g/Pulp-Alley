@@ -28,7 +28,25 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   then hit + on any ability to add it straight to the character card you're
   building — the library stays open so you can add several in a row. It also
   won't let you add the same ability to a card twice, matching the rulebook's
-  "No Duplicates" rule.
+  "No Duplicates" rule. Abilities above the current Card Type's level cap are
+  shown dimmed and tagged "Above [Type] cap" — you can still add them for a
+  homebrew exception, it's just flagged.
+- **Ability rules warnings** — picking a Card Type shows the Core Rules p. 9
+  skill-dice guideline for it (e.g. "Leader: pick 4 skills to start at 3d10,
+  the other 2 at 2d8") above the Stats section, and the Abilities section
+  checks your card against the p. 9 "Abilities Rules and Restrictions": too
+  many abilities for the Card Type, an ability above the Level Restriction,
+  the same ability twice (No Duplicates), two abilities reducing the same
+  skill to no-dice (No-Dice), or two abilities that both prevent actions
+  (No-Action). Like the League Roster warnings, these are informational only
+  — nothing is blocked, since homebrew exceptions are common.
+- **Rename an ability** — after picking an ability from autocomplete or the
+  library, you can freely edit its displayed name (e.g. call Animal
+  "Unarmed" to fit your character's genre) without touching what it actually
+  does. The card keeps track of the ability's real rules-text identity
+  underneath, shown as "Originally: Animal · reset" under the renamed field
+  — rules checks (duplicates, no-dice, no-action, level cap) still key off
+  the original ability, not the display name.
 - Cards render at true **Standard Playing Card size** — 2.5″ × 3.5″ at 300dpi
   (750×1050px) — so exported PNGs are print-ready.
 - **Light background by default** — designed for home inkjet/laser printing:

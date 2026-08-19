@@ -17,17 +17,17 @@
 const ABILITIES = [
   // ---- Level 1 ----
   { name: 'Agile', level: 1, text: 'Add +1 die to Dodge.' },
-  { name: 'Animal', level: 1, text: 'Add +1 die to two skills. Reduce Shoot to no-dice.', gangEligible: true },
+  { name: 'Animal', level: 1, text: 'Add +1 die to two skills. Reduce Shoot to no-dice.', gangEligible: true, noDiceSkills: ['Shoot'] },
   { name: 'Aquatic', level: 1, text: 'You automatically pass the perils for difficult and perilous areas in deep water. In the deep, your line-of-sight is up to 12” and you ignore the –1 fight penalties.', gangEligible: true },
   { name: 'Armored', level: 1, text: 'You cannot move over 6” except to rush. You roll one bonus die for all Health checks.' },
-  { name: 'Beast', level: 1, text: 'You cannot perform actions. Select two of the following abilities at no cost: Animal, Aquatic, Big, Fierce, Mindless, Reanimated, Speedy, Swarm, Winged.', gangEligible: true },
-  { name: 'Brainy', level: 1, text: 'Add +1 die to Dodge and Cunning. Reduce Brawl to no-dice.' },
+  { name: 'Beast', level: 1, text: 'You cannot perform actions. Select two of the following abilities at no cost: Animal, Aquatic, Big, Fierce, Mindless, Reanimated, Speedy, Swarm, Winged.', gangEligible: true, preventsActions: true },
+  { name: 'Brainy', level: 1, text: 'Add +1 die to Dodge and Cunning. Reduce Brawl to no-dice.', noDiceSkills: ['Brawl'] },
   { name: 'Brute', level: 1, text: 'Once per turn, you may re-roll one Brawl or Might die.', gangEligible: true },
   { name: 'Clever', level: 1, text: 'Add +1 die to Cunning.' },
   { name: 'Covert', level: 1, text: 'When you are hidden, an opponent must win the opposed spotting check to spot you.' },
   { name: 'Crafty', level: 1, text: 'Once per turn, you may re-roll one Dodge or Cunning die.', gangEligible: true },
   { name: 'Fierce', level: 1, text: 'Add +1 die to Brawl.', gangEligible: true },
-  { name: 'Goon', level: 1, text: 'You cannot perform actions. Select two of the following abilities at no cost: Aquatic, Brute, Fierce, Marksman, Sharp, Slam, Trick, Winged.', gangEligible: true },
+  { name: 'Goon', level: 1, text: 'You cannot perform actions. Select two of the following abilities at no cost: Aquatic, Brute, Fierce, Marksman, Sharp, Slam, Trick, Winged.', gangEligible: true, preventsActions: true },
   { name: 'Hard-Nosed', level: 1, text: 'Once per turn, you may re-roll one Might, Finesse, or Cunning die.' },
   { name: 'Marksman', level: 1, text: 'Add +1 die to Shoot.', gangEligible: true },
   { name: 'Mighty', level: 1, text: 'Add +1 die to Might.' },
@@ -35,21 +35,21 @@ const ABILITIES = [
   { name: 'Monster', level: 1, text: 'You are horrific (see Horror).' },
   { name: 'Mounted', level: 1, text: 'You may start each scenario riding a basic mount.' },
   { name: 'Plan', level: 1, text: 'Once per turn, you may discard to gain a +1 bonus to Dodge or Cunning.' },
-  { name: 'Reanimated', level: 1, text: 'You automatically pass all 1d Health checks. Reduce Dodge to no-dice. You cannot block. You cannot move over 6” except to rush.', gangEligible: true },
+  { name: 'Reanimated', level: 1, text: 'You automatically pass all 1d Health checks. Reduce Dodge to no-dice. You cannot block. You cannot move over 6” except to rush.', gangEligible: true, noDiceSkills: ['Dodge'] },
   { name: 'Savvy', level: 1, text: 'Add +1 die to Finesse.' },
   { name: 'Shadowy', level: 1, text: 'You gain a +1 bonus to all opposed spotting checks.' },
   { name: 'Sharp', level: 1, text: 'Once per turn, you may re-roll one Shoot or Finesse die.', gangEligible: true },
   { name: 'Short Burst', level: 1, text: 'Action: Place the Short Burst (see Burst rules).' },
   { name: 'Slam', level: 1, text: 'Once per turn, you may discard to gain a +1 bonus to Brawl or Might.', gangEligible: true },
-  { name: 'Sly', level: 1, text: 'Add +1 die to Dodge and Finesse. Reduce Brawl to no-dice.' },
+  { name: 'Sly', level: 1, text: 'Add +1 die to Dodge and Finesse. Reduce Brawl to no-dice.', noDiceSkills: ['Brawl'] },
   { name: 'Speedy', level: 1, text: 'You may move up to 16” — instead of 12”.', gangEligible: true },
   { name: 'Swarm', level: 1, text: 'You may play a peril from your Fortune hand on an enemy when they come into contact or activate in contact with you.', gangEligible: true },
   { name: 'Trick', level: 1, text: 'Once per turn, you may discard to gain a +1 bonus to Shoot or Finesse.', gangEligible: true },
   // Note: the Gang Abilities table (p. 22) lists True Believer under its
   // "Level 2" gang-eligible list, but its actual definition lives in this
   // Level 1 chapter — kept as level 1 here to match the ability's real text.
-  { name: 'True Believer', level: 1, text: '(Followers, Allies, and Sidekicks only) Reduce Shoot to no-dice. When rolling for any other skill, you roll a number of dice equal to your character level. You ignore all modifiers except Fortune card effects. You can never have any other abilities.', gangEligible: true },
-  { name: 'Two-Fisted', level: 1, text: 'Add +1 die to two skills. Reduce Shoot to no-dice.' },
+  { name: 'True Believer', level: 1, text: '(Followers, Allies, and Sidekicks only) Reduce Shoot to no-dice. When rolling for any other skill, you roll a number of dice equal to your character level. You ignore all modifiers except Fortune card effects. You can never have any other abilities.', gangEligible: true, noDiceSkills: ['Shoot'] },
+  { name: 'Two-Fisted', level: 1, text: 'Add +1 die to two skills. Reduce Shoot to no-dice.', noDiceSkills: ['Shoot'] },
   { name: 'Winged', level: 1, text: 'You may fly up to 16” and ignore the intervening terrain and characters. You cannot fly shoot during the same activation when you are at ground level.', gangEligible: true },
 
   // ---- Level 2 ----
@@ -63,7 +63,7 @@ const ABILITIES = [
   { name: 'Drag', level: 2, text: 'You cannot shoot over 12”. After a shootout, if you scored 2 or more hits then you may immediately move the enemy into contact with you. Do not resolve another fight in this activation.' },
   { name: 'Eagle-Eyed', level: 2, text: 'Your close range goes up to 12", and long range is over 48".', gangEligible: true },
   { name: 'Faint of Heart', level: 2, text: 'Select two level 1 abilities at no additional cost. Your Recovery checks are impaired. Faint of Heart is incompatible with abilities that prevent actions or reduce any skill to no-dice.' },
-  { name: 'Harmless', level: 2, text: 'An enemy that is over 6” away cannot target, attack, or rush you. You can never target or attack an enemy. Reduce your Brawl and Shoot to no-dice.' },
+  { name: 'Harmless', level: 2, text: 'An enemy that is over 6” away cannot target, attack, or rush you. You can never target or attack an enemy. Reduce your Brawl and Shoot to no-dice.', noDiceSkills: ['Brawl', 'Shoot'] },
   { name: 'Hindrance', level: 2, text: 'Select two level 1 abilities at no additional cost. Select two of your skills to be hindered. Hindrance is incompatible with abilities that prevent actions or reduce any skill to no-dice.' },
   { name: 'Insight', level: 2, text: 'Once per turn, after a challenge is revealed for this character, you may replace it with a challenge from your Fortune hand.' },
   { name: 'Intrepid', level: 2, text: 'When you disengage, you may move 1” to 3”.' },
@@ -162,6 +162,17 @@ const ABILITIES = [
 
 // Display order matching the rulebook's chapter order.
 const LEVEL_ORDER = [1, 2, 3, 4, 'Epic'];
+
+// Numeric rank for comparing an ability's level against a character's
+// maxAbilityLevel (Core Rules p.9 "Level Restriction": an ability's level
+// may not exceed the character's level). Epic ranks above every normal
+// league level since Epic abilities aren't part of the standard
+// Leader/Sidekick/Ally/Follower table at all.
+function abilityLevelRank(level) {
+  if (level === 'Epic') return 5;
+  if (level === 'Gang') return 0;
+  return level;
+}
 
 // The six Gang-only abilities (Core Rules p. 22). Gangs cannot have any
 // abilities other than these plus the gangEligible-flagged entries above.

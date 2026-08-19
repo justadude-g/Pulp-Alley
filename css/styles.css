@@ -138,7 +138,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .checkbox-label { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; }
 .checkbox-label input { width: auto; }
 
-.field-row { display: flex; gap: 12px; }
+.field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.field-row > label:not(.grow):not(.narrow) { flex: 1 1 120px; min-width: 100px; }
 
 .stat-grid {
   display: grid;

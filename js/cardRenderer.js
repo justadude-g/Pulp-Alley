@@ -63,6 +63,34 @@ const THEMES = {
     downOutText: 'rgba(255,255,255,0.7)',
     cornerAccentAlpha: 0.10,
   },
+  // 'Classical' matches the official Pulp Alley blank character card
+  // template: aged parchment paper, terracotta/taupe stat bands, olive
+  // health bar, dark typewriter-brown ink, and a dashed cut-guide border.
+  // Colors sampled directly from that template.
+  classical: {
+    bgTop: '#e9cb9f', bgBottom: '#ddbb8a',
+    textPrimary: '#241b13',
+    textSecondary: '#332617',
+    textMuted: 'rgba(36,27,19,0.6)',
+    nameBarBg: 'rgba(36,27,19,0.05)',
+    healthBarBg: '#bfab63',
+    borderSubtle: 'rgba(36,27,19,0.22)',
+    outerBorder: 'rgba(20,14,8,0.75)',
+    outerBorderDashed: true,
+    placeholderBg: '#e7c786',
+    placeholderPattern: 'rgba(36,27,19,0.10)',
+    placeholderText: 'rgba(36,27,19,0.45)',
+    fixedTint: '#ebb185',
+    fixedTint2: '#c1ac9c',
+    downOutFill: 'rgba(36,27,19,0.05)',
+    downOutBorder: 'rgba(36,27,19,0.4)',
+    downOutText: 'rgba(36,27,19,0.75)',
+    cornerAccentAlpha: 0,
+    badgeFill: '#fdf8f0',
+    badgeRing: '#865536',
+    badgeText: '#241b13',
+    skullWatermark: 'rgba(36,27,19,0.075)',
+  },
 };
 
 // Build a Health dice sequence from a starting die type, e.g. 'd10' -> ['d10','d8','d6']
@@ -124,6 +152,52 @@ function wrapLines(ctx, text, maxWidth) {
   return lines;
 }
 
+// Faint stylized skull watermark, echoing the official card template's
+// background motif. Drawn as one flat silhouette with the eyes/nose
+// punched out via destination-out compositing.
+function drawSkullWatermark(ctx, cx, cy, w, color) {
+  const s = w / 200;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(s, s);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-70, -15);
+  ctx.bezierCurveTo(-70, -95, 70, -95, 70, -15);
+  ctx.lineTo(66, 28);
+  ctx.bezierCurveTo(66, 52, 52, 58, 40, 58);
+  ctx.lineTo(40, 80);
+  ctx.lineTo(24, 80);
+  ctx.lineTo(24, 58);
+  ctx.lineTo(9, 58);
+  ctx.lineTo(9, 80);
+  ctx.lineTo(-9, 80);
+  ctx.lineTo(-9, 58);
+  ctx.lineTo(-24, 58);
+  ctx.lineTo(-24, 80);
+  ctx.lineTo(-40, 80);
+  ctx.lineTo(-40, 58);
+  ctx.bezierCurveTo(-52, 58, -66, 52, -66, 28);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath();
+  ctx.ellipse(-30, -10, 17, 22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(30, -10, 17, 22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0, 6);
+  ctx.lineTo(-11, 26);
+  ctx.lineTo(11, 26);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+}
+
 const PORTRAIT = { x: 24, y: 132, w: 300, h: 430 };
 const STATS = { x: 340, y: 132, w: 386, h: 430 };
 const NAME_BAR_H = 118;
@@ -149,8 +223,11 @@ export function renderCard(canvas, data) {
   const preset = TYPE_PRESETS[data.cardType] || TYPE_PRESETS.Custom;
   const accent = data.accentColor || preset.accent;
   const T = THEMES[data.theme] || THEMES.light;
-  const tint = hexToRgba(accent, T.tintAlpha);
-  const tint2 = T.tint2;
+  // Classical uses the official template's fixed terracotta/taupe bands
+  // instead of accent-tinted ones; light/dark tint the stat rows with the
+  // chosen accent color.
+  const tint = T.fixedTint || hexToRgba(accent, T.tintAlpha);
+  const tint2 = T.fixedTint2 || T.tint2;
 
   ctx.save();
   roundedRectPath(ctx, 0, 0, CARD_W, CARD_H, CARD_RADIUS);
@@ -182,16 +259,17 @@ export function renderCard(canvas, data) {
   ctx.fillStyle = accent;
   ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
 
-  // Level badge
+  // Level badge — Classical uses the template's brown-ring-on-cream look;
+  // light/dark fill the badge solid with the accent color.
   const badgeCx = 85, badgeCy = 59, badgeR = 46;
   ctx.beginPath();
   ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = T.badgeFill || accent;
   ctx.fill();
   ctx.lineWidth = 4;
-  ctx.strokeStyle = shade(accent, -0.3);
+  ctx.strokeStyle = T.badgeRing || shade(accent, -0.3);
   ctx.stroke();
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = T.badgeText || '#ffffff';
   ctx.font = '700 44px Rajdhani, Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -333,12 +411,16 @@ export function renderCard(canvas, data) {
   const healthBarH = 78;
   const abilBottom = CARD_H - healthBarH - (data.quote ? 56 : 14);
 
+  if (T.skullWatermark) {
+    drawSkullWatermark(ctx, CARD_W / 2, (abilTop + abilBottom) / 2, 260, T.skullWatermark);
+  }
+
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
   const abilities = (data.abilities || []).filter(a => a.name || a.text);
   if (abilities.length) {
-    let fontSize = 23;
+    let fontSize = data.abilityFontSize || 33;
     let lineHeight;
     const buildBlocks = (fs) => {
       ctx.font = `400 ${fs}px Inter, sans-serif`;
@@ -354,7 +436,7 @@ export function renderCard(canvas, data) {
       return { out, totalLines };
     };
     let res = buildBlocks(fontSize);
-    while ((res.totalLines * (fontSize * 1.28) + (abilities.length - 1) * 10) > (abilBottom - abilTop) && fontSize > 14) {
+    while ((res.totalLines * (fontSize * 1.28) + (abilities.length - 1) * 10) > (abilBottom - abilTop) && fontSize > 16) {
       fontSize -= 1;
       res = buildBlocks(fontSize);
     }
@@ -449,7 +531,9 @@ export function renderCard(canvas, data) {
 
   // outer border stroke — doubles as a cut guide when printing a single card
   roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
-  ctx.lineWidth = 2;
+  ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
   ctx.strokeStyle = T.outerBorder;
+  if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
   ctx.stroke();
+  ctx.setLineDash([]);
 }

@@ -38,6 +38,7 @@
             <option>Follower</option>
             <option>Villain</option>
             <option>Creature</option>
+            <option>Gang</option>
             <option>Custom</option>
           </select>
         </label>
@@ -73,6 +74,16 @@
         </label>
       </div>
 
+      <fieldset id="gang-fieldset" style="display:none">
+        <legend>Gang</legend>
+        <div class="field-row">
+          <label class="narrow">Current Models
+            <input type="number" id="f-gangModels" value="5" min="3" max="12">
+          </label>
+        </div>
+        <p class="hint">Brawl/Shoot/Might auto-fill in the Stats section below — 1d6 per 2 models (rounded up). Dodge/Cunning/Finesse are fixed at 1d6. You can still hand-edit any stat after auto-fill.</p>
+      </fieldset>
+
       <fieldset class="stat-grid">
         <legend>Stats</legend>
         <div class="stat-group-label">Combat</div>
@@ -87,23 +98,28 @@
 
       <fieldset>
         <legend>Health</legend>
-        <div class="field-row">
-          <label>Starting Health Die
-            <select id="f-healthStart">
-              <option value="d12">d12</option>
-              <option value="d10" selected>d10</option>
-              <option value="d8">d8</option>
-              <option value="d6">d6</option>
-            </select>
-          </label>
-          <label class="checkbox-label"><input type="checkbox" id="f-healthAsterisk"> Asterisk (removed on any fail)</label>
+        <div id="standard-health-fields">
+          <div class="field-row">
+            <label>Starting Health Die
+              <select id="f-healthStart">
+                <option value="d12">d12</option>
+                <option value="d10" selected>d10</option>
+                <option value="d8">d8</option>
+                <option value="d6">d6</option>
+              </select>
+            </label>
+            <label class="checkbox-label"><input type="checkbox" id="f-healthAsterisk"> Asterisk (removed on any fail)</label>
+          </div>
+        </div>
+        <div id="gang-health-fields" style="display:none">
+          <p class="hint">Gangs never roll Health checks. Casualties are removed one model at a time; the gang is knocked out at 2 models or fewer (p. 21). Set "Current Models" above.</p>
         </div>
         <p class="hint" id="health-preview">Track: d10 → d8 → d6 → Down → Out</p>
       </fieldset>
 
       <fieldset>
         <legend>Abilities</legend>
-        <p class="hint">Start typing a name to autocomplete from all 131 official abilities (Level 1–4 + Epic) — pick one from the list to fill in its rules text.</p>
+        <p class="hint">Start typing a name to autocomplete from all 131 official abilities (Level 1–4 + Epic) — pick one from the list to fill in its rules text. Gang cards see a filtered list of the 6 Gang-only abilities plus the abilities gangs are allowed to take.</p>
         <div id="abilities-list"></div>
         <div class="field-row">
           <button type="button" id="add-ability" class="btn-secondary">+ Add Ability</button>

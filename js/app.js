@@ -1,7 +1,7 @@
 import { renderCard, healthSequenceFrom, getPortraitBox, TYPE_PRESETS, CARD_W, CARD_H } from './cardRenderer.js';
 import { saveCard, deleteCard, getAllCards, getCard, saveRoster, deleteRoster, getAllRosters, getRoster } from './db.js';
 import { renderRosterSheet, loadImage } from './roster.js';
-import { ABILITIES, LEVEL_ORDER, searchAbilities } from './abilitiesData.js';
+import { ABILITIES, LEVEL_ORDER, GANG_LEVEL_ORDER, searchAbilities, abilitiesForCardType } from './abilitiesData.js';
 import { PERKS, SLOT_ORDER, searchPerks } from './perksData.js';
 import { BASE_ROSTER_SLOTS, slotCostForType } from './rosterRules.js';
 
@@ -86,7 +86,8 @@ function closeSuggestions(inputEl) {
 function showSuggestions(inputEl, idx) {
   const wrap = inputEl.closest('.ability-name-wrap');
   closeSuggestions(inputEl);
-  const results = searchAbilities(inputEl.value, 8);
+  const cardType = document.getElementById('f-cardType').value;
+  const results = searchAbilities(inputEl.value, 8, cardType);
   if (!results.length) return;
 
   const box = document.createElement('div');
@@ -97,7 +98,7 @@ function showSuggestions(inputEl, idx) {
         <span class="sugg-name">${escapeHtml(a.name)}</span>
         <span class="sugg-text">${escapeHtml(a.text)}</span>
       </div>
-      <span class="sugg-level">${a.level === 'Epic' ? 'Epic' : 'Lvl ' + a.level}</span>
+      <span class="sugg-level">${a.level === 'Epic' ? 'Epic' : a.level === 'Gang' ? 'Gang' : 'Lvl ' + a.level}</span>
     </div>
   `).join('');
   wrap.appendChild(box);
@@ -180,7 +181,15 @@ const librarySearch = document.getElementById('library-search');
 const levelFilterBar = document.getElementById('level-filter');
 let libraryLevel = 'all';
 
+function libraryLevelButtonsHtml(order) {
+  return '<button type="button" class="level-btn active" data-level="all">All</button>' +
+    order.map(l => `<button type="button" class="level-btn" data-level="${l}">${l === 'Epic' ? 'Epic' : l === 'Gang' ? 'Gang-only' : 'Level ' + l}</button>`).join('');
+}
+
 document.getElementById('open-ability-library').addEventListener('click', () => {
+  const cardType = document.getElementById('f-cardType').value;
+  levelFilterBar.innerHTML = libraryLevelButtonsHtml(cardType === 'Gang' ? GANG_LEVEL_ORDER : LEVEL_ORDER);
+  libraryLevel = 'all';
   libraryModal.classList.remove('hidden');
   renderLibraryList();
   librarySearch.focus();
@@ -209,34 +218,40 @@ levelFilterBar.addEventListener('click', (e) => {
 librarySearch.addEventListener('input', renderLibraryList);
 
 function renderLibraryList() {
+  const cardType = document.getElementById('f-cardType').value;
+  const isGang = cardType === 'Gang';
+  const pool = abilitiesForCardType(cardType);
+  const order = isGang ? GANG_LEVEL_ORDER : LEVEL_ORDER;
   const q = librarySearch.value.trim().toLowerCase();
-  const levels = libraryLevel === 'all' ? LEVEL_ORDER : [libraryLevel === 'Epic' ? 'Epic' : +libraryLevel];
+  const levels = libraryLevel === 'all' ? order : [libraryLevel === 'Epic' ? 'Epic' : libraryLevel === 'Gang' ? 'Gang' : +libraryLevel];
 
   let html = '';
   let anyResults = false;
   for (const lvl of levels) {
-    let items = ABILITIES.filter(a => a.level === lvl);
+    let items = pool.filter(a => a.level === lvl);
     if (q) {
       items = items.filter(a => a.name.toLowerCase().includes(q) || a.text.toLowerCase().includes(q));
     }
     if (!items.length) continue;
     anyResults = true;
-    html += `<div class="library-level-heading">${lvl === 'Epic' ? 'Epic abilities' : 'Level ' + lvl + ' abilities'}</div>`;
+    html += `<div class="library-level-heading">${lvl === 'Epic' ? 'Epic abilities' : lvl === 'Gang' ? 'Gang-only abilities' : 'Level ' + lvl + ' abilities'}</div>`;
     html += items.map(a => `
       <div class="library-item">
         <div class="library-item-body">
-          <span class="library-item-name">${escapeHtml(a.name)}</span><span class="library-item-level">${lvl === 'Epic' ? 'Epic' : 'Lvl ' + lvl}</span>
+          <span class="library-item-name">${escapeHtml(a.name)}</span><span class="library-item-level">${lvl === 'Epic' ? 'Epic' : lvl === 'Gang' ? 'Gang' : 'Lvl ' + lvl}</span>
           <div class="library-item-text">${escapeHtml(a.text)}</div>
         </div>
         <button type="button" class="library-add-btn" data-name="${escapeAttr(a.name)}" title="Add to card">+</button>
       </div>
     `).join('');
   }
-  libraryList.innerHTML = anyResults ? html : '<div class="library-empty">No abilities match your search.</div>';
+  libraryList.innerHTML = anyResults ? html : (isGang
+    ? '<div class="library-empty">No matching abilities. Gangs can only take the 6 Gang-only abilities plus a specific subset of Level 1–2 abilities (p. 22).</div>'
+    : '<div class="library-empty">No abilities match your search.</div>');
 
   libraryList.querySelectorAll('.library-add-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const ability = ABILITIES.find(a => a.name === btn.dataset.name);
+      const ability = pool.find(a => a.name === btn.dataset.name);
       if (!ability) return;
       const added = addAbilityToCard(ability);
       btn.textContent = added ? '✓' : '•';
@@ -261,12 +276,68 @@ form.addEventListener('change', updatePreview);
 document.getElementById('f-cardType').addEventListener('change', (e) => {
   const preset = TYPE_PRESETS[e.target.value];
   if (preset) document.getElementById('f-accentColor').value = preset.accent;
+  toggleGangFields(e.target.value === 'Gang');
+  if (e.target.value === 'Gang') applyGangStatsFromModels();
+  updateHealthPreview();
+  updatePreview();
+});
+
+// ---------------- Gang fields ----------------
+const gangFieldset = document.getElementById('gang-fieldset');
+const standardHealthFields = document.getElementById('standard-health-fields');
+const gangHealthFields = document.getElementById('gang-health-fields');
+const gangModelsInput = document.getElementById('f-gangModels');
+
+function toggleGangFields(isGang) {
+  gangFieldset.style.display = isGang ? 'block' : 'none';
+  standardHealthFields.style.display = isGang ? 'none' : 'block';
+  gangHealthFields.style.display = isGang ? 'block' : 'none';
+}
+
+function setStatRow(key, n, d) {
+  const row = document.querySelector(`.stat-row[data-stat="${key}"]`);
+  if (!row) return;
+  row.querySelector('input[type="number"]').value = n;
+  row.querySelector('select').value = d;
+}
+
+// Auto-fills the six stat rows from the rulebook's gang formula (p. 21):
+// Brawl/Shoot/Might roll 1d6 per 2 models (rounded up); Dodge/Cunning/
+// Finesse are always a flat 1d6. Fields stay normal, editable inputs
+// afterward so a perk or homebrew rule can still override the numbers.
+function applyGangStatsFromModels() {
+  const models = Math.max(1, +gangModelsInput.value || 5);
+  const combatDice = Math.ceil(models / 2);
+  setStatRow('brawl', combatDice, 6);
+  setStatRow('shoot', combatDice, 6);
+  setStatRow('might', combatDice, 6);
+  setStatRow('dodge', 1, 6);
+  setStatRow('cunning', 1, 6);
+  setStatRow('finesse', 1, 6);
+}
+
+gangModelsInput.addEventListener('input', () => {
+  applyGangStatsFromModels();
+  updateHealthPreview();
   updatePreview();
 });
 
 document.getElementById('f-healthStart').addEventListener('change', updateHealthPreview);
 document.getElementById('f-healthAsterisk').addEventListener('change', updateHealthPreview);
+
+function gangModelSequence() {
+  const models = Math.max(3, +gangModelsInput.value || 5);
+  const seq = [];
+  for (let m = models; m >= 3; m--) seq.push(String(m));
+  return seq;
+}
+
 function updateHealthPreview() {
+  if (document.getElementById('f-cardType').value === 'Gang') {
+    document.getElementById('health-preview').textContent =
+      'Track: ' + gangModelSequence().join(' → ') + ' → Out (knocked out at ≤2 models)';
+    return;
+  }
   const seq = healthSequenceFrom(document.getElementById('f-healthStart').value);
   document.getElementById('health-preview').textContent =
     'Track: ' + seq.join(' → ') + ' → Down → Out';
@@ -284,6 +355,16 @@ function collectStats() {
   return stats;
 }
 
+function collectHealth() {
+  if (document.getElementById('f-cardType').value === 'Gang') {
+    return { sequence: gangModelSequence(), asterisk: false, isGang: true };
+  }
+  return {
+    sequence: healthSequenceFrom(document.getElementById('f-healthStart').value),
+    asterisk: document.getElementById('f-healthAsterisk').checked,
+  };
+}
+
 function collectFormData() {
   return {
     cardType: document.getElementById('f-cardType').value,
@@ -296,10 +377,7 @@ function collectFormData() {
     abilities: state.abilities,
     quote: document.getElementById('f-quote').value.trim(),
     footerText: document.getElementById('f-footer').value.trim(),
-    health: {
-      sequence: healthSequenceFrom(document.getElementById('f-healthStart').value),
-      asterisk: document.getElementById('f-healthAsterisk').checked,
-    },
+    health: collectHealth(),
   };
 }
 
@@ -443,6 +521,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   state.abilities = [{ name: '', text: '' }];
   form.reset();
   document.getElementById('f-level').value = 4;
+  toggleGangFields(false);
   portraitControls.style.display = 'none';
   renderAbilityRows();
   updateHealthPreview();
@@ -522,9 +601,16 @@ async function loadCardIntoForm(record) {
       row.querySelector('select').value = s.d;
     }
   });
-  const startDie = d.health?.sequence?.[0] || 'd10';
-  document.getElementById('f-healthStart').value = startDie;
-  document.getElementById('f-healthAsterisk').checked = !!d.health?.asterisk;
+  const isGang = d.cardType === 'Gang';
+  toggleGangFields(isGang);
+  if (isGang) {
+    const models = d.health?.sequence?.length ? +d.health.sequence[0] : 5;
+    gangModelsInput.value = models || 5;
+  } else {
+    const startDie = d.health?.sequence?.[0] || 'd10';
+    document.getElementById('f-healthStart').value = startDie;
+    document.getElementById('f-healthAsterisk').checked = !!d.health?.asterisk;
+  }
   updateHealthPreview();
   document.getElementById('f-quote').value = d.quote || '';
   document.getElementById('f-footer').value = d.footerText || '';

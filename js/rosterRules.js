@@ -13,6 +13,7 @@ export const ROSTER_SLOT_COST = {
   Sidekick: 3,
   Ally: 2,
   Follower: 1,
+  Gang: 2,
 };
 
 // Card types that aren't native league-roster roles (Villain/Creature are

@@ -32,11 +32,21 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   delete them later, no server required.
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
-  (normally 1), Ally = 2, Follower = 1. Add colleagues straight from your
-  saved cards, browse and add any of the 36 official Background Perks (p.
-  22-26) — which permanently cost slots too — and watch the slot meter and
-  rule warnings (too many Leaders/Sidekicks, over budget) update live. Save
-  multiple named rosters and switch between them.
+  (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight
+  from your saved cards, browse and add any of the 36 official Background
+  Perks (p. 22-26) — which permanently cost slots too — and watch the slot
+  meter and rule warnings (too many Leaders/Sidekicks, over budget) update
+  live. Save multiple named rosters and switch between them.
+- **Gangs** — pick "Gang" as the Card Type and the Stats section becomes a
+  "Current Models" field (default 5) that auto-fills Brawl/Shoot/Might as
+  1d6 per 2 models and Dodge/Cunning/Finesse as a flat 1d6, matching the
+  Gang rules (p. 21) — the auto-filled numbers stay normal, editable fields
+  in case a perk or homebrew rule changes the math. The Health section
+  switches to a model-count track (e.g. 5 → 4 → 3 → Out) instead of a
+  die-based track, since gangs never roll Health checks. The Ability
+  Library and autocomplete automatically filter to the 6 Gang-only
+  abilities (Armed, Dangerous, Disciplined, Loyal, Mob, Sixth-Man) plus the
+  specific Level 1-2 abilities Gangs are allowed to take (p. 22).
 - **Print Sheet (A4)** — pick up to 9 saved cards and lay them out on an A4
   page at true size with crop marks. Download as PNG, download as PDF, or
   print directly from the browser.
@@ -84,9 +94,9 @@ js/cardRenderer.js    Canvas renderer for a single card (750x1050px)
 js/roster.js          A4 sheet layout (3x3 grid + crop marks)
 js/db.js               IndexedDB wrapper for saved cards + rosters
 js/app.js               Form wiring, portrait drag/zoom, gallery, exports, roster logic
-js/abilitiesData.js     Full 131-ability catalog (Level 1-4 + Epic)
+js/abilitiesData.js     Full 131-ability catalog (Level 1-4 + Epic) + 6 Gang-only abilities
 js/perksData.js         Full 36-perk catalog (Background Perks, p. 22-26)
-js/rosterRules.js       League roster slot math (p. 8)
+js/rosterRules.js       League roster slot math (p. 8), incl. Gang cost
 js/vendor/jspdf.umd.min.js   Bundled PDF export library
 assets/fonts/           Self-hosted woff2 font files
 test/verify.js, verify2.js   Playwright smoke tests (dev-only)

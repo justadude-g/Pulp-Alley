@@ -17,6 +17,7 @@ export const TYPE_PRESETS = {
   Follower: { accent: '#64748b' },
   Villain:  { accent: '#dc2626' },
   Creature: { accent: '#9333ea' },
+  Gang:     { accent: '#57534e' },
   Custom:   { accent: '#0d9488' },
 };
 
@@ -490,8 +491,12 @@ export function renderCard(canvas, data) {
   ctx.fillStyle = accent;
   ctx.fillRect(0, hbY, CARD_W, 3);
 
-  const seq = (data.health?.sequence && data.health.sequence.length) ? data.health.sequence : ['d6'];
-  const pills = [...seq, 'Down', 'Out'];
+  // Gangs never roll Health checks — instead of a die-based track ending in
+  // Down/Out, they show a model-count track (e.g. 5 → 4 → 3) ending in a
+  // single Out state (knocked out at 2 models or fewer, no "Down" state).
+  const isGangHealth = !!data.health?.isGang;
+  const seq = (data.health?.sequence && data.health.sequence.length) ? data.health.sequence : (isGangHealth ? ['5', '4', '3'] : ['d6']);
+  const pills = isGangHealth ? [...seq, 'Out'] : [...seq, 'Down', 'Out'];
   ctx.font = '700 24px Rajdhani, Inter, sans-serif';
   const gap = 14;
   let totalW = 0;

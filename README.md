@@ -17,7 +17,18 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   as Card Type fills in Level and Health automatically — both stay normal,
   editable fields afterward for homebrew exceptions. Villain/Creature/Custom
   aren't part of that table, so picking them never overrides a level you
-  already set.
+  already set. The d6* asterisk means no Down state — a Follower is
+  knocked straight to Out on a failed Health check, and the card's Health
+  bar reflects that (just D6* → OUT, no DOWN pill).
+- **Reset Stats to Card Type** — Leader/Sidekick/Ally/Follower show a
+  "↺ Reset to Card Type" button above Stats that fills in a valid starting
+  dice allocation for the p. 9 budget (e.g. Leader's 4 skills at 3d10 + 2 at
+  2d8) — a one-click starting point you can still hand-edit afterward to
+  choose which specific skills got the higher tier. It's a deliberate
+  button, not an auto-fill-on-change, so switching Card Type never
+  silently overwrites stats you've already customized. Hidden for Gang
+  (has its own model-based auto-fill) and Villain/Creature/Custom (no
+  rulebook default).
 - **Ability autocomplete** — start typing an ability name and pick from all
   131 official abilities (Level 1–4 + Epic, transcribed from the Core Rules)
   to fill in its exact rules text automatically. You can still type any

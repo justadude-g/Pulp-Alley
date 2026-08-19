@@ -22,26 +22,50 @@ const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 // homebrew characters can be any level with any abilities — so those
 // fields are left undefined and nothing here ever overrides what the user
 // typed for them.
+// defaultStats gives the "Reset Stats" button (app.js) something concrete
+// to apply: the rulebook only fixes the total dice budget per Card Type
+// (skillDiceHint above) and leaves which specific skills get the higher
+// tier up to the player. These pick Brawl/Shoot/Might as the "boosted"
+// skills by default — matching the same split the Gang stat auto-fill
+// already uses (see applyGangStatsFromModels in app.js) — as a valid,
+// rules-legal starting point. Every field stays a normal, editable input
+// afterward, same as everywhere else in the app.
 const TYPE_PRESETS = {
   Leader: {
     accent: '#c2650a', level: 4, healthStart: 'd10', healthAsterisk: false,
     maxAbilities: 3, maxAbilityLevel: 4,
     skillDiceHint: 'Leader (p.9): pick 4 skills to start at 3d10, the other 2 at 2d8.',
+    defaultStats: {
+      brawl: { n: 3, d: 10 }, shoot: { n: 3, d: 10 }, might: { n: 3, d: 10 }, finesse: { n: 3, d: 10 },
+      dodge: { n: 2, d: 8 }, cunning: { n: 2, d: 8 },
+    },
   },
   Sidekick: {
     accent: '#0d9488', level: 3, healthStart: 'd8', healthAsterisk: false,
     maxAbilities: 2, maxAbilityLevel: 3,
     skillDiceHint: 'Sidekick (p.9): pick 3 skills to start at 3d8, the other 3 at 2d6.',
+    defaultStats: {
+      brawl: { n: 3, d: 8 }, shoot: { n: 3, d: 8 }, might: { n: 3, d: 8 },
+      dodge: { n: 2, d: 6 }, cunning: { n: 2, d: 6 }, finesse: { n: 2, d: 6 },
+    },
   },
   Ally: {
     accent: '#2563eb', level: 2, healthStart: 'd6', healthAsterisk: false,
     maxAbilities: 1, maxAbilityLevel: 2,
     skillDiceHint: 'Ally (p.9): all skills start at d6 — pick 2 skills at 2 dice, the other 4 at 1 die.',
+    defaultStats: {
+      brawl: { n: 2, d: 6 }, shoot: { n: 2, d: 6 },
+      might: { n: 1, d: 6 }, finesse: { n: 1, d: 6 }, dodge: { n: 1, d: 6 }, cunning: { n: 1, d: 6 },
+    },
   },
   Follower: {
     accent: '#64748b', level: 1, healthStart: 'd6', healthAsterisk: true,
     maxAbilities: 1, maxAbilityLevel: 1,
     skillDiceHint: 'Follower (p.9): all skills start at 1d6.',
+    defaultStats: {
+      brawl: { n: 1, d: 6 }, shoot: { n: 1, d: 6 }, might: { n: 1, d: 6 },
+      finesse: { n: 1, d: 6 }, dodge: { n: 1, d: 6 }, cunning: { n: 1, d: 6 },
+    },
   },
   Villain:  { accent: '#dc2626' },
   Creature: { accent: '#9333ea' },
@@ -529,9 +553,13 @@ function renderCard(canvas, data) {
   // Gangs never roll Health checks — instead of a die-based track ending in
   // Down/Out, they show a model-count track (e.g. 5 → 4 → 3) ending in a
   // single Out state (knocked out at 2 models or fewer, no "Down" state).
+  // Asterisked characters (Followers, "d6*") have no Down state either —
+  // per the rulebook note, they're knocked out on a failed Health check
+  // instead of going down, at any point in their sequence.
   const isGangHealth = !!data.health?.isGang;
+  const noDownState = isGangHealth || !!data.health?.asterisk;
   const seq = (data.health?.sequence && data.health.sequence.length) ? data.health.sequence : (isGangHealth ? ['5', '4', '3'] : ['d6']);
-  const pills = isGangHealth ? [...seq, 'Out'] : [...seq, 'Down', 'Out'];
+  const pills = noDownState ? [...seq, 'Out'] : [...seq, 'Down', 'Out'];
   ctx.font = '700 27px Rajdhani, Inter, sans-serif';
   const gap = 14;
   let totalW = 0;

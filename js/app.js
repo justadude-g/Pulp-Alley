@@ -450,6 +450,7 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   }
   toggleGangFields(e.target.value === 'Gang');
   if (e.target.value === 'Gang') applyGangStatsFromModels();
+  updateResetStatsVisibility(e.target.value);
   updateHealthPreview();
   updatePreview();
 });
@@ -494,6 +495,34 @@ gangModelsInput.addEventListener('input', () => {
   updatePreview();
 });
 
+// ---- Reset Stats to Card Type ----
+// Leader/Sidekick/Ally/Follower each have a defaultStats block in
+// TYPE_PRESETS (cardRenderer.js) — a valid, rules-legal starting dice
+// allocation for that Card Type. The rulebook fixes the total budget
+// (skillDiceHint) but leaves which specific skills get the higher tier up
+// to the player, so this is a deliberate, explicit action (a button, not
+// an auto-fill-on-change) — it won't silently clobber hand-edited stats
+// just because you tweaked the Card Type for an unrelated reason. Gang
+// isn't included here since it already has its own model-based stat
+// auto-fill (applyGangStatsFromModels); Villain/Creature/Custom have no
+// rulebook default at all.
+const statGridActions = document.querySelector('.stat-grid-actions');
+const resetStatsBtn = document.getElementById('reset-stats');
+
+function updateResetStatsVisibility(cardType) {
+  const hasDefaults = !!TYPE_PRESETS[cardType]?.defaultStats;
+  statGridActions.style.display = hasDefaults ? 'flex' : 'none';
+}
+
+resetStatsBtn.addEventListener('click', () => {
+  const cardType = document.getElementById('f-cardType').value;
+  const defaults = TYPE_PRESETS[cardType]?.defaultStats;
+  if (!defaults) return;
+  Object.entries(defaults).forEach(([key, { n, d }]) => setStatRow(key, n, d));
+  updatePreview();
+});
+updateResetStatsVisibility(document.getElementById('f-cardType').value);
+
 document.getElementById('f-healthStart').addEventListener('change', updateHealthPreview);
 document.getElementById('f-healthAsterisk').addEventListener('change', updateHealthPreview);
 
@@ -511,8 +540,11 @@ function updateHealthPreview() {
     return;
   }
   const seq = healthSequenceFrom(document.getElementById('f-healthStart').value);
-  document.getElementById('health-preview').textContent =
-    'Track: ' + seq.join(' → ') + ' → Down → Out';
+  const asterisk = document.getElementById('f-healthAsterisk').checked;
+  const seqDisplay = asterisk ? [seq[0] + '*', ...seq.slice(1)] : seq;
+  document.getElementById('health-preview').textContent = asterisk
+    ? 'Track: ' + seqDisplay.join(' → ') + ' → Out (knocked out on a failed Health check — no Down state)'
+    : 'Track: ' + seqDisplay.join(' → ') + ' → Down → Out';
 }
 updateHealthPreview();
 
@@ -695,6 +727,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   form.reset();
   document.getElementById('f-level').value = 4;
   toggleGangFields(false);
+  updateResetStatsVisibility(document.getElementById('f-cardType').value);
   portraitControls.style.display = 'none';
   renderAbilityRows();
   updateHealthPreview();
@@ -776,6 +809,7 @@ async function loadCardIntoForm(record) {
   });
   const isGang = d.cardType === 'Gang';
   toggleGangFields(isGang);
+  updateResetStatsVisibility(d.cardType);
   if (isGang) {
     const models = d.health?.sequence?.length ? +d.health.sequence[0] : 5;
     gangModelsInput.value = models || 5;

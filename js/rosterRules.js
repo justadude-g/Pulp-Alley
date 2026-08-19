@@ -1,5 +1,4 @@
 // rosterRules.js
-// League roster math from the Pulp Alley 2nd Edition Core Rules, page 8:
 // "Your league roster starts with 10 slots." Each colleague fills slots
 // based on level; perks permanently remove slots from the pool.
 

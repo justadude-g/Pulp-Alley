@@ -512,7 +512,7 @@ function renderCard(canvas, data) {
   const isGangHealth = !!data.health?.isGang;
   const seq = (data.health?.sequence && data.health.sequence.length) ? data.health.sequence : (isGangHealth ? ['5', '4', '3'] : ['d6']);
   const pills = isGangHealth ? [...seq, 'Out'] : [...seq, 'Down', 'Out'];
-  ctx.font = '700 24px Rajdhani, Inter, sans-serif';
+  ctx.font = '700 27px Rajdhani, Inter, sans-serif';
   const gap = 14;
   let totalW = 0;
   const widths = pills.map(p => {
@@ -522,7 +522,8 @@ function renderCard(canvas, data) {
   });
   totalW -= gap;
   let px = (CARD_W - totalW) / 2;
-  const pillY = hbY + 14, pillH = 34;
+  const pillH = 38;
+  const pillY = hbY + (healthBarH - pillH) / 2; // vertically centered in the bar, not top-hugging
   pills.forEach((p, i) => {
     const w = widths[i];
     const isDie = i < seq.length;

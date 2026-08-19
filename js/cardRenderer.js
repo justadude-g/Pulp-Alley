@@ -395,13 +395,18 @@ function renderCard(canvas, data) {
         ctx.globalAlpha = 1;
       }
       ctx.fillStyle = T.textPrimary;
-      ctx.font = '600 27px Inter, sans-serif';
+      ctx.font = '600 28px Inter, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(label, STATS.x + 20, ry + rowH / 2 + 1);
 
+      // Dice pool is the single most important thing to read at a glance
+      // during play, so it's set larger than the stat label — Rajdhani is a
+      // condensed display face that reads visually smaller than Inter at
+      // the same px size, so matching px values alone isn't enough to look
+      // the same size; this compensates so the two feel like one scale.
       const dieStr = val ? `${val.n}d${val.d}` : '—';
-      ctx.font = '700 27px Rajdhani, Inter, sans-serif';
+      ctx.font = '700 34px Rajdhani, Inter, sans-serif';
       ctx.textAlign = 'right';
       ctx.fillStyle = accent;
       ctx.fillText(dieStr, STATS.x + STATS.w - 20, ry + rowH / 2 + 1);

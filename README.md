@@ -30,6 +30,13 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   punchier look for screen use.
 - **My Cards** — save cards locally in your browser (IndexedDB), edit or
   delete them later, no server required.
+- **League Roster** — build a league following the Core Rules' roster math
+  (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
+  (normally 1), Ally = 2, Follower = 1. Add colleagues straight from your
+  saved cards, browse and add any of the 36 official Background Perks (p.
+  22-26) — which permanently cost slots too — and watch the slot meter and
+  rule warnings (too many Leaders/Sidekicks, over budget) update live. Save
+  multiple named rosters and switch between them.
 - **Print Sheet (A4)** — pick up to 9 saved cards and lay them out on an A4
   page at true size with crop marks. Download as PNG, download as PDF, or
   print directly from the browser.
@@ -75,8 +82,11 @@ css/styles.css       App UI styling
 css/fonts.css         Self-hosted Inter + Rajdhani font faces
 js/cardRenderer.js    Canvas renderer for a single card (750x1050px)
 js/roster.js          A4 sheet layout (3x3 grid + crop marks)
-js/db.js               IndexedDB wrapper for saved cards
-js/app.js               Form wiring, portrait drag/zoom, gallery, exports
+js/db.js               IndexedDB wrapper for saved cards + rosters
+js/app.js               Form wiring, portrait drag/zoom, gallery, exports, roster logic
+js/abilitiesData.js     Full 131-ability catalog (Level 1-4 + Epic)
+js/perksData.js         Full 36-perk catalog (Background Perks, p. 22-26)
+js/rosterRules.js       League roster slot math (p. 8)
 js/vendor/jspdf.umd.min.js   Bundled PDF export library
 assets/fonts/           Self-hosted woff2 font files
 test/verify.js, verify2.js   Playwright smoke tests (dev-only)

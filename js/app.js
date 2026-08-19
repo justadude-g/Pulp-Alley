@@ -1,7 +1,9 @@
 import { renderCard, healthSequenceFrom, getPortraitBox, TYPE_PRESETS, CARD_W, CARD_H } from './cardRenderer.js';
-import { saveCard, deleteCard, getAllCards, getCard } from './db.js';
+import { saveCard, deleteCard, getAllCards, getCard, saveRoster, deleteRoster, getAllRosters, getRoster } from './db.js';
 import { renderRosterSheet, loadImage } from './roster.js';
 import { ABILITIES, LEVEL_ORDER, searchAbilities } from './abilitiesData.js';
+import { PERKS, SLOT_ORDER, searchPerks } from './perksData.js';
+import { BASE_ROSTER_SLOTS, slotCostForType } from './rosterRules.js';
 
 // ---------------- State ----------------
 const state = {
@@ -23,6 +25,7 @@ function activateTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
   if (tab === 'gallery') refreshGallery();
+  if (tab === 'roster') refreshRosterTab();
   if (tab === 'print') refreshPrintSheet();
 }
 document.getElementById('go-print').addEventListener('click', () => activateTab('print'));
@@ -186,12 +189,15 @@ document.getElementById('close-ability-library').addEventListener('click', close
 libraryModal.addEventListener('click', (e) => {
   if (e.target === libraryModal) closeLibrary();
 });
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !libraryModal.classList.contains('hidden')) closeLibrary();
-});
 function closeLibrary() {
   libraryModal.classList.add('hidden');
 }
+
+// Generic: Escape closes whichever modal is currently open.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
+});
 
 levelFilterBar.addEventListener('click', (e) => {
   const btn = e.target.closest('.level-btn');
@@ -575,6 +581,298 @@ document.getElementById('print-download-pdf').addEventListener('click', () => {
 document.getElementById('print-browser').addEventListener('click', () => {
   window.print();
 });
+
+// ---------------- League Roster ----------------
+const rosterState = {
+  editingId: null,
+  createdAt: null,
+  name: '',
+  members: [], // snapshots: {cardId, name, cardType, pngDataURL, slots}
+  perks: [],   // {name, slots}
+};
+
+const rosterNameInput = document.getElementById('roster-name');
+const rosterPicker = document.getElementById('roster-picker');
+const rosterMembersEl = document.getElementById('roster-members');
+const rosterMembersEmpty = document.getElementById('roster-members-empty');
+const rosterPerksEl = document.getElementById('roster-perks');
+const rosterPerksEmpty = document.getElementById('roster-perks-empty');
+const rosterWarningsEl = document.getElementById('roster-warnings');
+const slotMeterFill = document.getElementById('slot-meter-fill');
+const slotMeterLabel = document.getElementById('slot-meter-label');
+
+async function refreshRosterTab() {
+  const rosters = await getAllRosters();
+  rosterPicker.innerHTML = '<option value="">＋ New roster…</option>' +
+    rosters.map(r => `<option value="${escapeAttr(r.id)}">${escapeHtml(r.name || 'Untitled League')}</option>`).join('');
+  rosterPicker.value = rosterState.editingId || '';
+  renderRosterWorkspace();
+}
+
+rosterNameInput.addEventListener('input', () => { rosterState.name = rosterNameInput.value; });
+
+rosterPicker.addEventListener('change', async () => {
+  const id = rosterPicker.value;
+  if (!id) {
+    resetRosterState();
+    renderRosterWorkspace();
+    return;
+  }
+  const record = await getRoster(id);
+  if (!record) return;
+  rosterState.editingId = record.id;
+  rosterState.createdAt = record.createdAt;
+  rosterState.name = record.name || '';
+  rosterState.members = record.members || [];
+  rosterState.perks = record.perks || [];
+  renderRosterWorkspace();
+});
+
+function resetRosterState() {
+  rosterState.editingId = null;
+  rosterState.createdAt = null;
+  rosterState.name = '';
+  rosterState.members = [];
+  rosterState.perks = [];
+}
+
+document.getElementById('roster-save').addEventListener('click', async () => {
+  const id = rosterState.editingId || crypto.randomUUID();
+  const record = {
+    id,
+    name: rosterState.name || 'Untitled League',
+    members: rosterState.members,
+    perks: rosterState.perks,
+    createdAt: rosterState.createdAt || Date.now(),
+    updatedAt: Date.now(),
+  };
+  await saveRoster(record);
+  rosterState.editingId = id;
+  rosterState.createdAt = record.createdAt;
+  await refreshRosterTab();
+});
+
+document.getElementById('roster-delete').addEventListener('click', async () => {
+  if (!rosterState.editingId) return;
+  if (!confirm(`Delete “${rosterState.name || 'this roster'}”?`)) return;
+  await deleteRoster(rosterState.editingId);
+  resetRosterState();
+  await refreshRosterTab();
+});
+
+function computeRosterSlots() {
+  const memberSlots = rosterState.members.reduce((sum, m) => sum + (m.slots || 0), 0);
+  const perkSlots = rosterState.perks.reduce((sum, p) => sum + (p.slots || 0), 0);
+  return { memberSlots, perkSlots, used: memberSlots + perkSlots, remaining: BASE_ROSTER_SLOTS - memberSlots - perkSlots };
+}
+
+function renderRosterWorkspace() {
+  rosterNameInput.value = rosterState.name || '';
+
+  // Members
+  rosterMembersEl.innerHTML = '';
+  rosterMembersEmpty.style.display = rosterState.members.length ? 'none' : 'block';
+  rosterState.members.forEach((m, i) => {
+    const row = document.createElement('div');
+    row.className = 'roster-row';
+    row.innerHTML = `
+      ${m.pngDataURL ? `<img class="roster-row-thumb" src="${m.pngDataURL}" alt="">` : ''}
+      <div class="roster-row-body">
+        <div class="roster-row-name">${escapeHtml(m.name || 'Unnamed')}</div>
+        <div class="roster-row-meta">${escapeHtml(m.cardType || 'Custom')}</div>
+      </div>
+      <div class="roster-row-slots">${m.slots} slot${m.slots === 1 ? '' : 's'}</div>
+      <button type="button" class="roster-row-remove" data-idx="${i}" title="Remove">✕</button>
+    `;
+    rosterMembersEl.appendChild(row);
+  });
+  rosterMembersEl.querySelectorAll('.roster-row-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rosterState.members.splice(+btn.dataset.idx, 1);
+      renderRosterWorkspace();
+    });
+  });
+
+  // Perks
+  rosterPerksEl.innerHTML = '';
+  rosterPerksEmpty.style.display = rosterState.perks.length ? 'none' : 'block';
+  rosterState.perks.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'roster-row';
+    row.innerHTML = `
+      <div class="roster-row-body">
+        <div class="roster-row-name">${escapeHtml(p.name)}</div>
+      </div>
+      <div class="roster-row-slots">${p.slots} slot${p.slots === 1 ? '' : 's'}</div>
+      <button type="button" class="roster-row-remove" data-idx="${i}" title="Remove">✕</button>
+    `;
+    rosterPerksEl.appendChild(row);
+  });
+  rosterPerksEl.querySelectorAll('.roster-row-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rosterState.perks.splice(+btn.dataset.idx, 1);
+      renderRosterWorkspace();
+    });
+  });
+
+  // Slot meter
+  const { used, remaining } = computeRosterSlots();
+  const pct = Math.min(100, (used / BASE_ROSTER_SLOTS) * 100);
+  slotMeterFill.style.width = pct + '%';
+  slotMeterFill.classList.toggle('over', remaining < 0);
+  slotMeterLabel.textContent = remaining < 0
+    ? `${used} / ${BASE_ROSTER_SLOTS} slots used — over by ${-remaining}`
+    : `${used} / ${BASE_ROSTER_SLOTS} slots used (${remaining} remaining)`;
+
+  // Warnings (soft — informational, not blocking)
+  const warnings = [];
+  const leaderCount = rosterState.members.filter(m => m.cardType === 'Leader').length;
+  const sidekickCount = rosterState.members.filter(m => m.cardType === 'Sidekick').length;
+  const hasCompanyOfHeroes = rosterState.perks.some(p => p.name === 'Company of Heroes');
+  const hasLeagueOfLegends = rosterState.perks.some(p => p.name === 'League of Legends');
+  const hasMastermind = rosterState.perks.some(p => p.name === 'Mastermind');
+  if (leaderCount > 1 && !hasLeagueOfLegends) {
+    warnings.push('More than 1 Leader on this roster — a league normally includes only one (p. 8).');
+  }
+  if (leaderCount === 0 && !hasMastermind && !hasLeagueOfLegends) {
+    warnings.push('No Leader on this roster — every league needs one (p. 8), unless using Mastermind or League of Legends.');
+  }
+  if (sidekickCount > 1 && !hasCompanyOfHeroes && !hasLeagueOfLegends) {
+    warnings.push('More than 1 Sidekick on this roster — normally only 1 is allowed unless you’ve added the Company of Heroes perk.');
+  }
+  if (remaining < 0) {
+    warnings.push(`This roster is over its slot budget by ${-remaining} slot${-remaining === 1 ? '' : 's'}.`);
+  }
+  rosterWarningsEl.innerHTML = warnings.map(w => `<div class="roster-warning">⚠ ${escapeHtml(w)}</div>`).join('');
+}
+
+// ---- Add-colleague picker ----
+const colleaguePickerModal = document.getElementById('colleague-picker-modal');
+const colleaguePickerList = document.getElementById('colleague-picker-list');
+
+document.getElementById('open-colleague-picker').addEventListener('click', async () => {
+  colleaguePickerModal.classList.remove('hidden');
+  await renderColleaguePicker();
+});
+document.getElementById('close-colleague-picker').addEventListener('click', () => {
+  colleaguePickerModal.classList.add('hidden');
+});
+colleaguePickerModal.addEventListener('click', (e) => {
+  if (e.target === colleaguePickerModal) colleaguePickerModal.classList.add('hidden');
+});
+
+async function renderColleaguePicker() {
+  const cards = await getAllCards();
+  const addedIds = new Set(rosterState.members.map(m => m.cardId));
+  const available = cards.filter(c => !addedIds.has(c.id));
+  if (!available.length) {
+    colleaguePickerList.innerHTML = '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>';
+    return;
+  }
+  colleaguePickerList.innerHTML = available.map(c => `
+    <div class="library-item">
+      <img class="library-item-thumb" src="${c.pngDataURL}" alt="">
+      <div class="library-item-body">
+        <span class="library-item-name">${escapeHtml(c.formData?.name || 'Unnamed')}</span><span class="library-item-level">${escapeHtml(c.formData?.cardType || 'Custom')}</span>
+        <div class="library-item-text">${slotCostForType(c.formData?.cardType)} roster slot${slotCostForType(c.formData?.cardType) === 1 ? '' : 's'}</div>
+      </div>
+      <button type="button" class="library-add-btn" data-id="${escapeAttr(c.id)}" title="Add to roster">+</button>
+    </div>
+  `).join('');
+
+  colleaguePickerList.querySelectorAll('.library-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = available.find(c => c.id === btn.dataset.id);
+      if (!card) return;
+      rosterState.members.push({
+        cardId: card.id,
+        name: card.formData?.name || 'Unnamed',
+        cardType: card.formData?.cardType || 'Custom',
+        pngDataURL: card.pngDataURL,
+        slots: slotCostForType(card.formData?.cardType),
+      });
+      renderRosterWorkspace();
+      renderColleaguePicker();
+    });
+  });
+}
+
+// ---- Perk library ----
+const perkLibraryModal = document.getElementById('perk-library-modal');
+const perkLibraryList = document.getElementById('perk-library-list');
+const perkSearch = document.getElementById('perk-search');
+const perkSlotFilterBar = document.getElementById('perk-slot-filter');
+let perkSlotFilter = 'all';
+
+document.getElementById('open-perk-library').addEventListener('click', () => {
+  perkLibraryModal.classList.remove('hidden');
+  renderPerkLibrary();
+  perkSearch.focus();
+});
+document.getElementById('close-perk-library').addEventListener('click', () => {
+  perkLibraryModal.classList.add('hidden');
+});
+perkLibraryModal.addEventListener('click', (e) => {
+  if (e.target === perkLibraryModal) perkLibraryModal.classList.add('hidden');
+});
+perkSlotFilterBar.addEventListener('click', (e) => {
+  const btn = e.target.closest('.level-btn');
+  if (!btn) return;
+  perkSlotFilter = btn.dataset.slots;
+  perkSlotFilterBar.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b === btn));
+  renderPerkLibrary();
+});
+perkSearch.addEventListener('input', renderPerkLibrary);
+
+function renderPerkLibrary() {
+  const q = perkSearch.value.trim().toLowerCase();
+  const slotLevels = perkSlotFilter === 'all' ? SLOT_ORDER : [+perkSlotFilter];
+
+  let html = '';
+  let anyResults = false;
+  for (const slots of slotLevels) {
+    let items = PERKS.filter(p => p.slots === slots);
+    if (q) items = items.filter(p => p.name.toLowerCase().includes(q) || p.text.toLowerCase().includes(q));
+    if (!items.length) continue;
+    anyResults = true;
+    html += `<div class="library-level-heading">${slots} slot${slots === 1 ? '' : 's'}</div>`;
+    html += items.map(p => `
+      <div class="library-item">
+        <div class="library-item-body">
+          <span class="library-item-name">${escapeHtml(p.name)}</span><span class="library-item-level">${p.slots} slot${p.slots === 1 ? '' : 's'}</span>
+          <div class="library-item-text">${escapeHtml(p.text)}</div>
+        </div>
+        <button type="button" class="library-add-btn" data-name="${escapeAttr(p.name)}" title="Add to roster">+</button>
+      </div>
+    `).join('');
+  }
+  perkLibraryList.innerHTML = anyResults ? html : '<div class="library-empty">No perks match your search.</div>';
+
+  perkLibraryList.querySelectorAll('.library-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const perk = PERKS.find(p => p.name === btn.dataset.name);
+      if (!perk) return;
+      const already = rosterState.perks.some(p => p.name === perk.name);
+      if (already) {
+        btn.textContent = '•';
+        btn.title = 'Already on this roster';
+      } else {
+        rosterState.perks.push({ name: perk.name, slots: perk.slots });
+        renderRosterWorkspace();
+        btn.textContent = '✓';
+        btn.title = 'Added to roster';
+      }
+      btn.classList.add('added');
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = '+';
+        btn.title = 'Add to roster';
+        btn.classList.remove('added');
+        btn.disabled = false;
+      }, 900);
+    });
+  });
+}
 
 // ---------------- Init ----------------
 document.fonts.ready.then(updatePreview);

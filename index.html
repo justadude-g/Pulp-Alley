@@ -17,6 +17,7 @@
   <nav class="tabs">
     <button class="tab-btn active" data-tab="designer">Card Designer</button>
     <button class="tab-btn" data-tab="gallery">My Cards</button>
+    <button class="tab-btn" data-tab="roster">League Roster</button>
     <button class="tab-btn" data-tab="print">Print Sheet (A4)</button>
   </nav>
 </header>
@@ -163,6 +164,54 @@
   </div>
 </section>
 
+<!-- ===================== LEAGUE ROSTER ===================== -->
+<section id="tab-roster" class="tab-panel">
+  <div class="panel">
+    <div class="gallery-toolbar">
+      <h2>League Roster</h2>
+      <div class="gallery-meta">
+        <select id="roster-picker"><option value="">＋ New roster…</option></select>
+        <button id="roster-delete" class="btn-ghost">Delete</button>
+        <button id="roster-save" class="btn-primary">💾 Save Roster</button>
+      </div>
+    </div>
+    <p class="hint">Based on the Pulp Alley 2E League Roster rules (p. 8): every league starts with 10 roster slots. Leader = 0 slots (only 1 per league), Sidekick = 3 slots (normally only 1), Ally = 2 slots, Follower = 1 slot. Perks permanently remove slots from the pool.</p>
+
+    <div class="field-row">
+      <label class="grow">League Name
+        <input type="text" id="roster-name" placeholder="The Shadow Tong" maxlength="60">
+      </label>
+    </div>
+
+    <div id="roster-warnings"></div>
+
+    <div class="slot-meter">
+      <div class="slot-meter-bar"><div id="slot-meter-fill" class="slot-meter-fill"></div></div>
+      <div id="slot-meter-label" class="slot-meter-label">0 / 10 slots used</div>
+    </div>
+
+    <div class="roster-columns">
+      <div class="roster-column">
+        <div class="roster-column-header">
+          <h3>Colleagues</h3>
+          <button type="button" id="open-colleague-picker" class="btn-secondary">+ Add from My Cards</button>
+        </div>
+        <div id="roster-members" class="roster-list"></div>
+        <p id="roster-members-empty" class="hint">No colleagues yet. Save some characters in the Card Designer first, then add them here.</p>
+      </div>
+
+      <div class="roster-column">
+        <div class="roster-column-header">
+          <h3>Perks</h3>
+          <button type="button" id="open-perk-library" class="btn-secondary">📖 Browse Perk Library</button>
+        </div>
+        <div id="roster-perks" class="roster-list"></div>
+        <p id="roster-perks-empty" class="hint">No perks selected. Perks are optional — see the Perk Library to browse all 36.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ===================== PRINT SHEET ===================== -->
 <section id="tab-print" class="tab-panel">
   <div class="panel">
@@ -202,6 +251,40 @@
       <input type="text" id="library-search" placeholder="Search abilities…">
     </div>
     <div id="library-list" class="library-list"></div>
+  </div>
+</div>
+
+<!-- ===================== PERK LIBRARY MODAL ===================== -->
+<div id="perk-library-modal" class="modal-overlay hidden">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>Perk Library</h2>
+      <button type="button" id="close-perk-library" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-toolbar">
+      <div class="level-filter" id="perk-slot-filter">
+        <button type="button" class="level-btn active" data-slots="all">All</button>
+        <button type="button" class="level-btn" data-slots="0">0 slots</button>
+        <button type="button" class="level-btn" data-slots="1">1 slot</button>
+        <button type="button" class="level-btn" data-slots="2">2 slots</button>
+        <button type="button" class="level-btn" data-slots="3">3 slots</button>
+        <button type="button" class="level-btn" data-slots="4">4 slots</button>
+        <button type="button" class="level-btn" data-slots="10">10 slots</button>
+      </div>
+      <input type="text" id="perk-search" placeholder="Search perks…">
+    </div>
+    <div id="perk-library-list" class="library-list"></div>
+  </div>
+</div>
+
+<!-- ===================== ADD COLLEAGUE MODAL ===================== -->
+<div id="colleague-picker-modal" class="modal-overlay hidden">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>Add from My Cards</h2>
+      <button type="button" id="close-colleague-picker" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div id="colleague-picker-list" class="library-list"></div>
   </div>
 </div>
 

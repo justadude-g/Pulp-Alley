@@ -26,7 +26,6 @@ async function main() {
   await page.selectOption('#f-cardType', 'Sidekick');
   await page.fill('#f-level', '3');
   await page.fill('#f-quote', "Lights out, pal.");
-  await page.fill('#f-footer', 'Neon League · Pulp Alley 2E');
 
   // abilities
   await page.fill('.ability-item input[data-field="name"]', 'Marksman');

@@ -218,7 +218,7 @@ function getThemeNames() { return Object.keys(THEMES); }
 //   name, level, cardType, accentColor, theme: 'light'|'dark',
 //   stats: {brawl:{n,d}, shoot:{n,d}, dodge:{n,d}, might:{n,d}, finesse:{n,d}, cunning:{n,d}},
 //   abilities: [{name, text}],
-//   quote, footerText,
+//   quote,
 //   health: {sequence:['d10','d8','d6'], asterisk:false},
 //   portraitImg: HTMLImageElement|null,
 //   portraitView: {scale, offsetX, offsetY}  // pixel offsets in canvas space
@@ -418,7 +418,7 @@ function renderCard(canvas, data) {
   const abilRight = CARD_W - 28;
   const abilMaxWidth = abilRight - abilLeft;
   const healthBarH = 78;
-  const abilBottom = CARD_H - healthBarH - (data.quote ? 56 : 14);
+  const abilBottom = CARD_H - healthBarH - (data.quote ? 72 : 14);
 
   if (T.skullWatermark) {
     drawSkullWatermark(ctx, CARD_W / 2, (abilTop + abilBottom) / 2, 260, T.skullWatermark);
@@ -478,16 +478,18 @@ function renderCard(canvas, data) {
     }
   }
 
-  // Quote
+  // Quote — sized to stay legible once printed at true card size (2.5"x3.5").
   if (data.quote) {
-    ctx.font = 'italic 400 20px Inter, sans-serif';
+    const quoteFontSize = 26;
+    const quoteLineHeight = 32;
+    ctx.font = `italic 400 ${quoteFontSize}px Inter, sans-serif`;
     ctx.fillStyle = T.textMuted;
     ctx.textAlign = 'center';
     const lines = wrapLines(ctx, `“${data.quote}”`, abilMaxWidth);
-    let qy = CARD_H - healthBarH - 16 - (lines.length - 1) * 24;
+    let qy = CARD_H - healthBarH - 18 - (lines.length - 1) * quoteLineHeight;
     for (const l of lines) {
       ctx.fillText(l, CARD_W / 2, qy);
-      qy += 24;
+      qy += quoteLineHeight;
     }
     ctx.textAlign = 'left';
   }
@@ -531,14 +533,6 @@ function renderCard(canvas, data) {
     ctx.fillText(p.toUpperCase() + (isDie && data.health?.asterisk && i === 0 ? '*' : ''), px + w / 2, pillY + pillH / 2 + 2);
     px += w + gap;
   });
-
-  // footer text
-  if (data.footerText) {
-    ctx.font = '400 13px Inter, sans-serif';
-    ctx.fillStyle = T.textMuted;
-    ctx.textAlign = 'center';
-    ctx.fillText(data.footerText, CARD_W / 2, hbY + healthBarH - 6);
-  }
 
   ctx.restore(); // end clip
 

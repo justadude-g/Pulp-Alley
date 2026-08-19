@@ -389,7 +389,6 @@ function collectFormData() {
     stats: collectStats(),
     abilities: state.abilities,
     quote: document.getElementById('f-quote').value.trim(),
-    footerText: document.getElementById('f-footer').value.trim(),
     health: collectHealth(),
   };
 }
@@ -626,7 +625,6 @@ async function loadCardIntoForm(record) {
   }
   updateHealthPreview();
   document.getElementById('f-quote').value = d.quote || '';
-  document.getElementById('f-footer').value = d.footerText || '';
 
   state.abilities = d.abilities?.length ? d.abilities.map(a => ({ ...a })) : [{ name: '', text: '' }];
   renderAbilityRows();

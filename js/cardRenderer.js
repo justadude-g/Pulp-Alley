@@ -1,0 +1,410 @@
+// cardRenderer.js
+// Draws a Pulp Alley character card onto a canvas at fixed print resolution.
+// Standard playing card @ 300dpi = 2.5in x 3.5in = 750 x 1050 px.
+
+export const CARD_W = 750;
+export const CARD_H = 1050;
+export const CARD_RADIUS = 34;
+
+export const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
+
+export const TYPE_PRESETS = {
+  Leader:   { accent: '#f5a524', tint: 'rgba(245,165,36,0.16)' },
+  Sidekick: { accent: '#2dd4bf', tint: 'rgba(45,212,191,0.16)' },
+  Ally:     { accent: '#3b82f6', tint: 'rgba(59,130,246,0.16)' },
+  Follower: { accent: '#94a3b8', tint: 'rgba(148,163,184,0.16)' },
+  Villain:  { accent: '#ef4444', tint: 'rgba(239,68,68,0.16)' },
+  Creature: { accent: '#a855f7', tint: 'rgba(168,85,247,0.16)' },
+  Custom:   { accent: '#2dd4bf', tint: 'rgba(45,212,191,0.16)' },
+};
+
+// Build a Health dice sequence from a starting die type, e.g. 'd10' -> ['d10','d8','d6']
+export function healthSequenceFrom(startDie) {
+  const idx = DIE_ORDER.indexOf(startDie);
+  if (idx === -1) return ['d6'];
+  return DIE_ORDER.slice(idx); // e.g. 'd10' -> ['d10','d8','d6']
+}
+
+function hexToRgba(hex, alpha) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function shade(hex, percent) {
+  const h = hex.replace('#', '');
+  let r = parseInt(h.substring(0, 2), 16);
+  let g = parseInt(h.substring(2, 4), 16);
+  let b = parseInt(h.substring(4, 6), 16);
+  r = Math.max(0, Math.min(255, Math.round(r + (percent < 0 ? r : 255 - r) * percent)));
+  g = Math.max(0, Math.min(255, Math.round(g + (percent < 0 ? g : 255 - g) * percent)));
+  b = Math.max(0, Math.min(255, Math.round(b + (percent < 0 ? b : 255 - b) * percent)));
+  return `rgb(${r},${g},${b})`;
+}
+
+function roundedRectPath(ctx, x, y, w, h, r) {
+  const rr = typeof r === 'number' ? { tl: r, tr: r, br: r, bl: r } : r;
+  ctx.beginPath();
+  ctx.moveTo(x + rr.tl, y);
+  ctx.lineTo(x + w - rr.tr, y);
+  ctx.arcTo(x + w, y, x + w, y + rr.tr, rr.tr);
+  ctx.lineTo(x + w, y + h - rr.br);
+  ctx.arcTo(x + w, y + h, x + w - rr.br, y + h, rr.br);
+  ctx.lineTo(x + rr.bl, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rr.bl, rr.bl);
+  ctx.lineTo(x, y + rr.tl);
+  ctx.arcTo(x, y, x + rr.tl, y, rr.tl);
+  ctx.closePath();
+}
+
+// Wrap text to a max width, returns array of lines
+function wrapLines(ctx, text, maxWidth) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width > maxWidth && cur) {
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = test;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+const PORTRAIT = { x: 24, y: 132, w: 300, h: 430 };
+const STATS = { x: 340, y: 132, w: 386, h: 430 };
+const NAME_BAR_H = 118;
+
+export function getPortraitBox() { return { ...PORTRAIT }; }
+
+// data: {
+//   name, level, cardType, accentColor,
+//   stats: {brawl:{n,d}, shoot:{n,d}, dodge:{n,d}, might:{n,d}, finesse:{n,d}, cunning:{n,d}},
+//   abilities: [{name, text}],
+//   quote, footerText,
+//   health: {sequence:['d10','d8','d6'], asterisk:false},
+//   portraitImg: HTMLImageElement|null,
+//   portraitView: {scale, offsetX, offsetY}  // offsets in -1..1 range relative to box
+// }
+export function renderCard(canvas, data) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = CARD_W;
+  canvas.height = CARD_H;
+  ctx.clearRect(0, 0, CARD_W, CARD_H);
+
+  const preset = TYPE_PRESETS[data.cardType] || TYPE_PRESETS.Custom;
+  const accent = data.accentColor || preset.accent;
+  const tint = hexToRgba(accent, 0.16);
+  const tint2 = 'rgba(148,163,184,0.10)';
+
+  ctx.save();
+  roundedRectPath(ctx, 0, 0, CARD_W, CARD_H, CARD_RADIUS);
+  ctx.clip();
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, CARD_H);
+  bg.addColorStop(0, '#12161d');
+  bg.addColorStop(1, '#0b0e13');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, CARD_W, CARD_H);
+
+  // subtle corner glow / geometric accent (modern sci-fi touch)
+  ctx.save();
+  ctx.globalAlpha = 0.10;
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(CARD_W - 10 - i * 18, 0);
+    ctx.lineTo(CARD_W, 10 + i * 18);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ---- Name bar ----
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fillRect(0, 0, CARD_W, NAME_BAR_H);
+  ctx.fillStyle = accent;
+  ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
+
+  // Level badge
+  const badgeCx = 85, badgeCy = 59, badgeR = 46;
+  ctx.beginPath();
+  ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
+  ctx.fillStyle = shade(accent, -0.35);
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = accent;
+  ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 44px Rajdhani, Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(data.level ?? ''), badgeCx, badgeCy + 3);
+
+  // Type tag (top-right pill)
+  if (data.cardType) {
+    ctx.font = '700 20px Rajdhani, Inter, sans-serif';
+    const label = data.cardType.toUpperCase();
+    const tw = ctx.measureText(label).width;
+    const padX = 16, pillH = 32;
+    const pillW = tw + padX * 2;
+    const px = CARD_W - 24 - pillW, py = 18;
+    roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
+    ctx.fillStyle = tint;
+    ctx.fill();
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, px + pillW / 2, py + pillH / 2 + 1);
+  }
+
+  // Name text (auto-shrink to fit)
+  {
+    const nameX = 150;
+    const nameMaxW = CARD_W - nameX - 24 - (data.cardType ? 150 : 0);
+    let fontSize = 42;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    let name = data.name || 'Unnamed Character';
+    do {
+      ctx.font = `700 ${fontSize}px Rajdhani, Inter, sans-serif`;
+      if (ctx.measureText(name).width <= nameMaxW || fontSize <= 22) break;
+      fontSize -= 2;
+    } while (true);
+    // If still too wide at minimum size, truncate with an ellipsis rather than
+    // letting canvas squash the text horizontally.
+    if (ctx.measureText(name).width > nameMaxW) {
+      while (name.length > 1 && ctx.measureText(name + '...').width > nameMaxW) {
+        name = name.slice(0, -1);
+      }
+      name = name.replace(/\s+$/, '') + '...';
+    }
+    ctx.fillStyle = '#f4f6f8';
+    ctx.fillText(name, nameX, NAME_BAR_H / 2 + 2);
+  }
+
+  // ---- Portrait ----
+  roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
+  ctx.save();
+  ctx.clip();
+  ctx.fillStyle = '#1a2029';
+  ctx.fillRect(PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h);
+
+  if (data.portraitImg) {
+    const img = data.portraitImg;
+    const view = data.portraitView || { scale: 1, offsetX: 0, offsetY: 0 };
+    const boxW = PORTRAIT.w, boxH = PORTRAIT.h;
+    const coverScale = Math.max(boxW / img.width, boxH / img.height) * (view.scale || 1);
+    const dw = img.width * coverScale;
+    const dh = img.height * coverScale;
+    const maxOffX = Math.max(0, (dw - boxW) / 2);
+    const maxOffY = Math.max(0, (dh - boxH) / 2);
+    const ox = Math.max(-maxOffX, Math.min(maxOffX, view.offsetX || 0));
+    const oy = Math.max(-maxOffY, Math.min(maxOffY, view.offsetY || 0));
+    const dx = PORTRAIT.x + (boxW - dw) / 2 + ox;
+    const dy = PORTRAIT.y + (boxH - dh) / 2 + oy;
+    ctx.drawImage(img, dx, dy, dw, dh);
+  } else {
+    // placeholder pattern
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    for (let i = -PORTRAIT.h; i < PORTRAIT.w; i += 24) {
+      ctx.beginPath();
+      ctx.moveTo(PORTRAIT.x + i, PORTRAIT.y);
+      ctx.lineTo(PORTRAIT.x + i + PORTRAIT.h, PORTRAIT.y + PORTRAIT.h);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.font = '600 20px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('UPLOAD', PORTRAIT.x + PORTRAIT.w / 2, PORTRAIT.y + PORTRAIT.h / 2 - 14);
+    ctx.fillText('IMAGE', PORTRAIT.x + PORTRAIT.w / 2, PORTRAIT.y + PORTRAIT.h / 2 + 14);
+  }
+  ctx.restore();
+  roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = accent;
+  ctx.stroke();
+
+  // ---- Stats table ----
+  {
+    const rows = [
+      ['Brawl', data.stats?.brawl],
+      ['Shoot', data.stats?.shoot],
+      ['Dodge', data.stats?.dodge],
+      ['Might', data.stats?.might],
+      ['Finesse', data.stats?.finesse],
+      ['Cunning', data.stats?.cunning],
+    ];
+    const rowH = STATS.h / 6;
+    rows.forEach(([label, val], i) => {
+      const ry = STATS.y + i * rowH;
+      ctx.fillStyle = i < 3 ? tint : tint2;
+      ctx.fillRect(STATS.x, ry, STATS.w, rowH);
+      if (i === 3) {
+        ctx.fillStyle = accent;
+        ctx.globalAlpha = 0.6;
+        ctx.fillRect(STATS.x, ry, STATS.w, 2);
+        ctx.globalAlpha = 1;
+      }
+      ctx.fillStyle = '#e8ebef';
+      ctx.font = '600 27px Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, STATS.x + 20, ry + rowH / 2 + 1);
+
+      const dieStr = val ? `${val.n}d${val.d}` : '—';
+      ctx.font = '700 27px Rajdhani, Inter, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = accent;
+      ctx.fillText(dieStr, STATS.x + STATS.w - 20, ry + rowH / 2 + 1);
+    });
+    // outer border
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(STATS.x + 0.5, STATS.y + 0.5, STATS.w - 1, STATS.h - 1);
+  }
+
+  // ---- Abilities + quote area ----
+  const abilTop = PORTRAIT.y + PORTRAIT.h + 22;
+  const abilLeft = 28;
+  const abilRight = CARD_W - 28;
+  const abilMaxWidth = abilRight - abilLeft;
+  const healthBarH = 78;
+  const abilBottom = CARD_H - healthBarH - (data.quote ? 56 : 14);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  const abilities = (data.abilities || []).filter(a => a.name || a.text);
+  if (abilities.length) {
+    let fontSize = 23;
+    let lineHeight, blocks;
+    const buildBlocks = (fs) => {
+      ctx.font = `400 ${fs}px Inter, sans-serif`;
+      lineHeight = Math.round(fs * 1.28);
+      let totalLines = 0;
+      const out = abilities.map(a => {
+        ctx.font = `700 ${fs}px Inter, sans-serif`;
+        const nameStr = a.name ? a.name + (a.text ? ': ' : '') : '';
+        ctx.font = `400 ${fs}px Inter, sans-serif`;
+        const full = nameStr + (a.text || '');
+        // Wrap combined text, but measure name bold width separately for first line indent-free wrap
+        const lines = wrapLines(ctx, full, abilMaxWidth);
+        totalLines += lines.length;
+        return { nameStr, text: a.text || '', lines };
+      });
+      return { out, totalLines };
+    };
+    let res = buildBlocks(fontSize);
+    while ((res.totalLines * (fontSize * 1.28) + (abilities.length - 1) * 10) > (abilBottom - abilTop) && fontSize > 14) {
+      fontSize -= 1;
+      res = buildBlocks(fontSize);
+    }
+    lineHeight = Math.round(fontSize * 1.28);
+    let y = abilTop + fontSize;
+    for (const block of res.out) {
+      ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+      // draw first line with bold name prefix
+      let firstLine = block.lines[0] || '';
+      if (block.nameStr && firstLine.startsWith(block.nameStr.trim().replace(/:$/, ''))) {
+        ctx.font = `700 ${fontSize}px Inter, sans-serif`;
+        ctx.fillStyle = accent;
+        ctx.fillText(block.nameStr, abilLeft, y);
+        const w = ctx.measureText(block.nameStr).width;
+        ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+        ctx.fillStyle = '#d7dbe0';
+        ctx.fillText(firstLine.slice(block.nameStr.length), abilLeft + w, y);
+      } else {
+        ctx.fillStyle = '#d7dbe0';
+        ctx.fillText(firstLine, abilLeft, y);
+      }
+      y += lineHeight;
+      for (let i = 1; i < block.lines.length; i++) {
+        ctx.fillStyle = '#d7dbe0';
+        ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+        ctx.fillText(block.lines[i], abilLeft, y);
+        y += lineHeight;
+      }
+      y += 8;
+    }
+  }
+
+  // Quote
+  if (data.quote) {
+    ctx.font = 'italic 400 20px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.textAlign = 'center';
+    const lines = wrapLines(ctx, `“${data.quote}”`, abilMaxWidth);
+    let qy = CARD_H - healthBarH - 16 - (lines.length - 1) * 24;
+    for (const l of lines) {
+      ctx.fillText(l, CARD_W / 2, qy);
+      qy += 24;
+    }
+    ctx.textAlign = 'left';
+  }
+
+  // ---- Health bar ----
+  const hbY = CARD_H - healthBarH;
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fillRect(0, hbY, CARD_W, healthBarH);
+  ctx.fillStyle = accent;
+  ctx.fillRect(0, hbY, CARD_W, 3);
+
+  const seq = (data.health?.sequence && data.health.sequence.length) ? data.health.sequence : ['d6'];
+  const pills = [...seq, 'Down', 'Out'];
+  ctx.font = '700 24px Rajdhani, Inter, sans-serif';
+  const gap = 14;
+  let totalW = 0;
+  const widths = pills.map(p => {
+    const w = ctx.measureText(p.toUpperCase()).width + 26;
+    totalW += w + gap;
+    return w;
+  });
+  totalW -= gap;
+  let px = (CARD_W - totalW) / 2;
+  const pillY = hbY + 14, pillH = 34;
+  pills.forEach((p, i) => {
+    const w = widths[i];
+    const isDie = i < seq.length;
+    roundedRectPath(ctx, px, pillY, w, pillH, pillH / 2);
+    ctx.fillStyle = isDie ? tint : 'rgba(255,255,255,0.06)';
+    ctx.fill();
+    ctx.strokeStyle = isDie ? accent : 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = isDie ? accent : 'rgba(255,255,255,0.7)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.toUpperCase() + (isDie && data.health?.asterisk && i === 0 ? '*' : ''), px + w / 2, pillY + pillH / 2 + 2);
+    px += w + gap;
+  });
+
+  // footer text
+  if (data.footerText) {
+    ctx.font = '400 13px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'center';
+    ctx.fillText(data.footerText, CARD_W / 2, hbY + healthBarH - 6);
+  }
+
+  ctx.restore(); // end clip
+
+  // outer border stroke
+  roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.stroke();
+}

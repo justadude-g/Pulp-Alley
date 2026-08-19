@@ -1,0 +1,15 @@
+{
+  "name": "pulp-alley-cards",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Character card designer & A4 roster print sheet for Pulp Alley 2nd Edition. Static site, no build step.",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "node test/verify.js && node test/verify2.js"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "playwright": "^1.0.0",
+    "serve-handler": "^6.0.0"
+  }
+}

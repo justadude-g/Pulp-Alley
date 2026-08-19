@@ -46,7 +46,10 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   does. The card keeps track of the ability's real rules-text identity
   underneath, shown as "Originally: Animal · reset" under the renamed field
   — rules checks (duplicates, no-dice, no-action, level cap) still key off
-  the original ability, not the display name.
+  the original ability, not the display name. Its description text is
+  locked read-only once picked, so the rules stay exactly as printed —
+  only the name is yours to customize. A freeform/homebrew ability (typed
+  by hand, never picked from the catalog) keeps a fully editable text box.
 - Cards render at true **Standard Playing Card size** — 2.5″ × 3.5″ at 300dpi
   (750×1050px) — so exported PNGs are print-ready.
 - **Light background by default** — designed for home inkjet/laser printing:

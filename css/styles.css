@@ -247,6 +247,17 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   width: 100%;
 }
 .ability-item textarea { resize: vertical; min-height: 44px; }
+.ability-item textarea[readonly] {
+  background: var(--panel-2);
+  border-style: dashed;
+  cursor: default;
+  resize: none;
+}
+.ability-text-locked-note {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  margin: -2px 0 0;
+}
 .ability-rename-note {
   font-size: 11px;
   color: var(--text-dim);

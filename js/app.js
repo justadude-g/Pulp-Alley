@@ -45,13 +45,15 @@ function renderAbilityRows() {
     // rename, not a replacement. Rules checks (duplicates, level cap,
     // no-dice/no-action) key off baseName so a renamed ability still counts
     // as its official self.
-    const renamed = a.baseName && a.baseName.trim() && a.baseName !== a.name;
+    const isOfficial = a.baseName && a.baseName.trim();
+    const renamed = isOfficial && a.baseName !== a.name;
     row.innerHTML = `
       <div class="ability-name-wrap">
         <input type="text" placeholder="Ability name (e.g. Marksman)" value="${escapeAttr(a.name)}" data-idx="${i}" data-field="name" autocomplete="off">
         ${renamed ? `<div class="ability-rename-note">Originally: <strong>${escapeHtml(a.baseName)}</strong> · <a href="#" class="ability-reset-name" data-idx="${i}">reset</a></div>` : ''}
       </div>
-      <textarea placeholder="Ability description..." data-idx="${i}" data-field="text">${escapeHtml(a.text)}</textarea>
+      <textarea placeholder="Ability description..." data-idx="${i}" data-field="text"${isOfficial ? ' readonly' : ''}>${escapeHtml(a.text)}</textarea>
+      ${isOfficial ? '<p class="ability-text-locked-note">🔒 Official rules text — not editable. Rename the ability above if you want, its effect stays as written.</p>' : ''}
       <button type="button" class="ability-remove" data-idx="${i}">Remove</button>
     `;
     abilitiesList.appendChild(row);

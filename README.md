@@ -10,6 +10,14 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Might, Finesse, Cunning as dice pools), any number of Abilities, an optional
   flavor quote, and a starting Health die. Upload your own character artwork,
   then zoom/drag it directly on the live preview to frame it.
+- **Level & Health auto-fill by Card Type** — Leader, Sidekick, Ally,
+  Follower, and Gang each have a rules-fixed Level and starting Health die
+  (Core Rules p. 8-9: Leader = Level 4/d10, Sidekick = Level 3/d8, Ally =
+  Level 2/d6, Follower = Level 1/d6*, Gang = Level 2). Picking one of these
+  as Card Type fills in Level and Health automatically — both stay normal,
+  editable fields afterward for homebrew exceptions. Villain/Creature/Custom
+  aren't part of that table, so picking them never overrides a level you
+  already set.
 - **Ability autocomplete** — start typing an ability name and pick from all
   131 official abilities (Level 1–4 + Epic, transcribed from the Core Rules)
   to fill in its exact rules text automatically. You can still type any

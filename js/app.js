@@ -277,7 +277,18 @@ form.addEventListener('change', updatePreview);
 
 document.getElementById('f-cardType').addEventListener('change', (e) => {
   const preset = TYPE_PRESETS[e.target.value];
-  if (preset) document.getElementById('f-accentColor').value = preset.accent;
+  if (preset) {
+    document.getElementById('f-accentColor').value = preset.accent;
+    // Leader/Sidekick/Ally/Follower have a rules-fixed Level and starting
+    // Health die (Core Rules p. 8-9); Gang is fixed at Level 2 (p. 21).
+    // Villain/Creature/Custom aren't part of that table, so preset.level
+    // is left undefined for them and nothing here overrides a hand-picked
+    // value. The fields stay normal, editable inputs after auto-fill in
+    // case of a homebrew exception.
+    if (preset.level !== undefined) document.getElementById('f-level').value = preset.level;
+    if (preset.healthStart !== undefined) document.getElementById('f-healthStart').value = preset.healthStart;
+    if (preset.healthAsterisk !== undefined) document.getElementById('f-healthAsterisk').checked = preset.healthAsterisk;
+  }
   toggleGangFields(e.target.value === 'Gang');
   if (e.target.value === 'Gang') applyGangStatsFromModels();
   updateHealthPreview();

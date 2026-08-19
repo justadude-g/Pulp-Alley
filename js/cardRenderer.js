@@ -10,14 +10,22 @@ const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 
 // Saturated-but-print-safe accents: dark enough to stay legible as text/line
 // color on a white background, still read fine on the dark theme too.
+//
+// level/healthStart/healthAsterisk mirror the fixed character-creation table
+// on Core Rules p. 8-9: Leader/Sidekick/Ally/Follower each have a rules-
+// mandated Level and starting Health die (Gang is fixed at Level 2 per
+// p. 21, but tracks Health by model count instead of a die — see
+// app.js/cardRenderer.js's Gang handling). Villain/Creature/Custom aren't
+// part of that table — opposition and homebrew characters can be any level
+// — so they're left undefined and never override what the user typed.
 const TYPE_PRESETS = {
-  Leader:   { accent: '#c2650a' },
-  Sidekick: { accent: '#0d9488' },
-  Ally:     { accent: '#2563eb' },
-  Follower: { accent: '#64748b' },
+  Leader:   { accent: '#c2650a', level: 4, healthStart: 'd10', healthAsterisk: false },
+  Sidekick: { accent: '#0d9488', level: 3, healthStart: 'd8', healthAsterisk: false },
+  Ally:     { accent: '#2563eb', level: 2, healthStart: 'd6', healthAsterisk: false },
+  Follower: { accent: '#64748b', level: 1, healthStart: 'd6', healthAsterisk: true },
   Villain:  { accent: '#dc2626' },
   Creature: { accent: '#9333ea' },
-  Gang:     { accent: '#57534e' },
+  Gang:     { accent: '#57534e', level: 2 },
   Custom:   { accent: '#0d9488' },
 };
 

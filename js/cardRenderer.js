@@ -8,14 +8,61 @@ export const CARD_RADIUS = 34;
 
 export const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 
+// Saturated-but-print-safe accents: dark enough to stay legible as text/line
+// color on a white background, still read fine on the dark theme too.
 export const TYPE_PRESETS = {
-  Leader:   { accent: '#f5a524', tint: 'rgba(245,165,36,0.16)' },
-  Sidekick: { accent: '#2dd4bf', tint: 'rgba(45,212,191,0.16)' },
-  Ally:     { accent: '#3b82f6', tint: 'rgba(59,130,246,0.16)' },
-  Follower: { accent: '#94a3b8', tint: 'rgba(148,163,184,0.16)' },
-  Villain:  { accent: '#ef4444', tint: 'rgba(239,68,68,0.16)' },
-  Creature: { accent: '#a855f7', tint: 'rgba(168,85,247,0.16)' },
-  Custom:   { accent: '#2dd4bf', tint: 'rgba(45,212,191,0.16)' },
+  Leader:   { accent: '#c2650a' },
+  Sidekick: { accent: '#0d9488' },
+  Ally:     { accent: '#2563eb' },
+  Follower: { accent: '#64748b' },
+  Villain:  { accent: '#dc2626' },
+  Creature: { accent: '#9333ea' },
+  Custom:   { accent: '#0d9488' },
+};
+
+// Two background themes. 'light' is the default: it's the one that prints
+// well on a home inkjet/laser (near-zero solid ink coverage, crisp on
+// cardstock). 'dark' is kept for anyone who wants the punchier look for
+// screen use / a color laser printer with cheap toner.
+const THEMES = {
+  light: {
+    bgTop: '#ffffff', bgBottom: '#fbfbfa',
+    textPrimary: '#181c24',
+    textSecondary: '#333a46',
+    textMuted: 'rgba(24,28,36,0.45)',
+    nameBarBg: 'rgba(24,28,36,0.025)',
+    healthBarBg: 'rgba(24,28,36,0.035)',
+    borderSubtle: 'rgba(24,28,36,0.12)',
+    outerBorder: 'rgba(24,28,36,0.22)',
+    placeholderBg: '#f1f3f6',
+    placeholderPattern: 'rgba(24,28,36,0.06)',
+    placeholderText: 'rgba(24,28,36,0.38)',
+    tintAlpha: 0.11,
+    tint2: 'rgba(24,28,36,0.045)',
+    downOutFill: 'rgba(24,28,36,0.02)',
+    downOutBorder: 'rgba(24,28,36,0.28)',
+    downOutText: 'rgba(24,28,36,0.6)',
+    cornerAccentAlpha: 0.16,
+  },
+  dark: {
+    bgTop: '#12161d', bgBottom: '#0b0e13',
+    textPrimary: '#f4f6f8',
+    textSecondary: '#d7dbe0',
+    textMuted: 'rgba(255,255,255,0.45)',
+    nameBarBg: 'rgba(255,255,255,0.03)',
+    healthBarBg: 'rgba(255,255,255,0.04)',
+    borderSubtle: 'rgba(255,255,255,0.08)',
+    outerBorder: 'rgba(255,255,255,0.14)',
+    placeholderBg: '#1a2029',
+    placeholderPattern: 'rgba(255,255,255,0.035)',
+    placeholderText: 'rgba(255,255,255,0.28)',
+    tintAlpha: 0.17,
+    tint2: 'rgba(148,163,184,0.10)',
+    downOutFill: 'rgba(255,255,255,0.06)',
+    downOutBorder: 'rgba(255,255,255,0.25)',
+    downOutText: 'rgba(255,255,255,0.7)',
+    cornerAccentAlpha: 0.10,
+  },
 };
 
 // Build a Health dice sequence from a starting die type, e.g. 'd10' -> ['d10','d8','d6']
@@ -82,15 +129,16 @@ const STATS = { x: 340, y: 132, w: 386, h: 430 };
 const NAME_BAR_H = 118;
 
 export function getPortraitBox() { return { ...PORTRAIT }; }
+export function getThemeNames() { return Object.keys(THEMES); }
 
 // data: {
-//   name, level, cardType, accentColor,
+//   name, level, cardType, accentColor, theme: 'light'|'dark',
 //   stats: {brawl:{n,d}, shoot:{n,d}, dodge:{n,d}, might:{n,d}, finesse:{n,d}, cunning:{n,d}},
 //   abilities: [{name, text}],
 //   quote, footerText,
 //   health: {sequence:['d10','d8','d6'], asterisk:false},
 //   portraitImg: HTMLImageElement|null,
-//   portraitView: {scale, offsetX, offsetY}  // offsets in -1..1 range relative to box
+//   portraitView: {scale, offsetX, offsetY}  // pixel offsets in canvas space
 // }
 export function renderCard(canvas, data) {
   const ctx = canvas.getContext('2d');
@@ -100,8 +148,9 @@ export function renderCard(canvas, data) {
 
   const preset = TYPE_PRESETS[data.cardType] || TYPE_PRESETS.Custom;
   const accent = data.accentColor || preset.accent;
-  const tint = hexToRgba(accent, 0.16);
-  const tint2 = 'rgba(148,163,184,0.10)';
+  const T = THEMES[data.theme] || THEMES.light;
+  const tint = hexToRgba(accent, T.tintAlpha);
+  const tint2 = T.tint2;
 
   ctx.save();
   roundedRectPath(ctx, 0, 0, CARD_W, CARD_H, CARD_RADIUS);
@@ -109,14 +158,14 @@ export function renderCard(canvas, data) {
 
   // Background
   const bg = ctx.createLinearGradient(0, 0, 0, CARD_H);
-  bg.addColorStop(0, '#12161d');
-  bg.addColorStop(1, '#0b0e13');
+  bg.addColorStop(0, T.bgTop);
+  bg.addColorStop(1, T.bgBottom);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
-  // subtle corner glow / geometric accent (modern sci-fi touch)
+  // subtle corner accent (modern touch, minimal ink)
   ctx.save();
-  ctx.globalAlpha = 0.10;
+  ctx.globalAlpha = T.cornerAccentAlpha;
   ctx.strokeStyle = accent;
   ctx.lineWidth = 2;
   for (let i = 0; i < 3; i++) {
@@ -128,7 +177,7 @@ export function renderCard(canvas, data) {
   ctx.restore();
 
   // ---- Name bar ----
-  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fillStyle = T.nameBarBg;
   ctx.fillRect(0, 0, CARD_W, NAME_BAR_H);
   ctx.fillStyle = accent;
   ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
@@ -137,10 +186,10 @@ export function renderCard(canvas, data) {
   const badgeCx = 85, badgeCy = 59, badgeR = 46;
   ctx.beginPath();
   ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
-  ctx.fillStyle = shade(accent, -0.35);
+  ctx.fillStyle = accent;
   ctx.fill();
   ctx.lineWidth = 4;
-  ctx.strokeStyle = accent;
+  ctx.strokeStyle = shade(accent, -0.3);
   ctx.stroke();
   ctx.fillStyle = '#ffffff';
   ctx.font = '700 44px Rajdhani, Inter, sans-serif';
@@ -189,7 +238,7 @@ export function renderCard(canvas, data) {
       }
       name = name.replace(/\s+$/, '') + '...';
     }
-    ctx.fillStyle = '#f4f6f8';
+    ctx.fillStyle = T.textPrimary;
     ctx.fillText(name, nameX, NAME_BAR_H / 2 + 2);
   }
 
@@ -197,7 +246,7 @@ export function renderCard(canvas, data) {
   roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
   ctx.save();
   ctx.clip();
-  ctx.fillStyle = '#1a2029';
+  ctx.fillStyle = T.placeholderBg;
   ctx.fillRect(PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h);
 
   if (data.portraitImg) {
@@ -216,16 +265,15 @@ export function renderCard(canvas, data) {
     ctx.drawImage(img, dx, dy, dw, dh);
   } else {
     // placeholder pattern
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
     for (let i = -PORTRAIT.h; i < PORTRAIT.w; i += 24) {
       ctx.beginPath();
       ctx.moveTo(PORTRAIT.x + i, PORTRAIT.y);
       ctx.lineTo(PORTRAIT.x + i + PORTRAIT.h, PORTRAIT.y + PORTRAIT.h);
       ctx.lineWidth = 10;
-      ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+      ctx.strokeStyle = T.placeholderPattern;
       ctx.stroke();
     }
-    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.fillStyle = T.placeholderText;
     ctx.font = '600 20px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -259,7 +307,7 @@ export function renderCard(canvas, data) {
         ctx.fillRect(STATS.x, ry, STATS.w, 2);
         ctx.globalAlpha = 1;
       }
-      ctx.fillStyle = '#e8ebef';
+      ctx.fillStyle = T.textPrimary;
       ctx.font = '600 27px Inter, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
@@ -272,7 +320,7 @@ export function renderCard(canvas, data) {
       ctx.fillText(dieStr, STATS.x + STATS.w - 20, ry + rowH / 2 + 1);
     });
     // outer border
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = T.borderSubtle;
     ctx.lineWidth = 1;
     ctx.strokeRect(STATS.x + 0.5, STATS.y + 0.5, STATS.w - 1, STATS.h - 1);
   }
@@ -291,17 +339,14 @@ export function renderCard(canvas, data) {
   const abilities = (data.abilities || []).filter(a => a.name || a.text);
   if (abilities.length) {
     let fontSize = 23;
-    let lineHeight, blocks;
+    let lineHeight;
     const buildBlocks = (fs) => {
       ctx.font = `400 ${fs}px Inter, sans-serif`;
       lineHeight = Math.round(fs * 1.28);
       let totalLines = 0;
       const out = abilities.map(a => {
-        ctx.font = `700 ${fs}px Inter, sans-serif`;
         const nameStr = a.name ? a.name + (a.text ? ': ' : '') : '';
-        ctx.font = `400 ${fs}px Inter, sans-serif`;
         const full = nameStr + (a.text || '');
-        // Wrap combined text, but measure name bold width separately for first line indent-free wrap
         const lines = wrapLines(ctx, full, abilMaxWidth);
         totalLines += lines.length;
         return { nameStr, text: a.text || '', lines };
@@ -325,15 +370,15 @@ export function renderCard(canvas, data) {
         ctx.fillText(block.nameStr, abilLeft, y);
         const w = ctx.measureText(block.nameStr).width;
         ctx.font = `400 ${fontSize}px Inter, sans-serif`;
-        ctx.fillStyle = '#d7dbe0';
+        ctx.fillStyle = T.textSecondary;
         ctx.fillText(firstLine.slice(block.nameStr.length), abilLeft + w, y);
       } else {
-        ctx.fillStyle = '#d7dbe0';
+        ctx.fillStyle = T.textSecondary;
         ctx.fillText(firstLine, abilLeft, y);
       }
       y += lineHeight;
       for (let i = 1; i < block.lines.length; i++) {
-        ctx.fillStyle = '#d7dbe0';
+        ctx.fillStyle = T.textSecondary;
         ctx.font = `400 ${fontSize}px Inter, sans-serif`;
         ctx.fillText(block.lines[i], abilLeft, y);
         y += lineHeight;
@@ -345,7 +390,7 @@ export function renderCard(canvas, data) {
   // Quote
   if (data.quote) {
     ctx.font = 'italic 400 20px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillStyle = T.textMuted;
     ctx.textAlign = 'center';
     const lines = wrapLines(ctx, `“${data.quote}”`, abilMaxWidth);
     let qy = CARD_H - healthBarH - 16 - (lines.length - 1) * 24;
@@ -358,7 +403,7 @@ export function renderCard(canvas, data) {
 
   // ---- Health bar ----
   const hbY = CARD_H - healthBarH;
-  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fillStyle = T.healthBarBg;
   ctx.fillRect(0, hbY, CARD_W, healthBarH);
   ctx.fillStyle = accent;
   ctx.fillRect(0, hbY, CARD_W, 3);
@@ -380,12 +425,12 @@ export function renderCard(canvas, data) {
     const w = widths[i];
     const isDie = i < seq.length;
     roundedRectPath(ctx, px, pillY, w, pillH, pillH / 2);
-    ctx.fillStyle = isDie ? tint : 'rgba(255,255,255,0.06)';
+    ctx.fillStyle = isDie ? tint : T.downOutFill;
     ctx.fill();
-    ctx.strokeStyle = isDie ? accent : 'rgba(255,255,255,0.25)';
+    ctx.strokeStyle = isDie ? accent : T.downOutBorder;
     ctx.lineWidth = 1.5;
     ctx.stroke();
-    ctx.fillStyle = isDie ? accent : 'rgba(255,255,255,0.7)';
+    ctx.fillStyle = isDie ? accent : T.downOutText;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(p.toUpperCase() + (isDie && data.health?.asterisk && i === 0 ? '*' : ''), px + w / 2, pillY + pillH / 2 + 2);
@@ -395,16 +440,16 @@ export function renderCard(canvas, data) {
   // footer text
   if (data.footerText) {
     ctx.font = '400 13px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillStyle = T.textMuted;
     ctx.textAlign = 'center';
     ctx.fillText(data.footerText, CARD_W / 2, hbY + healthBarH - 6);
   }
 
   ctx.restore(); // end clip
 
-  // outer border stroke
+  // outer border stroke — doubles as a cut guide when printing a single card
   roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
   ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.strokeStyle = T.outerBorder;
   ctx.stroke();
 }

@@ -100,6 +100,7 @@ function collectFormData() {
   return {
     cardType: document.getElementById('f-cardType').value,
     accentColor: document.getElementById('f-accentColor').value,
+    theme: document.getElementById('f-theme').value,
     name: document.getElementById('f-name').value,
     level: +document.getElementById('f-level').value,
     stats: collectStats(),
@@ -320,6 +321,7 @@ async function loadCardIntoForm(record) {
   const d = record.formData;
   document.getElementById('f-cardType').value = d.cardType;
   document.getElementById('f-accentColor').value = d.accentColor;
+  document.getElementById('f-theme').value = d.theme || 'light';
   document.getElementById('f-name').value = d.name;
   document.getElementById('f-level').value = d.level;
   document.querySelectorAll('.stat-row').forEach(row => {

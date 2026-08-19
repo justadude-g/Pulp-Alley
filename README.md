@@ -12,6 +12,11 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   then zoom/drag it directly on the live preview to frame it.
 - Cards render at true **Standard Playing Card size** — 2.5″ × 3.5″ at 300dpi
   (750×1050px) — so exported PNGs are print-ready.
+- **Light background by default** — designed for home inkjet/laser printing:
+  near-white card face, color used only in thin lines, small fills, and text,
+  so a page of 9 cards uses a fraction of the ink a solid dark card would. A
+  Dark theme is also available (Card Background dropdown) if you want the
+  punchier look for screen use.
 - **My Cards** — save cards locally in your browser (IndexedDB), edit or
   delete them later, no server required.
 - **Print Sheet (A4)** — pick up to 9 saved cards and lay them out on an A4

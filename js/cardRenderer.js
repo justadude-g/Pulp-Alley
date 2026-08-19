@@ -2,15 +2,15 @@
 // Draws a Pulp Alley character card onto a canvas at fixed print resolution.
 // Standard playing card @ 300dpi = 2.5in x 3.5in = 750 x 1050 px.
 
-export const CARD_W = 750;
-export const CARD_H = 1050;
-export const CARD_RADIUS = 34;
+const CARD_W = 750;
+const CARD_H = 1050;
+const CARD_RADIUS = 34;
 
-export const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
+const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 
 // Saturated-but-print-safe accents: dark enough to stay legible as text/line
 // color on a white background, still read fine on the dark theme too.
-export const TYPE_PRESETS = {
+const TYPE_PRESETS = {
   Leader:   { accent: '#c2650a' },
   Sidekick: { accent: '#0d9488' },
   Ally:     { accent: '#2563eb' },
@@ -95,7 +95,7 @@ const THEMES = {
 };
 
 // Build a Health dice sequence from a starting die type, e.g. 'd10' -> ['d10','d8','d6']
-export function healthSequenceFrom(startDie) {
+function healthSequenceFrom(startDie) {
   const idx = DIE_ORDER.indexOf(startDie);
   if (idx === -1) return ['d6'];
   return DIE_ORDER.slice(idx); // e.g. 'd10' -> ['d10','d8','d6']
@@ -203,8 +203,8 @@ const PORTRAIT = { x: 24, y: 132, w: 300, h: 430 };
 const STATS = { x: 340, y: 132, w: 386, h: 430 };
 const NAME_BAR_H = 118;
 
-export function getPortraitBox() { return { ...PORTRAIT }; }
-export function getThemeNames() { return Object.keys(THEMES); }
+function getPortraitBox() { return { ...PORTRAIT }; }
+function getThemeNames() { return Object.keys(THEMES); }
 
 // data: {
 //   name, level, cardType, accentColor, theme: 'light'|'dark',
@@ -215,7 +215,7 @@ export function getThemeNames() { return Object.keys(THEMES); }
 //   portraitImg: HTMLImageElement|null,
 //   portraitView: {scale, offsetX, offsetY}  // pixel offsets in canvas space
 // }
-export function renderCard(canvas, data) {
+function renderCard(canvas, data) {
   const ctx = canvas.getContext('2d');
   canvas.width = CARD_W;
   canvas.height = CARD_H;

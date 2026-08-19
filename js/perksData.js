@@ -7,7 +7,7 @@
 // here since the League Roster page models colleagues + perks, matching
 // what the rulebook calls out on page 8.
 
-export const PERKS = [
+const PERKS = [
   { name: 'Dominion', slots: 0, text: 'This perk grants access to the Minions, Gifts, and Cult assets. You cannot use your Resource points to select Backup, Contacts, or Gear assets.' },
 
   { name: 'Altar', slots: 1, text: 'During set-up roll 1d6. On a 4+ you may select two Level 1 Minions or one Level 2 Minion to join your league for this scenario.' },
@@ -55,15 +55,15 @@ export const PERKS = [
   { name: 'League of Legends', slots: 10, text: 'Your league includes four Sidekicks (included in the cost of this perk), but does not include a Leader level character. Instead, select one of these Sidekicks to fill the role of Leader for the scenarios.' },
 ];
 
-export const SLOT_ORDER = [0, 1, 2, 3, 4, 10];
+const SLOT_ORDER = [0, 1, 2, 3, 4, 10];
 
-export function findPerkByName(name) {
+function findPerkByName(name) {
   const n = (name || '').trim().toLowerCase();
   if (!n) return null;
   return PERKS.find(p => p.name.toLowerCase() === n) || null;
 }
 
-export function searchPerks(query, limit = 8) {
+function searchPerks(query, limit = 8) {
   const q = (query || '').trim().toLowerCase();
   if (!q) return [];
   const starts = [];

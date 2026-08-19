@@ -3,12 +3,12 @@
 // "Your league roster starts with 10 slots." Each colleague fills slots
 // based on level; perks permanently remove slots from the pool.
 
-export const BASE_ROSTER_SLOTS = 10;
+const BASE_ROSTER_SLOTS = 10;
 
 // Slot cost + short rule text by character type (Leader is the one
 // permanent, 0-slot member; a league normally allows only 1 Leader and
 // only 1 Sidekick unless a perk like Company of Heroes says otherwise).
-export const ROSTER_SLOT_COST = {
+const ROSTER_SLOT_COST = {
   Leader: 0,
   Sidekick: 3,
   Ally: 2,
@@ -19,8 +19,8 @@ export const ROSTER_SLOT_COST = {
 // Card types that aren't native league-roster roles (Villain/Creature are
 // normally opposition, Custom is user-defined) default to an Ally-ish cost
 // so they can still be tracked if someone adds one on purpose.
-export const DEFAULT_SLOT_COST = 2;
+const DEFAULT_SLOT_COST = 2;
 
-export function slotCostForType(cardType) {
+function slotCostForType(cardType) {
   return ROSTER_SLOT_COST[cardType] ?? DEFAULT_SLOT_COST;
 }

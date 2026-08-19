@@ -14,7 +14,7 @@
 // official ability text fills in automatically. You can still type any
 // custom ability that isn't in this list — it just won't autocomplete.
 
-export const ABILITIES = [
+const ABILITIES = [
   // ---- Level 1 ----
   { name: 'Agile', level: 1, text: 'Add +1 die to Dodge.' },
   { name: 'Animal', level: 1, text: 'Add +1 die to two skills. Reduce Shoot to no-dice.', gangEligible: true },
@@ -161,11 +161,11 @@ export const ABILITIES = [
 ];
 
 // Display order matching the rulebook's chapter order.
-export const LEVEL_ORDER = [1, 2, 3, 4, 'Epic'];
+const LEVEL_ORDER = [1, 2, 3, 4, 'Epic'];
 
 // The six Gang-only abilities (Core Rules p. 22). Gangs cannot have any
 // abilities other than these plus the gangEligible-flagged entries above.
-export const GANG_ABILITIES = [
+const GANG_ABILITIES = [
   { name: 'Armed', level: 'Gang', gangOnly: true, gangEligible: true, text: 'This gang ignores the multiple fights penalty when rolling Shoot dice.' },
   { name: 'Dangerous', level: 'Gang', gangOnly: true, gangEligible: true, text: 'This gang ignores the multiple fights penalty when rolling Brawl dice.' },
   { name: 'Disciplined', level: 'Gang', gangOnly: true, gangEligible: true, text: 'This gang always counts as being in cover.' },
@@ -175,13 +175,13 @@ export const GANG_ABILITIES = [
 ];
 
 // Display order for the Ability Library when Card Type = Gang.
-export const GANG_LEVEL_ORDER = ['Gang', 1, 2];
+const GANG_LEVEL_ORDER = ['Gang', 1, 2];
 
 // Returns the ability pool a given Card Type is allowed to browse/autocomplete
 // from. Gangs get the 6 Gang-only abilities plus the gangEligible-flagged
 // subset of Level 1/2 abilities; everyone else gets the normal catalog
 // (which never contains Gang-only abilities).
-export function abilitiesForCardType(cardType) {
+function abilitiesForCardType(cardType) {
   if (cardType === 'Gang') {
     return [...GANG_ABILITIES, ...ABILITIES.filter(a => a.gangEligible)];
   }
@@ -190,7 +190,7 @@ export function abilitiesForCardType(cardType) {
 
 // Case-insensitive lookup by exact name, searching both the standard and
 // Gang-only catalogs.
-export function findAbilityByName(name) {
+function findAbilityByName(name) {
   const n = (name || '').trim().toLowerCase();
   if (!n) return null;
   return ABILITIES.find(a => a.name.toLowerCase() === n)
@@ -202,7 +202,7 @@ export function findAbilityByName(name) {
 // the query come first. Capped to `limit` results. Pass `cardType` to
 // restrict the search pool (e.g. 'Gang' restricts to gang-eligible
 // abilities); omit it for the full standard catalog.
-export function searchAbilities(query, limit = 8, cardType) {
+function searchAbilities(query, limit = 8, cardType) {
   const q = (query || '').trim().toLowerCase();
   if (!q) return [];
   const pool = abilitiesForCardType(cardType);

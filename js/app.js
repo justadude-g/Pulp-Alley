@@ -1,9 +1,11 @@
-import { renderCard, healthSequenceFrom, getPortraitBox, TYPE_PRESETS, CARD_W, CARD_H } from './cardRenderer.js';
-import { saveCard, deleteCard, getAllCards, getCard, saveRoster, deleteRoster, getAllRosters, getRoster } from './db.js';
-import { renderRosterSheet, loadImage } from './roster.js';
-import { ABILITIES, LEVEL_ORDER, GANG_LEVEL_ORDER, searchAbilities, abilitiesForCardType } from './abilitiesData.js';
-import { PERKS, SLOT_ORDER, searchPerks } from './perksData.js';
-import { BASE_ROSTER_SLOTS, slotCostForType } from './rosterRules.js';
+// app.js — loaded as a plain (non-module) script, after cardRenderer.js,
+// db.js, roster.js, abilitiesData.js, perksData.js, and rosterRules.js in
+// index.html. Those files declare their exports as ordinary top-level
+// const/function — as plain scripts they share one global scope, so no
+// import statements are needed here. (This app intentionally avoids
+// type="module" scripts: browsers block cross-file module loading under
+// file://, which broke opening index.html by double-clicking it instead of
+// running a local server. Plain scripts work either way.)
 
 // ---------------- State ----------------
 const state = {
@@ -959,6 +961,68 @@ function renderPerkLibrary() {
     });
   });
 }
+
+// ---------------- Backup (export / import) ----------------
+// Everything is stored locally in this browser's IndexedDB (see README) —
+// there's no account or sync. Export bundles every saved card and roster
+// (portraits/card art included, since they're already embedded as data
+// URLs on each record) into one JSON file; Import reads that file back in
+// on this browser, a different browser, or a different device entirely.
+const importBackupFile = document.getElementById('import-backup-file');
+
+document.getElementById('btn-export-backup').addEventListener('click', async () => {
+  const data = await exportAllData();
+  if (!data.cards.length && !data.rosters.length) {
+    alert('Nothing saved yet — build and save a card or roster first.');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const stamp = new Date(data.exportedAt).toISOString().slice(0, 10);
+  const link = document.createElement('a');
+  link.download = `pulp-alley-backup-${stamp}.json`;
+  link.href = url;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('btn-import-backup').addEventListener('click', () => {
+  importBackupFile.value = ''; // allow re-selecting the same file twice in a row
+  importBackupFile.click();
+});
+
+importBackupFile.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch {
+    alert('Could not read that file — it doesn’t look like valid JSON.');
+    return;
+  }
+  const cardCount = Array.isArray(data?.cards) ? data.cards.length : 0;
+  const rosterCount = Array.isArray(data?.rosters) ? data.rosters.length : 0;
+  if (!cardCount && !rosterCount) {
+    alert('This file doesn’t look like a Pulp Alley Card Maker backup.');
+    return;
+  }
+  const proceed = confirm(
+    `Import ${cardCount} card(s) and ${rosterCount} roster(s) from this backup?\n\n` +
+    `Anything already saved here with a matching ID will be overwritten by the backup’s version. Nothing else is deleted.`
+  );
+  if (!proceed) return;
+  try {
+    const result = await importAllData(data);
+    state.selected.clear();
+    await refreshGallery();
+    await refreshRosterTab();
+    saveStatus.textContent = `Imported ${result.cardsImported} card(s) and ${result.rostersImported} roster(s).`;
+    setTimeout(() => { saveStatus.textContent = ''; }, 4000);
+  } catch (err) {
+    alert('Import failed: ' + err.message);
+  }
+});
 
 // ---------------- Init ----------------
 document.fonts.ready.then(updatePreview);

@@ -50,22 +50,33 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
 - **Print Sheet (A4)** — pick up to 9 saved cards and lay them out on an A4
   page at true size with crop marks. Download as PNG, download as PDF, or
   print directly from the browser.
+- **Export / Import Backup** — every saved card and roster lives only in
+  this browser's IndexedDB (see Data & privacy below), so "Export Backup" in
+  the top bar bundles all of it — including portrait images and rendered
+  card art, already embedded as data URLs on each record — into one JSON
+  file. "Import Backup" reads that file back in on this browser, a
+  different browser, or a different device. Import merges by ID: anything
+  in the backup overwrites a local card/roster with the same ID, but
+  nothing already saved locally is deleted.
 - Fully offline-capable: fonts and the PDF library are bundled in the repo,
   no third-party CDN calls at runtime.
 
 ## Using it locally
 
-No build step. Any static file server works:
+No build step, and no `type="module"` scripts — every script is a plain
+`<script src="...">`, loaded in dependency order, specifically so the app
+works the same whether it's served or opened directly. Any static file
+server works:
 
 ```bash
 npm run start        # python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-or just open `index.html` directly in a browser (file uploads, canvas
-rendering, and IndexedDB all work fine from `file://`; only the PDF download
-button needs `window.jspdf`, which is loaded from the bundled
-`js/vendor/jspdf.umd.min.js`).
+or just open `index.html` directly in a browser by double-clicking it —
+file uploads, canvas rendering, IndexedDB, and the PDF download button
+(`window.jspdf`, bundled at `js/vendor/jspdf.umd.min.js`) all work fine
+from `file://`.
 
 ## Deploying to GitHub Pages
 
@@ -92,7 +103,7 @@ css/styles.css       App UI styling
 css/fonts.css         Self-hosted Inter + Rajdhani font faces
 js/cardRenderer.js    Canvas renderer for a single card (750x1050px)
 js/roster.js          A4 sheet layout (3x3 grid + crop marks)
-js/db.js               IndexedDB wrapper for saved cards + rosters
+js/db.js               IndexedDB wrapper for saved cards + rosters, backup export/import
 js/app.js               Form wiring, portrait drag/zoom, gallery, exports, roster logic
 js/abilitiesData.js     Full 131-ability catalog (Level 1-4 + Epic) + 6 Gang-only abilities
 js/perksData.js         Full 36-perk catalog (Background Perks, p. 22-26)
@@ -106,7 +117,11 @@ test/verify.js, verify2.js   Playwright smoke tests (dev-only)
 
 Everything happens in your browser. Saved cards and uploaded portraits are
 stored in your browser's IndexedDB and never leave your machine — there's no
-backend and nothing is uploaded anywhere.
+backend, no accounts, and nothing is uploaded anywhere. That also means
+storage is local to one browser on one device: it won't follow you to a
+different browser or a new computer, and clearing that browser's site data
+wipes it. Use Export Backup periodically, or before switching browsers/
+devices, to avoid losing your work.
 
 ## Rules reference
 

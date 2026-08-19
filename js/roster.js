@@ -1,13 +1,14 @@
 // roster.js — builds the A4 print sheet (3x3 grid of standard playing-card-size cards)
+// CARD_W/CARD_H are the same standard-playing-card constants defined in
+// cardRenderer.js (loaded before this file in index.html) — reused here
+// rather than redeclared, since plain <script> files share one global scope.
 
-export const A4_W = 2480; // 210mm @ 300dpi
-export const A4_H = 3508; // 297mm @ 300dpi
-export const CARD_W = 750; // 2.5in @ 300dpi
-export const CARD_H = 1050; // 3.5in @ 300dpi
+const A4_W = 2480; // 210mm @ 300dpi
+const A4_H = 3508; // 297mm @ 300dpi
 const GAP = 16;
 const COLS = 3, ROWS = 3;
 
-export function gridSlots() {
+function gridSlots() {
   const totalW = COLS * CARD_W + (COLS - 1) * GAP;
   const totalH = ROWS * CARD_H + (ROWS - 1) * GAP;
   const marginX = (A4_W - totalW) / 2;
@@ -33,7 +34,7 @@ function cropMark(ctx, x, y, dx, dy, len) {
   ctx.stroke();
 }
 
-export function renderRosterSheet(canvas, images) {
+function renderRosterSheet(canvas, images) {
   canvas.width = A4_W;
   canvas.height = A4_H;
   const ctx = canvas.getContext('2d');
@@ -86,7 +87,7 @@ export function renderRosterSheet(canvas, images) {
   });
 }
 
-export function loadImage(src) {
+function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);

@@ -1,9 +1,15 @@
 // cardRenderer.js
 // Draws a Pulp Alley character card onto a canvas at fixed print resolution.
-// Standard playing card @ 300dpi = 2.5in x 3.5in = 750 x 1050 px.
-
-const CARD_W = 750;
-const CARD_H = 1050;
+// Sized to the Gamegenic "Standard" sleeve, 64mm x 89mm — so a Print Sheet
+// page printed at 100% / "Actual size" produces cards that drop straight
+// into a Standard sleeve. 64mm/25.4*300 = 755.9px, 89mm/25.4*300 = 1051.2px,
+// rounded to the nearest pixel at 300dpi. (Slightly larger than the classic
+// 2.5in x 3.5in / 750x1050px poker-card size this used to target — Gamegenic
+// Standard runs a hair bigger, and every layout constant below already
+// scales off CARD_W/CARD_H rather than being hardcoded, so the extra ~6px
+// of width and ~1px of height just becomes a touch more margin.)
+const CARD_W = 756;
+const CARD_H = 1051;
 const CARD_RADIUS = 34;
 
 const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
@@ -543,7 +549,7 @@ function renderCard(canvas, data) {
     }
   }
 
-  // Quote — sized to stay legible once printed at true card size (2.5"x3.5").
+  // Quote — sized to stay legible once printed at true card size (64x89mm).
   if (data.quote) {
     const quoteFontSize = 26;
     const quoteLineHeight = 32;

@@ -626,7 +626,14 @@ function resizeImageFile(file, maxDim) {
         const c = document.createElement('canvas');
         c.width = width; c.height = height;
         c.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(c.toDataURL('image/jpeg', 0.9));
+        // Preserve transparency for formats that support it (PNG/WebP/GIF)
+        // by re-encoding as PNG — JPEG has no alpha channel, so exporting a
+        // transparent portrait as JPEG used to flatten the transparent
+        // areas to solid black. A source file with no alpha to begin with
+        // (JPEG) stays JPEG, since that's smaller and there's nothing to
+        // preserve.
+        const supportsAlpha = /png|webp|gif/i.test(file.type);
+        resolve(supportsAlpha ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.9));
       };
       img.onerror = reject;
       img.src = reader.result;

@@ -73,6 +73,33 @@ const TYPE_PRESETS = {
   Custom:   { accent: '#0d9488' },
 };
 
+// Shared palette for both Classical variants (see THEMES.classical /
+// classicalNoSkull below) — kept as one object so the two themes can never
+// drift apart on anything except the skull watermark.
+const CLASSICAL_BASE = {
+  bgTop: '#e9cb9f', bgBottom: '#ddbb8a',
+  textPrimary: '#241b13',
+  textSecondary: '#332617',
+  textMuted: 'rgba(36,27,19,0.6)',
+  nameBarBg: 'rgba(36,27,19,0.05)',
+  healthBarBg: '#bfab63',
+  borderSubtle: 'rgba(36,27,19,0.22)',
+  outerBorder: 'rgba(20,14,8,0.75)',
+  outerBorderDashed: true,
+  placeholderBg: '#e7c786',
+  placeholderPattern: 'rgba(36,27,19,0.10)',
+  placeholderText: 'rgba(36,27,19,0.45)',
+  fixedTint: '#ebb185',
+  fixedTint2: '#c1ac9c',
+  downOutFill: 'rgba(36,27,19,0.05)',
+  downOutBorder: 'rgba(36,27,19,0.4)',
+  downOutText: 'rgba(36,27,19,0.75)',
+  cornerAccentAlpha: 0,
+  badgeFill: '#fdf8f0',
+  badgeRing: '#865536',
+  badgeText: '#241b13',
+};
+
 // Two background themes. 'light' is the default: it's the one that prints
 // well on a home inkjet/laser (near-zero solid ink coverage, crisp on
 // cardstock). 'dark' is kept for anyone who wants the punchier look for
@@ -95,7 +122,7 @@ const THEMES = {
     downOutFill: 'rgba(24,28,36,0.02)',
     downOutBorder: 'rgba(24,28,36,0.28)',
     downOutText: 'rgba(24,28,36,0.6)',
-    cornerAccentAlpha: 0.16,
+    cornerAccentAlpha: 0,
   },
   dark: {
     bgTop: '#12161d', bgBottom: '#0b0e13',
@@ -119,31 +146,14 @@ const THEMES = {
   // 'Classical' matches the official Pulp Alley blank character card
   // template: aged parchment paper, terracotta/taupe stat bands, olive
   // health bar, dark typewriter-brown ink, and a dashed cut-guide border.
-  // Colors sampled directly from that template.
-  classical: {
-    bgTop: '#e9cb9f', bgBottom: '#ddbb8a',
-    textPrimary: '#241b13',
-    textSecondary: '#332617',
-    textMuted: 'rgba(36,27,19,0.6)',
-    nameBarBg: 'rgba(36,27,19,0.05)',
-    healthBarBg: '#bfab63',
-    borderSubtle: 'rgba(36,27,19,0.22)',
-    outerBorder: 'rgba(20,14,8,0.75)',
-    outerBorderDashed: true,
-    placeholderBg: '#e7c786',
-    placeholderPattern: 'rgba(36,27,19,0.10)',
-    placeholderText: 'rgba(36,27,19,0.45)',
-    fixedTint: '#ebb185',
-    fixedTint2: '#c1ac9c',
-    downOutFill: 'rgba(36,27,19,0.05)',
-    downOutBorder: 'rgba(36,27,19,0.4)',
-    downOutText: 'rgba(36,27,19,0.75)',
-    cornerAccentAlpha: 0,
-    badgeFill: '#fdf8f0',
-    badgeRing: '#865536',
-    badgeText: '#241b13',
-    skullWatermark: 'rgba(36,27,19,0.075)',
-  },
+  // Colors sampled directly from that template (CLASSICAL_BASE above).
+  // classicalNoSkull is the identical palette with the background skull
+  // watermark switched off — kept as a separate theme key (rather than a
+  // checkbox) so it's picked the same way as every other Card Background
+  // option, and so existing saved cards with theme:'classical' keep
+  // rendering exactly as before.
+  classical: { ...CLASSICAL_BASE, skullWatermark: 'rgba(36,27,19,0.075)' },
+  classicalNoSkull: { ...CLASSICAL_BASE },
 };
 
 // Build a Health dice sequence from a starting die type, e.g. 'd10' -> ['d10','d8','d6']
@@ -377,7 +387,13 @@ function renderCard(canvas, data) {
   roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
   ctx.save();
   ctx.clip();
-  ctx.fillStyle = T.placeholderBg;
+  // When a portrait is uploaded, fill behind it with the same accent tint
+  // used elsewhere on the card (not the neutral upload-placeholder color)
+  // — a transparent-background PNG then blends into the card's own color
+  // scheme instead of showing a mismatched gray box behind the character.
+  // Fully opaque portraits cover this fill completely, so it's invisible
+  // for ordinary (non-transparent) uploads.
+  ctx.fillStyle = data.portraitImg ? tint : T.placeholderBg;
   ctx.fillRect(PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h);
 
   if (data.portraitImg) {

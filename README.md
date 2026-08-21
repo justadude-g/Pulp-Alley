@@ -65,9 +65,17 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   (750×1050px) — so exported PNGs are print-ready.
 - **Light background by default** — designed for home inkjet/laser printing:
   near-white card face, color used only in thin lines, small fills, and text,
-  so a page of 9 cards uses a fraction of the ink a solid dark card would. A
-  Dark theme is also available (Card Background dropdown) if you want the
-  punchier look for screen use.
+  so a page of 9 cards uses a fraction of the ink a solid dark card would. All
+  four corners are clean on Light — no accent lines. A Dark theme is also
+  available (Card Background dropdown) if you want the punchier look for
+  screen use, and two Classical (aged parchment) variants — with or without
+  the background skull watermark — for a period feel.
+- **Transparent portrait blending** — upload a character image with a
+  transparent background (PNG/WebP/GIF) and the portrait box's fill behind it
+  uses the card's own accent tint instead of a mismatched neutral gray, so
+  only the character stands out against the card's color scheme. Previously
+  transparent areas flattened to solid black; images are now re-encoded to
+  preserve alpha instead of forcing JPEG.
 - **My Cards** — save cards locally in your browser (IndexedDB), edit or
   delete them later, no server required.
 - **League Roster** — build a league following the Core Rules' roster math

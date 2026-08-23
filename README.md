@@ -85,7 +85,11 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   from your saved cards, browse and add any of the 36 official Background
   Perks (p. 22-26) — which permanently cost slots too — and watch the slot
   meter and rule warnings (too many Leaders/Sidekicks, over budget) update
-  live. Save multiple named rosters and switch between them.
+  live. Save multiple named rosters and switch between them. Known perk
+  errata is flagged too: Dominion is incompatible with Network of
+  Supporters, Bastion of Science, and Call to Arms — the Perk Library shows
+  this on Dominion's own entry, and picking it alongside any of the three
+  triggers a roster warning.
 - **Associates** (p. 27-28) — non-character support cast (a butler, a
   bartender, a mentor, and so on) that cost 1 roster slot each. Give each
   one a name and pick 2 of the 15 official Associate Abilities from the

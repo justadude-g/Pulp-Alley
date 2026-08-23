@@ -8,7 +8,7 @@
 // what the rulebook calls out on page 8.
 
 const PERKS = [
-  { name: 'Dominion', slots: 0, text: 'This perk grants access to the Minions, Gifts, and Cult assets. You cannot use your Resource points to select Backup, Contacts, or Gear assets.' },
+  { name: 'Dominion', slots: 0, text: 'This perk grants access to the Minions, Gifts, and Cult assets. You cannot use your Resource points to select Backup, Contacts, or Gear assets. Errata: Dominion is incompatible with Network of Supporters, Bastion of Science, and Call to Arms — a roster cannot take Dominion together with any of those three perks.' },
 
   { name: 'Altar', slots: 1, text: 'During set-up roll 1d6. On a 4+ you may select two Level 1 Minions or one Level 2 Minion to join your league for this scenario.' },
   { name: 'Amphibians', slots: 1, text: 'One or more characters on this roster may include the Aquatic ability in addition to their starting abilities.' },

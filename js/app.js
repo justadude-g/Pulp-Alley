@@ -1042,6 +1042,15 @@ function renderRosterWorkspace() {
   const hasCompanyOfHeroes = rosterState.perks.some(p => p.name === 'Company of Heroes');
   const hasLeagueOfLegends = rosterState.perks.some(p => p.name === 'League of Legends');
   const hasMastermind = rosterState.perks.some(p => p.name === 'Mastermind');
+  // Errata: Dominion cannot be combined with these three perks.
+  const hasDominion = rosterState.perks.some(p => p.name === 'Dominion');
+  const DOMINION_INCOMPATIBLE_PERKS = ['Network of Supporters', 'Bastion of Science', 'Call to Arms'];
+  const conflictingDominionPerks = hasDominion
+    ? rosterState.perks.filter(p => DOMINION_INCOMPATIBLE_PERKS.includes(p.name)).map(p => p.name)
+    : [];
+  if (conflictingDominionPerks.length) {
+    warnings.push(`Dominion is incompatible with ${conflictingDominionPerks.join(', ')} (errata) — remove one or the other.`);
+  }
   if (leaderCount > 1 && !hasLeagueOfLegends) {
     warnings.push('More than 1 Leader on this roster — a league normally includes only one (p. 8).');
   }

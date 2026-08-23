@@ -451,6 +451,13 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   }
   toggleGangFields(e.target.value === 'Gang');
   if (e.target.value === 'Gang') applyGangStatsFromModels();
+  // Stats auto-fill to match the new Card Type too — same p.9 budget the
+  // Reset Stats button applies, just automatic now so Stats keep pace with
+  // Level/Health/Accent Color instead of needing an extra click. Still a
+  // normal, editable grid afterward for a homebrew exception; no-op for
+  // Villain/Creature/Custom (no rulebook default) since Gang is already
+  // handled above.
+  applyDefaultStatsForType(e.target.value);
   updateResetStatsVisibility(e.target.value);
   updateNpcHintVisibility(e.target.value);
   updateHealthPreview();
@@ -527,11 +534,19 @@ function updateNpcHintVisibility(cardType) {
   npcHintEl.style.display = (cardType === 'Villain' || cardType === 'Creature') ? 'block' : 'none';
 }
 
+// Shared by both the Card Type auto-fill (above) and the Reset Stats
+// button below, so there's exactly one place that knows how to apply a
+// Card Type's default stat allocation.
+function applyDefaultStatsForType(cardType) {
+  const defaults = TYPE_PRESETS[cardType]?.defaultStats;
+  if (!defaults) return false;
+  Object.entries(defaults).forEach(([key, { n, d }]) => setStatRow(key, n, d));
+  return true;
+}
+
 resetStatsBtn.addEventListener('click', () => {
   const cardType = document.getElementById('f-cardType').value;
-  const defaults = TYPE_PRESETS[cardType]?.defaultStats;
-  if (!defaults) return;
-  Object.entries(defaults).forEach(([key, { n, d }]) => setStatRow(key, n, d));
+  if (!applyDefaultStatsForType(cardType)) return;
   updatePreview();
 });
 updateResetStatsVisibility(document.getElementById('f-cardType').value);
@@ -786,6 +801,12 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   form.reset();
   document.getElementById('f-level').value = 4;
   toggleGangFields(false);
+  // form.reset() puts Card Type back to its first <option> (Leader) but,
+  // unlike actually picking Leader from the dropdown, doesn't fire the
+  // 'change' handler that auto-fills Stats — apply the same defaults here
+  // so a brand new card starts from Leader's real p.9 allocation instead
+  // of the form's static placeholder numbers.
+  applyDefaultStatsForType(document.getElementById('f-cardType').value);
   updateResetStatsVisibility(document.getElementById('f-cardType').value);
   updateNpcHintVisibility(document.getElementById('f-cardType').value);
   // f-portrait now lives in the preview panel, outside <form id="card-form">

@@ -303,6 +303,22 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   padding: 20px;
   display: flex;
   justify-content: center;
+  transition: box-shadow 0.15s, background-color 0.15s;
+}
+/* Highlighted while a file is dragged over the preview panel (see
+   dragenter/dragover/drop handling in app.js) — the whole panel is one
+   drop target, so the highlight goes on the card stage since that's the
+   visual "drop it here" surface. */
+.preview-panel.drag-over .card-stage {
+  box-shadow: 0 0 0 3px var(--accent) inset;
+  background-color: rgba(45, 212, 191, 0.08);
+}
+.portrait-upload {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 #card-canvas {
   width: min(360px, 78vw);

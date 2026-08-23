@@ -8,8 +8,12 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
 
 - **Card Designer** — enter Name, Level, the six stats (Brawl, Shoot, Dodge,
   Might, Finesse, Cunning as dice pools), any number of Abilities, an optional
-  flavor quote, and a starting Health die. Upload your own character artwork,
-  then zoom/drag it directly on the live preview to frame it.
+  flavor quote, and a starting Health die. The Portrait Image control sits
+  right under the live card preview (next to Save/Download/New) rather than
+  buried at the bottom of the form, so it's always in view. Upload your own
+  character artwork with the file picker, or just drop an image file
+  anywhere on the card preview — then zoom/drag it directly on the preview
+  to frame it.
 - **Level & Health auto-fill by Card Type** — Leader, Sidekick, Ally,
   Follower, and Gang each have a rules-fixed Level and starting Health die
   (Core Rules p. 8-9: Leader = Level 4/d10, Sidekick = Level 3/d8, Ally =

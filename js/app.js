@@ -611,10 +611,13 @@ function updatePreview() {
 const fileInput = document.getElementById('f-portrait');
 const portraitControls = document.getElementById('portrait-controls');
 const zoomSlider = document.getElementById('f-zoom');
+const previewPanel = document.getElementById('preview-panel');
 
-fileInput.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+// Shared by both the file-picker input and drag-and-drop below, so a
+// dropped file goes through exactly the same resize/load/state pipeline
+// as one chosen with "Choose File".
+async function setPortraitFromFile(file) {
+  if (!file || !file.type || !file.type.startsWith('image/')) return;
   const dataURL = await resizeImageFile(file, 1200);
   const img = await loadImage(dataURL);
   state.portraitImg = img;
@@ -623,6 +626,41 @@ fileInput.addEventListener('change', async (e) => {
   zoomSlider.value = 1;
   portraitControls.style.display = 'flex';
   updatePreview();
+}
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  await setPortraitFromFile(file);
+});
+
+// Drag-and-drop an image file from the OS straight onto the card preview.
+// Without preventDefault() on dragenter/dragover/drop, the browser's
+// default behavior takes over a dropped file and navigates the tab to its
+// file:// URL instead of letting the app handle it — that's the bug this
+// fixes (dropping an image used to open it as its own page instead of
+// setting it as the portrait). dragCounter tracks nested enter/leave pairs
+// so the highlight doesn't flicker as the drag crosses child elements.
+let dragCounter = 0;
+previewPanel.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  dragCounter++;
+  previewPanel.classList.add('drag-over');
+});
+previewPanel.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+});
+previewPanel.addEventListener('dragleave', () => {
+  dragCounter = Math.max(0, dragCounter - 1);
+  if (dragCounter === 0) previewPanel.classList.remove('drag-over');
+});
+previewPanel.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  previewPanel.classList.remove('drag-over');
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) await setPortraitFromFile(file);
 });
 
 function resizeImageFile(file, maxDim) {
@@ -750,6 +788,10 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   toggleGangFields(false);
   updateResetStatsVisibility(document.getElementById('f-cardType').value);
   updateNpcHintVisibility(document.getElementById('f-cardType').value);
+  // f-portrait now lives in the preview panel, outside <form id="card-form">
+  // (see index.html), so form.reset() above no longer clears it — clear it
+  // explicitly instead, otherwise the old filename stays shown.
+  fileInput.value = '';
   portraitControls.style.display = 'none';
   renderAbilityRows();
   updateHealthPreview();

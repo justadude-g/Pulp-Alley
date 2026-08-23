@@ -313,6 +313,7 @@ function renderLibraryList() {
         <div class="library-item-body">
           <span class="library-item-name">${escapeHtml(a.name)}</span><span class="library-item-level">${lvl === 'Epic' ? 'Epic' : lvl === 'Gang' ? 'Gang' : 'Lvl ' + lvl}</span>
           ${overCap ? `<span class="library-item-overcap-tag">Above ${cardType} cap</span>` : ''}
+          ${a.npcOnly ? `<span class="library-item-npc-tag">NPC only</span>` : ''}
           <div class="library-item-text">${escapeHtml(a.text)}</div>
         </div>
         <button type="button" class="library-add-btn" data-name="${escapeAttr(a.name)}" title="Add to card">+</button>
@@ -451,6 +452,7 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   toggleGangFields(e.target.value === 'Gang');
   if (e.target.value === 'Gang') applyGangStatsFromModels();
   updateResetStatsVisibility(e.target.value);
+  updateNpcHintVisibility(e.target.value);
   updateHealthPreview();
   updatePreview();
 });
@@ -514,6 +516,17 @@ function updateResetStatsVisibility(cardType) {
   statGridActions.style.display = hasDefaults ? 'flex' : 'none';
 }
 
+// Non-Player Characters (advanced supplement) reference note — Villain and
+// Creature are this app's closest match to "NPC" among the Card Types, so
+// the note (and the "NPC only" abilities it points to) surfaces for those.
+// It's read-only reference text, not a card field: the rulebook's
+// Passive/Alert behavior is something you play out on the table, not
+// something a printed card needs to record.
+const npcHintEl = document.getElementById('npc-hint');
+function updateNpcHintVisibility(cardType) {
+  npcHintEl.style.display = (cardType === 'Villain' || cardType === 'Creature') ? 'block' : 'none';
+}
+
 resetStatsBtn.addEventListener('click', () => {
   const cardType = document.getElementById('f-cardType').value;
   const defaults = TYPE_PRESETS[cardType]?.defaultStats;
@@ -522,6 +535,7 @@ resetStatsBtn.addEventListener('click', () => {
   updatePreview();
 });
 updateResetStatsVisibility(document.getElementById('f-cardType').value);
+updateNpcHintVisibility(document.getElementById('f-cardType').value);
 
 document.getElementById('f-healthStart').addEventListener('change', updateHealthPreview);
 document.getElementById('f-healthAsterisk').addEventListener('change', updateHealthPreview);
@@ -735,6 +749,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   document.getElementById('f-level').value = 4;
   toggleGangFields(false);
   updateResetStatsVisibility(document.getElementById('f-cardType').value);
+  updateNpcHintVisibility(document.getElementById('f-cardType').value);
   portraitControls.style.display = 'none';
   renderAbilityRows();
   updateHealthPreview();
@@ -817,6 +832,7 @@ async function loadCardIntoForm(record) {
   const isGang = d.cardType === 'Gang';
   toggleGangFields(isGang);
   updateResetStatsVisibility(d.cardType);
+  updateNpcHintVisibility(d.cardType);
   if (isGang) {
     const models = d.health?.sequence?.length ? +d.health.sequence[0] : 5;
     gangModelsInput.value = models || 5;

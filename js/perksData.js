@@ -8,12 +8,13 @@
 // what the rulebook calls out on page 8.
 
 const PERKS = [
-  { name: 'Dominion', slots: 0, text: 'This perk grants access to the Minions, Gifts, and Cult assets. You cannot use your Resource points to select Backup, Contacts, or Gear assets. Errata: Dominion is incompatible with Network of Supporters, Bastion of Science, and Call to Arms — a roster cannot take Dominion together with any of those three perks.' },
+  { name: 'Dominion', slots: 0, text: 'This perk grants access to Minions, Gifts, and Cults assets. You cannot use your resources to select Backup, Gear, or Contacts. This perk is incompatible with Network of Supporters, Bastion of Science, and Call to Arms.' },
 
   { name: 'Altar', slots: 1, text: 'During set-up roll 1d6. On a 4+ you may select two Level 1 Minions or one Level 2 Minion to join your league for this scenario.' },
   { name: 'Amphibians', slots: 1, text: 'One or more characters on this roster may include the Aquatic ability in addition to their starting abilities.' },
   { name: 'Base', slots: 1, text: 'During set-up roll 1d6. On a 4+ you gain +1 Resource point (Backup, Contacts, or Gear) for an asset, vehicle, or mount. This point cannot be saved.' },
   { name: 'Companions', slots: 1, text: 'Each Ally on your league roster starts with one additional ability. This league roster can never include a Sidekick (level 3) character.' },
+  { name: 'Crewmates', slots: 1, text: 'Characters on this roster may re-roll one Brawl or Dodge die during their own activations if there is a ready colleague within 6”.' },
   { name: 'Garage', slots: 1, text: 'During set-up, your league receives +1 Gear point for a vehicle or modifications. This point cannot be saved.' },
   { name: 'Jack of All Trades', slots: 1, text: 'During set-up, you may spend one Tips, Contacts, Gear, or Backup point to select a level 1 ability for your Leader. This ability lasts for the duration of this scenario.' },
   { name: 'Keen Senses', slots: 1, text: 'Once per turn, you may give one of your characters a +1 bonus to dodge a peril.' },
@@ -30,14 +31,14 @@ const PERKS = [
 
   { name: 'Ancient Sect', slots: 2, text: 'Dominion required. During set-up, roll your Leader’s Finesse dice. Each success (4+) adds a +1 Contacts point for selecting Cult assets. These points cannot be saved.' },
   { name: 'Animals', slots: 2, text: 'One or more characters on this roster may include the Animal ability in addition to their starting abilities.' },
-  { name: 'Bastion of Science', slots: 2, text: 'During set-up, roll your Leader’s Cunning dice. Each success (4+) adds +1 Gear point for selecting assets. These points cannot be saved.' },
+  { name: 'Bastion of Science', slots: 2, text: 'During set-up, roll your Leader’s Cunning dice. Each success (4+) adds a +1 resource point to select Gear and Gadget assets for this scenario. These points cannot be saved.' },
   { name: 'Call to Arms', slots: 2, text: 'During set-up, roll your Leader’s Might dice. Each success (4+) adds +1 Backup point for selecting level 1 or level 2 Backup characters. These points cannot be saved.' },
   { name: 'Company of Heroes', slots: 2, text: 'Your league may include a second Sidekick. In addition to the cost of this perk, this second Sidekick also requires 3 roster slots.' },
   { name: 'Dark Pact', slots: 2, text: 'Dominion required. During set-up, roll your Leader’s Cunning dice. Each success (4+) adds +1 Gear point for selecting Gifts assets. These points cannot be saved.' },
   { name: 'Flyers', slots: 2, text: 'One or more characters on this roster may include the Winged ability in addition to their starting abilities.' },
   { name: 'Greater Purpose', slots: 2, text: 'Opponents do not become Director by clearly winning a fight against your level 1 and 2 characters.' },
   { name: 'Nefarious', slots: 2, text: 'Characters in your league may shoot into a brawl which includes a colleague. Shooting into a brawl is an unopposed attack and all hits are assigned randomly to the engaged characters.' },
-  { name: 'Network of Supporters', slots: 2, text: 'During set-up, roll your Leader’s Finesse dice. Each success (4+) adds a +1 Contacts point for selecting assets. These points cannot be saved.' },
+  { name: 'Network of Supporters', slots: 2, text: 'During set-up, roll your Leader’s Finesse dice. Each success (4+) adds a +1 resource point to select Contact assets for this scenario. These points cannot be saved.' },
   { name: 'Noblesse', slots: 2, text: 'One or more characters on this roster may include the Noblesse ability in addition to their starting abilities.' },
   { name: 'Overlord', slots: 2, text: 'Dominion required. During set-up, roll your Leader’s Might dice. Each success (4+) adds +1 Backup point for selecting level 1 and level 2 Minions. These points cannot be saved.' },
   { name: 'Riders', slots: 2, text: 'One or more characters on this roster may include the Mounted ability in addition to their starting abilities.' },

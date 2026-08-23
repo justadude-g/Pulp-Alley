@@ -30,18 +30,30 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   (has its own model-based auto-fill) and Villain/Creature/Custom (no
   rulebook default).
 - **Ability autocomplete** — start typing an ability name and pick from all
-  131 official abilities (Level 1–4 + Epic, transcribed from the Core Rules)
-  to fill in its exact rules text automatically. You can still type any
-  custom/homebrew ability name — it just won't autocomplete.
+  153 official abilities (Level 1–4 + Epic, transcribed from the Core Rules,
+  plus the "New Special Burst Abilities" and "Non-Player Characters: Advanced
+  Abilities" supplements) to fill in its exact rules text automatically. You
+  can still type any custom/homebrew ability name — it just won't autocomplete.
 - **Ability Library** — "Browse Ability Library" opens a searchable, filterable
-  catalog of all 131 abilities sorted by level exactly as in the rulebook
+  catalog of all 153 abilities sorted by level exactly as in the rulebook
   (Level 1 → 2 → 3 → 4 → Epic). Filter to one level or search by name/text,
   then hit + on any ability to add it straight to the character card you're
   building — the library stays open so you can add several in a row. It also
   won't let you add the same ability to a card twice, matching the rulebook's
   "No Duplicates" rule. Abilities above the current Card Type's level cap are
   shown dimmed and tagged "Above [Type] cap" — you can still add them for a
-  homebrew exception, it's just flagged.
+  homebrew exception, it's just flagged. The 6 abilities from the
+  Non-Player-Characters supplement (Crush, Evasive, Occult, Torment, Toxin,
+  Vicious) are tagged "NPC only" the same informational way — nothing stops
+  adding one to a Villain/Creature card for a homebrew NPC.
+- **Non-Player Characters (advanced rules)** — picking Villain or Creature as
+  Card Type shows a reference note summarizing the NPC supplement: NPCs are
+  Passive (resting, patrolling, or wandering) until an enemy comes within 12"
+  or a nearby character attacks or is attacked, then Alert (Brawler, Shooter,
+  or Scout) for the rest of the scenario, and normally can't perform actions
+  except via an ability that includes one, while driving a vehicle, or when a
+  scenario allows it. This is reference text for the tabletop, not a card
+  field — the "NPC only" abilities above are the part that actually prints.
 - **Ability rules warnings** — picking a Card Type shows the Core Rules p. 9
   skill-dice guideline for it (e.g. "Leader: pick 4 skills to start at 3d10,
   the other 2 at 2d8") above the Stats section, and the Abilities section
@@ -82,14 +94,14 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
   (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight
-  from your saved cards, browse and add any of the 36 official Background
-  Perks (p. 22-26) — which permanently cost slots too — and watch the slot
-  meter and rule warnings (too many Leaders/Sidekicks, over budget) update
-  live. Save multiple named rosters and switch between them. Known perk
-  errata is flagged too: Dominion is incompatible with Network of
-  Supporters, Bastion of Science, and Call to Arms — the Perk Library shows
-  this on Dominion's own entry, and picking it alongside any of the three
-  triggers a roster warning.
+  from your saved cards, browse and add any of the 41 official Background
+  Perks (p. 22-26, plus later additions like Crewmates) — which permanently
+  cost slots too — and watch the slot meter and rule warnings (too many
+  Leaders/Sidekicks, over budget) update live. Save multiple named rosters
+  and switch between them. Known perk errata is flagged too: Dominion is
+  incompatible with Network of Supporters, Bastion of Science, and Call to
+  Arms — the Perk Library shows this on Dominion's own entry, and picking it
+  alongside any of the three triggers a roster warning.
 - **Associates** (p. 27-28) — non-character support cast (a butler, a
   bartender, a mentor, and so on) that cost 1 roster slot each. Give each
   one a name and pick 2 of the 15 official Associate Abilities from the
@@ -106,7 +118,9 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   die-based track, since gangs never roll Health checks. The Ability
   Library and autocomplete automatically filter to the 6 Gang-only
   abilities (Armed, Dangerous, Disciplined, Loyal, Mob, Sixth-Man) plus the
-  specific Level 1-2 abilities Gangs are allowed to take (p. 22).
+  specific Level 1-2 abilities Gangs are allowed to take (p. 22). The Health
+  section also notes the Gangs & Horror errata: Gangs roll 1d6 for Horror
+  checks, and may roll 1d6 to Recover from Horror cards/effects.
 - **Print Sheet (A4)** — pick up to 9 saved cards and lay them out on an A4
   page at true size with crop marks. Download as PNG, download as PDF, or
   print directly from the browser.
@@ -165,8 +179,8 @@ js/cardRenderer.js    Canvas renderer for a single card (750x1050px)
 js/roster.js          A4 sheet layout (3x3 grid + crop marks)
 js/db.js               IndexedDB wrapper for saved cards + rosters, backup export/import
 js/app.js               Form wiring, portrait drag/zoom, gallery, exports, roster logic
-js/abilitiesData.js     Full 131-ability catalog (Level 1-4 + Epic) + 6 Gang-only abilities
-js/perksData.js         Full 36-perk catalog (Background Perks, p. 22-26)
+js/abilitiesData.js     Full 153-ability catalog (Level 1-4 + Epic, incl. Special Burst and NPC-only abilities) + 6 Gang-only abilities
+js/perksData.js         Full 41-perk catalog (Background Perks, p. 22-26 + later additions)
 js/associatesData.js    Full 15-ability catalog (Associate Abilities, p. 27-28)
 js/rosterRules.js       League roster slot math (p. 8), incl. Gang + Associate cost
 js/vendor/jspdf.umd.min.js   Bundled PDF export library

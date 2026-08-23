@@ -1,14 +1,24 @@
 // abilitiesData.js
 // Full ability catalog transcribed from the Pulp Alley 2nd Edition Core
 // Rules (2019), "Abilities" chapter (Level 1-4) and "Epic Characters"
-// chapter (Epic abilities). League Perks are not included here since
-// they're a League Roster field, not a per-character card field — see
-// perksData.js.
+// chapter (Epic abilities), plus later official supplements: the "NEW
+// Special Burst Abilities" table (6 Level 2 movement-impairing bursts —
+// Drop/Extended/Heavy/Sustained/Sweeping/Tactical Burst) and the
+// "Non-Player Characters: Advanced Abilities" table (6 NPC-only abilities
+// — Crush, Evasive, Occult, Torment, Toxin, Vicious). League Perks are not
+// included here since they're a League Roster field, not a per-character
+// card field — see perksData.js.
 //
 // Gangs (Card Type = "Gang") can only take the six Gang-only abilities
 // below (GANG_ABILITIES) plus a specific subset of Level 1/2 abilities —
 // those are flagged `gangEligible: true` on the entries below, matching
 // the "Other Abilities" list on Gang Abilities (Core Rules p. 22).
+//
+// `npcOnly: true` flags the 6 abilities from the Non-Player Characters
+// supplement that the rulebook restricts to NPCs. Like every other rules
+// restriction in this app, this is surfaced as an informational tag (the
+// Ability Library shows "NPC only") rather than a hard block — nothing
+// stops adding one to a Villain/Creature card for a homebrew NPC.
 //
 // Used to power autocomplete in the Card Designer: pick a name, the
 // official ability text fills in automatically. You can still type any
@@ -16,6 +26,7 @@
 
 const ABILITIES = [
   // ---- Level 1 ----
+  { name: 'Acrobat', level: 1, text: 'Once per turn, you may discard to gain a +1 Dodge or Finesse bonus.' },
   { name: 'Agile', level: 1, text: 'Add +1 die to Dodge.' },
   { name: 'Animal', level: 1, text: 'Add +1 die to two skills. Reduce Shoot to no-dice.', gangEligible: true, noDiceSkills: ['Shoot'] },
   { name: 'Aquatic', level: 1, text: 'You automatically pass the perils for difficult and perilous areas in deep water. In the deep, your line-of-sight is up to 12” and you ignore the –1 fight penalties.', gangEligible: true },
@@ -26,6 +37,8 @@ const ABILITIES = [
   { name: 'Clever', level: 1, text: 'Add +1 die to Cunning.' },
   { name: 'Covert', level: 1, text: 'When you are hidden, an opponent must win the opposed spotting check to spot you.' },
   { name: 'Crafty', level: 1, text: 'Once per turn, you may re-roll one Dodge or Cunning die.', gangEligible: true },
+  { name: 'Crush', level: 1, text: 'The number of hits is increased by +1 when this NPC scores 1 or more hits on an enemy during a brawl.', npcOnly: true },
+  { name: 'Evasive', level: 1, text: 'This NPC automatically becomes hidden at the end of their activation if there are no enemies in line-of-sight.', npcOnly: true },
   { name: 'Fierce', level: 1, text: 'Add +1 die to Brawl.', gangEligible: true },
   { name: 'Goon', level: 1, text: 'You cannot perform actions. Select two of the following abilities at no cost: Aquatic, Brute, Fierce, Marksman, Sharp, Slam, Trick, Winged.', gangEligible: true, preventsActions: true },
   { name: 'Hard-Nosed', level: 1, text: 'Once per turn, you may re-roll one Might, Finesse, or Cunning die.' },
@@ -44,7 +57,10 @@ const ABILITIES = [
   { name: 'Sly', level: 1, text: 'Add +1 die to Dodge and Finesse. Reduce Brawl to no-dice.', noDiceSkills: ['Brawl'] },
   { name: 'Speedy', level: 1, text: 'You may move up to 16” — instead of 12”.', gangEligible: true },
   { name: 'Swarm', level: 1, text: 'You may play a peril from your Fortune hand on an enemy when they come into contact or activate in contact with you.', gangEligible: true },
+  { name: 'Torment', level: 1, text: 'An enemy automatically draws a Horror card when they are injured by this NPC.', npcOnly: true },
+  { name: 'Toxin', level: 1, text: 'An enemy’s Recovery is impaired (until the end of the scenario) when they are injured by this NPC.', npcOnly: true },
   { name: 'Trick', level: 1, text: 'Once per turn, you may discard to gain a +1 bonus to Shoot or Finesse.', gangEligible: true },
+  { name: 'Vicious', level: 1, text: 'An enemy immediately encounters a peril when they activate in contact or come into contact with this NPC.', npcOnly: true },
   // Note: the Gang Abilities table (p. 22) lists True Believer under its
   // "Level 2" gang-eligible list, but its actual definition lives in this
   // Level 1 chapter — kept as level 1 here to match the ability's real text.
@@ -76,6 +92,17 @@ const ABILITIES = [
   { name: 'Smoke', level: 2, text: 'Action: Place a 3” (dia.) area within 12”. This area is difficult and blocks line-of-sight. Remove the area at the end of turn.' },
   { name: 'Unearthly', level: 2, text: 'When an enemy fights you, they must substitute their Brawl and Shooting dice with their Cunning or Finesse dice (their choice). Otherwise, the fight is resolved as normal. You cannot shoot over 12”. You cannot move over 6” except to rush.', gangEligible: true },
   { name: 'Unlucky', level: 2, text: 'Select two level 1 abilities at no additional cost. When an opponent plays a Fortune card effect during this character’s activation, they draw 1 Fortune card. Unlucky is incompatible with abilities that prevent actions or reduce a skill to no-dice.' },
+  { name: 'T.B.D.', level: 2, text: 'Each time you roll for any skill, the number of dice you roll is equal to X. You ignore all modifiers except Fortune card effects.' },
+  { name: 'Trench Fighter', level: 2, text: 'When you roll for a cover save, you may re-roll all failed Health check dice instead of just one.' },
+  // ---- New Special Burst abilities. Movement-impairing burst abilities —
+  // "Your movement is impaired" means: you must discard to move over 6"; if
+  // you do not discard, you cannot move over 6" that turn.
+  { name: 'Drop Burst', level: 2, text: 'Once per turn, during your move, you may discard to drop a 3” burst anywhere directly along your move path. At the end of your move, resolve the burst as normal. This is not an action and does not prohibit this character from performing an action or fighting as normal.' },
+  { name: 'Extended Burst', level: 2, text: 'Your movement is impaired. Action: Place a 3” Burst. If you did not move this turn then you may place this burst up to 24” (instead of 12”).' },
+  { name: 'Heavy Burst', level: 2, text: 'Your movement is impaired. Action: Place a 3” Burst or Long Burst. After you resolve this burst, if you did not move this turn then you may discard (once) to make all characters/vehicles in the burst immediately roll for a second random peril.' },
+  { name: 'Sustained Burst', level: 2, text: 'Your movement is impaired. Action: Place a 3” Burst or Long Burst. After you resolve this burst, you may discard to make the template a perilous area for the remainder of this turn.' },
+  { name: 'Sweeping Burst', level: 2, text: 'Your movement is impaired. Action: Place a Long Burst. Before you resolve the burst, you may discard to place a second Long Burst adjacent to your burst. Resolve the entire area as a single burst.' },
+  { name: 'Tactical Burst', level: 2, text: 'Your movement is impaired. Action: Place a 3” Burst or Long Burst. After the random peril is revealed for this burst, if you did not move this turn then you may replace the challenge with one from your Fortune hand.' },
 
   // ---- Level 3 ----
   { name: 'Aid', level: 3, text: 'Once per turn, a colleague within 6" gains a +1 bonus for a challenge. The character cannot apply this bonus to themselves.' },
@@ -103,12 +130,17 @@ const ABILITIES = [
   { name: 'Shrewd', level: 3, text: 'Your Dodge and Cunning dice-type are not affected by injuries.' },
   { name: 'Two-Guns', level: 3, text: 'Once per turn, after resolving a shootout, if the enemy did not go down or out then you may immediately start another shootout with the same enemy. Resolve the fight as normal.' },
   { name: 'Veteran', level: 3, text: 'You ignore the multiple fights penalty when rolling Shoot dice.' },
+  { name: 'Combat Sense', level: 3, text: 'When fighting lower level enemies, you control the blocking even if you are the defender. However, if the enemy uses Dodge, they control the blocking as normal.' },
+  { name: 'Sleuth', level: 3, text: 'When this character passes a challenge you immediately draw one Fortune card.' },
+  { name: 'Snipe', level: 3, text: 'Full Action: Target one enemy to encounter a peril played directly from your Fortune hand. The target must be in your line-of-sight.' },
+  { name: 'Touched', level: 3, text: 'You automatically pass all Horror checks.' },
+  { name: 'Occult', level: 3, text: 'Action: The enemy nearest to this NPC encounters a peril.', npcOnly: true },
 
   // ---- Level 4 ----
   { name: 'Blaggard', level: 4, text: 'If an enemy goes down in contact with you, that player must discard or the enemy is immediately knocked out.' },
   { name: 'Cloak & Dagger', level: 4, text: 'Once per turn, after rolling an opposed spotting check, you may discard to gain +1 success. You cannot shoot over 12”.' },
   { name: 'Cloud Minds', level: 4, text: 'Action: you may hide even if you are currently in line-of-sight of an enemy.' },
-  { name: 'Commander', level: 4, text: 'Add +4 slots to your league roster to use for level 1 and level 2 characters only.' },
+  { name: 'Commander', level: 4, text: 'Add +4 slots to your league roster to use for level 1 and level 2 characters only. Errata: this league cannot have more than 1 slot of background perks.' },
   { name: 'Cursed Presence', level: 4, text: 'Action: Target one enemy to encounter a peril played directly from your Fortune hand. Line-of-sight is not required.' },
   { name: 'Danger Sense', level: 4, text: 'You automatically pass the first peril you encounter each turn.' },
   { name: 'Dark Presence', level: 4, text: 'Action: Place a 3” (dia.) area centered on you. This area is perilous and blocks line-of-sight for the remainder of the turn.' },
@@ -137,6 +169,9 @@ const ABILITIES = [
   { name: 'Tactician', level: 4, text: 'When you deploy on the table, select one of the following Gang abilities: Armed, Dangerous, Disciplined, or Loyal. Your Gangs (except Mobs) count as having this additional ability while they are within 12” of you.' },
   { name: 'Untouchable', level: 4, text: 'You always count as being in cover.' },
   { name: 'Wealthy', level: 4, text: 'During set-up, you receive 1 resource point (Tips, Backup, Gear, or Contacts). This point may be spent on this scenario or saved.' },
+  { name: 'Fade', level: 4, text: 'If you are not engaged when your activation ends then you may discard to immediately become hidden — regardless of your movement or enemy line-of-sight.' },
+  { name: 'Gambler', level: 4, text: 'At the start of each turn, you may discard (once) to roll for a random challenge. If passed, you may choose to become Director or you may draw two cards.' },
+  { name: 'Wild Card', level: 4, text: 'Once per turn, after you roll for a challenge, you may discard to add one additional success to your result.' },
 
   // ---- Epic ----
   { name: 'Blood Frenzy', level: 'Epic', text: 'When you knock an enemy down or out in a brawl, you may immediately move up to 6” towards the nearest enemy. If you engage another enemy, do not fight again this activation.' },

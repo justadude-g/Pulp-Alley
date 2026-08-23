@@ -859,7 +859,7 @@ async function loadCardIntoForm(record) {
   const d = record.formData;
   document.getElementById('f-cardType').value = d.cardType;
   document.getElementById('f-accentColor').value = d.accentColor;
-  document.getElementById('f-theme').value = d.theme || 'light';
+  document.getElementById('f-theme').value = d.theme || 'ivory';
   document.getElementById('f-abilityFontSize').value = d.abilityFontSize || 33;
   document.getElementById('f-name').value = d.name;
   document.getElementById('f-level').value = d.level;

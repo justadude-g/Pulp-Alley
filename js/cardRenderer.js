@@ -106,11 +106,33 @@ const CLASSICAL_BASE = {
   badgeText: '#241b13',
 };
 
-// Two background themes. 'light' is the default: it's the one that prints
-// well on a home inkjet/laser (near-zero solid ink coverage, crisp on
-// cardstock). 'dark' is kept for anyone who wants the punchier look for
+// 'ivory' is the default: same near-zero ink-coverage design as 'light'
+// (still just thin lines, small fills, and text — no solid backgrounds),
+// but warmed off pure white so a printed card doesn't read as a stark
+// printer-paper white against the pulp-adventure art style. 'light' (pure
+// white) stays available for anyone who wants the coolest, lightest-ink
+// option. 'dark' is kept for anyone who wants the punchier look for
 // screen use / a color laser printer with cheap toner.
 const THEMES = {
+  ivory: {
+    bgTop: '#fdfaf2', bgBottom: '#f8f2e6',
+    textPrimary: '#181c24',
+    textSecondary: '#333a46',
+    textMuted: 'rgba(24,28,36,0.45)',
+    nameBarBg: 'rgba(60,50,30,0.035)',
+    healthBarBg: 'rgba(60,50,30,0.05)',
+    borderSubtle: 'rgba(60,50,30,0.14)',
+    outerBorder: 'rgba(50,42,26,0.24)',
+    placeholderBg: '#f0ece0',
+    placeholderPattern: 'rgba(60,50,30,0.07)',
+    placeholderText: 'rgba(45,38,25,0.42)',
+    tintAlpha: 0.11,
+    tint2: 'rgba(24,28,36,0.045)',
+    downOutFill: 'rgba(24,28,36,0.02)',
+    downOutBorder: 'rgba(24,28,36,0.28)',
+    downOutText: 'rgba(24,28,36,0.6)',
+    cornerAccentAlpha: 0,
+  },
   light: {
     bgTop: '#ffffff', bgBottom: '#fbfbfa',
     textPrimary: '#181c24',
@@ -291,7 +313,7 @@ function renderCard(canvas, data) {
 
   const preset = TYPE_PRESETS[data.cardType] || TYPE_PRESETS.Custom;
   const accent = data.accentColor || preset.accent;
-  const T = THEMES[data.theme] || THEMES.light;
+  const T = THEMES[data.theme] || THEMES.ivory;
   // Classical uses the official template's fixed terracotta/taupe bands
   // instead of accent-tinted ones; light/dark tint the stat rows with the
   // chosen accent color.

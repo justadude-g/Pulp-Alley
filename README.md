@@ -80,13 +80,18 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
 - Cards render at true **Gamegenic Standard sleeve size** — 64mm × 89mm at
   300dpi (756×1051px) — so exported PNGs are print-ready and a printed
   card drops straight into a Standard sleeve (Magic/Pokémon-size).
-- **Light background by default** — designed for home inkjet/laser printing:
-  near-white card face, color used only in thin lines, small fills, and text,
-  so a page of 9 cards uses a fraction of the ink a solid dark card would. All
-  four corners are clean on Light — no accent lines. A Dark theme is also
-  available (Card Background dropdown) if you want the punchier look for
-  screen use, and two Classical (aged parchment) variants — with or without
-  the background skull watermark — for a period feel.
+- **Ivory background by default** — designed for home inkjet/laser printing:
+  color used only in thin lines, small fills, and text (never a solid fill),
+  so a page of 9 cards uses a fraction of the ink a solid dark card would.
+  Ivory warms that same near-zero-ink design off pure white — stark white
+  reads as printer paper next to pulp-adventure art and shows print
+  imperfections more, while a warm off-white reads like real card stock for
+  virtually the same ink cost. Pure white is still available as the Light
+  option for anyone who wants zero tint. All four corners are clean on both
+  — no accent lines. A Dark theme is also available (Card Background
+  dropdown) if you want the punchier look for screen use, and two Classical
+  (aged parchment) variants — with or without the background skull
+  watermark — for a heavier period feel.
 - **Transparent portrait blending** — upload a character image with a
   transparent background (PNG/WebP/GIF) and the portrait box's fill behind it
   uses the card's own accent tint instead of a mismatched neutral gray, so

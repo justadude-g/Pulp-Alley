@@ -19,7 +19,7 @@ async function main() {
 
   await page.fill('#f-name', 'Dr. Fang');
   await page.selectOption('#f-cardType', 'Villain');
-  await page.fill('#f-level', '4');
+  await page.selectOption('#f-level', '4');
   await page.selectOption('#f-theme', 'classical');
   await page.click('#add-ability');
   const nameInputs = await page.$$('.ability-item input[data-field="name"]');

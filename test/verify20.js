@@ -1,6 +1,8 @@
-// verify20.js — new Ivory theme: warm off-white, added as its own Card
-// Background option, and made the default (replacing pure-white Light as
-// what a brand-new card starts with; Light stays available separately).
+// verify20.js — Ivory theme: warm off-white, its own Card Background
+// option alongside pure-white Light. (Ivory was originally made the app's
+// default when it was added; a later change made Classical no-skull the
+// default instead — see verify30.js — so this file now selects Ivory
+// explicitly rather than asserting it's what a fresh page starts with.)
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -20,21 +22,20 @@ function ok(label) { console.log('OK  ', label); }
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(400);
 
-  // ---- 1. Ivory is the default selected option on a fresh page ----
-  const selectedTheme = await page.$eval('#f-theme', el => el.value);
-  assert.strictEqual(selectedTheme, 'ivory', `expected Ivory to be the default Card Background, got: ${selectedTheme}`);
-  ok('Ivory is the default Card Background on a fresh page load');
-
-  // ---- 2. Both Ivory and Light (pure white) are separately selectable ----
+  // ---- 1. Ivory is still selectable, but Classical (no skull) is now the
+  // default (a later change moved the default to Classical and dropped
+  // Dark from the dropdown — see verify30.js for that). ----
   const themeOptions = await page.$$eval('#f-theme option', els => els.map(e => e.value));
   assert(themeOptions.includes('ivory'), 'expected an "ivory" option');
   assert(themeOptions.includes('light'), 'expected "light" (pure white) to still be a separate option');
   ok('Both Ivory and Light (pure white) are available as separate Card Background options');
 
-  // ---- 3. Ivory actually renders warm off-white, not pure white ----
+  // ---- 2. Ivory actually renders warm off-white, not pure white ----
   // Sample a background pixel away from any UI element (name bar, portrait,
   // stats, health bar) — top-right sliver below the border, left of the
   // rounded corner, same spot used in verify15's corner-lines check.
+  await page.selectOption('#f-theme', 'ivory');
+  await page.waitForTimeout(150);
   const ivoryPixel = await page.evaluate(() => {
     const c = document.getElementById('card-canvas');
     const ctx = c.getContext('2d');
@@ -62,7 +63,7 @@ function ok(label) { console.log('OK  ', label); }
   assert(lightPixel[0] - lightPixel[2] <= 1, `expected Light to be neutral (no warm tint), got rgb(${lightPixel})`);
   ok('Light (pure white) is unchanged and still selectable');
 
-  // ---- 4. Ivory keeps the same clean-corners fix as Light (no accent lines) ----
+  // ---- 3. Ivory keeps the same clean-corners fix as Light (no accent lines) ----
   await page.selectOption('#f-theme', 'ivory');
   await page.waitForTimeout(150);
   const rows = await page.evaluate(() => {
@@ -82,12 +83,16 @@ function ok(label) { console.log('OK  ', label); }
   assert(maxSpread <= 8, `expected Ivory's top-right corner to have no diagonal accent line, got max spread ${maxSpread}`);
   ok('Ivory has clean corners too (no accent lines)');
 
-  // ---- 5. Saving a card with no explicit theme choice persists as Ivory,
-  // and loading it back keeps Ivory. ----
+  // ---- 4. Saving a card with Ivory explicitly chosen persists as Ivory,
+  // and loading it back keeps Ivory (Ivory is no longer the app's default
+  // background — Classical no-skull is — so this now sets it explicitly
+  // rather than relying on a fresh page's default). ----
   await page.selectOption('#f-cardType', 'Leader');
   // Fresh reload to get a truly untouched default state.
   await page.reload();
   await page.waitForTimeout(400);
+  await page.selectOption('#f-theme', 'ivory');
+  await page.waitForTimeout(150);
   await page.fill('#f-name', 'Ivory Default Test');
   await page.click('#btn-save-card');
   await page.waitForTimeout(300);
@@ -99,7 +104,7 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(300);
   const reloadedTheme = await page.$eval('#f-theme', el => el.value);
   assert.strictEqual(reloadedTheme, 'ivory', `expected the saved card to keep Ivory as its theme, got: ${reloadedTheme}`);
-  ok('A card saved with the default theme persists and reloads as Ivory');
+  ok('A card saved with Ivory chosen persists and reloads as Ivory');
 
   console.log('\nAll verify20 checks passed.');
   await browser.close();

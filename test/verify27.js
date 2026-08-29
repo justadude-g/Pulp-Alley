@@ -18,7 +18,7 @@ function ok(label) { console.log('OK  ', label); }
 function norm(hex) { return hex.toLowerCase(); }
 
 const EXPECTED = {
-  Leader: '#f97316',    // Orange
+  Leader: '#f6930a',    // Orange
   Sidekick: '#16a34a',  // Green
   Ally: '#2563eb',      // Blue
   Follower: '#000000',  // Black
@@ -38,7 +38,7 @@ const EXPECTED = {
   await page.waitForTimeout(400);
 
   // ---- 1. Every Card Type defaults to its Gamegenic-corresponding color
-  // under a non-Classical theme (Ivory, the app default). ----
+  // under a non-Classical theme (Ivory). ----
   await page.selectOption('#f-theme', 'ivory');
   for (const [cardType, expected] of Object.entries(EXPECTED)) {
     await page.selectOption('#f-cardType', cardType);

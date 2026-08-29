@@ -940,7 +940,12 @@ async function loadCardIntoForm(record) {
   document.getElementById('f-portrait-frame').checked = !!d.portraitFrame;
   document.getElementById('f-abilityFontSize').value = d.abilityFontSize || 33;
   document.getElementById('f-name').value = d.name;
-  document.getElementById('f-level').value = d.level;
+  // Level used to be a free-typed number (1-20); the field is now a 0-4
+  // dropdown. Clamp anything saved before that change so an old card with,
+  // say, level 7 still shows a valid, selected option instead of silently
+  // landing on none.
+  const clampedLevel = Math.max(0, Math.min(4, Math.round(Number(d.level)) || 0));
+  document.getElementById('f-level').value = String(clampedLevel);
   document.querySelectorAll('.stat-row').forEach(row => {
     const key = row.dataset.stat;
     const s = d.stats?.[key];

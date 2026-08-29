@@ -48,7 +48,7 @@
           </select>
         </label>
         <label>Accent Color
-          <input type="color" id="f-accentColor" value="#f97316">
+          <input type="color" id="f-accentColor" value="#000000">
         </label>
         <label>Ability Text Size
           <select id="f-abilityFontSize">
@@ -63,11 +63,10 @@
       <div class="field-row">
         <label class="grow">Card Background
           <select id="f-theme">
-            <option value="ivory" selected>Ivory — warm, light on ink (default)</option>
-            <option value="light">Light — pure white, lightest on ink</option>
-            <option value="dark">Dark — screen / color laser</option>
+            <option value="classicalNoSkull" selected>Classical — aged Pulp Alley parchment (no skull, default)</option>
             <option value="classical">Classical — aged Pulp Alley parchment (with skull)</option>
-            <option value="classicalNoSkull">Classical — aged Pulp Alley parchment (no skull)</option>
+            <option value="ivory">Ivory — warm, light on ink</option>
+            <option value="light">Light — pure white, lightest on ink</option>
           </select>
         </label>
       </div>
@@ -77,10 +76,16 @@
           <input type="text" id="f-name" placeholder="The Raven" maxlength="40">
         </label>
         <label class="narrow">Level
-          <input type="number" id="f-level" value="4" min="1" max="20">
+          <select id="f-level">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+          </select>
         </label>
       </div>
-      <p class="hint">Leader/Sidekick/Ally/Follower/Gang auto-set Level (and Health, below) from the Core Rules p. 8-9 table when you pick Card Type — you can still hand-edit it after.</p>
+      <p class="hint">Leader/Sidekick/Ally/Follower/Gang auto-set Level (and Health, below) from the Core Rules p. 8-9 table when you pick Card Type — you can still change it after. Level 4 is the rulebook maximum.</p>
       <p class="hint" id="npc-hint" style="display:none">Non-Player Characters (advanced rules): NPCs are Passive (resting, patrolling, or wandering — limited movement, can't attack) until an enemy comes within 12" or a nearby character attacks or is attacked, then they become Alert (Brawler, Shooter, or Scout) for the rest of the scenario. NPCs don't normally perform actions, except via an ability that includes one (e.g. Occult), while driving a vehicle, or when a scenario allows it. The Ability Library's "NPC only" abilities (Crush, Evasive, Occult, Torment, Toxin, Vicious) are built for this role.</p>
 
       <fieldset id="gang-fieldset" style="display:none">

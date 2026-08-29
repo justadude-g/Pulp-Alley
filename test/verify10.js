@@ -39,39 +39,42 @@ async function main() {
     console.log(`${type}: level=${got.level} healthStart=${got.healthStart} asterisk=${got.asterisk} -> ${pass ? 'OK' : 'MISMATCH, expected ' + JSON.stringify(expected)}`);
   }
 
-  // Villain/Creature/Custom should NOT force a level -- hand-set a weird
-  // level first, then confirm switching to these types leaves it alone.
+  // Villain/Creature/Custom should NOT force a level -- hand-set a level
+  // that no preset ever assigns (0 — presets only ever set 1/2/3/4), then
+  // confirm switching to these types leaves it alone. (Level used to be a
+  // free-typed number and this used an arbitrary value like 7 to prove no
+  // clobbering; it's now a 0-4 dropdown, so 0 is the distinctive sentinel.)
   await page.selectOption('#f-cardType', 'Leader');
-  await page.fill('#f-level', '7');
+  await page.selectOption('#f-level', '0');
   await page.selectOption('#f-cardType', 'Villain');
   await page.waitForTimeout(100);
-  console.log('Villain after hand-set level 7 (expect untouched, still 7):', await page.locator('#f-level').inputValue());
+  console.log('Villain after hand-set level 0 (expect untouched, still 0):', await page.locator('#f-level').inputValue());
   await page.selectOption('#f-cardType', 'Creature');
   await page.waitForTimeout(100);
-  console.log('Creature (expect still 7):', await page.locator('#f-level').inputValue());
+  console.log('Creature (expect still 0):', await page.locator('#f-level').inputValue());
   await page.selectOption('#f-cardType', 'Custom');
   await page.waitForTimeout(100);
-  console.log('Custom (expect still 7):', await page.locator('#f-level').inputValue());
+  console.log('Custom (expect still 0):', await page.locator('#f-level').inputValue());
 
   // Manual override still works after auto-fill (auto-fill, not lock)
   await page.selectOption('#f-cardType', 'Sidekick');
   await page.waitForTimeout(100);
-  await page.fill('#f-level', '9');
-  console.log('Sidekick manually overridden to 9:', await page.locator('#f-level').inputValue());
+  await page.selectOption('#f-level', '1');
+  console.log('Sidekick manually overridden to 1:', await page.locator('#f-level').inputValue());
 
-  // Save a Custom card at level 7, reload it via My Cards, confirm loadCardIntoForm
+  // Save a Custom card at level 0, reload it via My Cards, confirm loadCardIntoForm
   // does NOT re-trigger the auto-fill and clobber the saved value.
   await page.click('#btn-new-card');
   await page.fill('#f-name', 'Weird One');
   await page.selectOption('#f-cardType', 'Custom');
-  await page.fill('#f-level', '7');
+  await page.selectOption('#f-level', '0');
   await page.click('#btn-save-card');
   await page.waitForTimeout(200);
   await page.click('.tab-btn[data-tab="gallery"]');
   await page.waitForTimeout(200);
   await page.click('.gallery-card [data-act="edit"]');
   await page.waitForTimeout(200);
-  console.log('reloaded Custom card level (expect still 7, not clobbered by load):', await page.locator('#f-level').inputValue());
+  console.log('reloaded Custom card level (expect still 0, not clobbered by load):', await page.locator('#f-level').inputValue());
 
   console.log('page errors:', errors);
   await browser.close();

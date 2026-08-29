@@ -19,9 +19,12 @@ async function main() {
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(500);
 
-  // Stress test: long name, level 12, many long abilities, no portrait, no quote
+  // Stress test: long name, max level, many long abilities, no portrait, no
+  // quote. (Level used to be a free-typed number and this stress-tested a
+  // two-digit value; it's now a 0-4 dropdown, so the two-digit badge-size
+  // safety margin is covered separately in verify29.js instead.)
   await page.fill('#f-name', 'Baroness Von Wrecking-Ball The Unstoppable Engine of Ruin');
-  await page.fill('#f-level', '12');
+  await page.selectOption('#f-level', '4');
   await page.selectOption('#f-cardType', 'Villain');
 
   const longText = 'This ability has a very long description that should wrap across multiple lines and force the auto-fit sizer to shrink the font so everything still fits neatly above the health bar without overlapping any other element on the card.';

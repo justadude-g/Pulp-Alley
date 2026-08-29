@@ -48,7 +48,12 @@ const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 // afterward, same as everywhere else in the app.
 const TYPE_PRESETS = {
   Leader: {
-    accent: '#f97316', level: 4, healthStart: 'd10', healthAsterisk: false,
+    // Tailwind's orange-500 (#f97316) reads a bit coral/pink once tinted
+    // light for the Stats/Card Type/Health backgrounds (low-alpha tints of
+    // a red-leaning orange skew toward salmon) — shifted toward a punchier,
+    // more yellow-leaning orange that stays unambiguously "orange" even at
+    // low opacity, and reads more distinctly from Villain's red.
+    accent: '#f6930a', level: 4, healthStart: 'd10', healthAsterisk: false,
     maxAbilities: 3, maxAbilityLevel: 4,
     skillDiceHint: 'Leader (p.9): pick 4 skills to start at 3d10, the other 2 at 2d8.',
     defaultStats: {
@@ -126,13 +131,16 @@ const CLASSICAL_BASE = {
   badgeText: '#f5e8cf',
 };
 
-// 'ivory' is the default: same near-zero ink-coverage design as 'light'
-// (still just thin lines, small fills, and text — no solid backgrounds),
-// but warmed off pure white so a printed card doesn't read as a stark
-// printer-paper white against the pulp-adventure art style. 'light' (pure
-// white) stays available for anyone who wants the coolest, lightest-ink
-// option. 'dark' is kept for anyone who wants the punchier look for
-// screen use / a color laser printer with cheap toner.
+// 'ivory' is a near-zero ink-coverage design (still just thin lines, small
+// fills, and text — no solid backgrounds), warmed off pure white so a
+// printed card doesn't read as a stark printer-paper white against the
+// pulp-adventure art style. 'light' (pure white) stays available for
+// anyone who wants the coolest, lightest-ink option. Classical (no skull)
+// is the app's actual default now — see the Card Background dropdown in
+// index.html — with ivory/light offered as lighter-ink alternatives.
+// 'dark' is no longer offered in that dropdown (not practical to print),
+// but its definition stays here so cards saved with it before this change
+// keep rendering correctly.
 const THEMES = {
   ivory: {
     bgTop: '#fdfaf2', bgBottom: '#f8f2e6',
@@ -309,7 +317,11 @@ function drawSkullWatermark(ctx, cx, cy, w, color) {
   ctx.restore();
 }
 
-const PORTRAIT = { x: 24, y: 132, w: 300, h: 430 };
+// Portrait box runs flush to the card's left edge and flush to the Stats
+// table's left edge (no side margins/gap), giving the image the largest
+// possible area instead of floating in a 24px-margin box with a 16px gap
+// before Stats.
+const PORTRAIT = { x: 0, y: 132, w: 340, h: 430 };
 const STATS = { x: 340, y: 132, w: 386, h: 430 };
 const NAME_BAR_H = 118;
 
@@ -522,12 +534,13 @@ function renderCard(canvas, data) {
       ctx.fillText(label, STATS.x + 20, ry + rowH / 2 + 1);
 
       // Dice pool is the single most important thing to read at a glance
-      // during play, so it's set larger than the stat label — Rajdhani is a
-      // condensed display face that reads visually smaller than Inter at
-      // the same px size, so matching px values alone isn't enough to look
-      // the same size; this compensates so the two feel like one scale.
+      // during play, so it's set larger than the stat label. Uses Inter
+      // (same family as the Abilities text) rather than the Rajdhani
+      // display face used for headline elements (Level, Card Type tag,
+      // Health pills) — keeps the card's two text blocks (Stats + Abilities)
+      // reading as one consistent typeface instead of mixing two families.
       const dieStr = val ? `${val.n}d${val.d}` : '—';
-      ctx.font = '700 34px Rajdhani, Inter, sans-serif';
+      ctx.font = '700 32px Inter, sans-serif';
       ctx.textAlign = 'right';
       ctx.fillStyle = accent;
       ctx.fillText(dieStr, STATS.x + STATS.w - 20, ry + rowH / 2 + 1);

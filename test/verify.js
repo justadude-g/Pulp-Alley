@@ -24,7 +24,7 @@ async function main() {
   // fill form
   await page.fill('#f-name', 'Jax "Blackout" Rourke');
   await page.selectOption('#f-cardType', 'Sidekick');
-  await page.fill('#f-level', '3');
+  await page.selectOption('#f-level', '3');
   await page.fill('#f-quote', "Lights out, pal.");
 
   // abilities
@@ -71,7 +71,7 @@ async function main() {
   await page.click('#btn-new-card');
   await page.fill('#f-name', 'Dr. Voss');
   await page.selectOption('#f-cardType', 'Leader');
-  await page.fill('#f-level', '5');
+  await page.selectOption('#f-level', '4');
   await page.click('#btn-save-card');
   await page.waitForTimeout(300);
 

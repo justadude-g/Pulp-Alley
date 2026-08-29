@@ -31,30 +31,35 @@ function ok(label) { console.log('OK  ', label); }
   await page.selectOption('#f-theme', 'light');
   await page.waitForTimeout(150);
 
+  // The portrait box now runs flush to the card's left edge and flush to
+  // the Stats table (x:0-340, y:132-562, see PORTRAIT in cardRenderer.js)
+  // — there's no open background margin beside it any more, only above and
+  // below it (the card's vertical gradient means a comparison pixel must
+  // share the same y as its subject, since color only varies with y).
   async function borderPixel() {
-    // Just outside the portrait box's flat left edge (box is {x:24, y:132,
-    // w:300, h:430}), at the vertical middle so it's away from the rounded
-    // corners. Never touched by the portrait's own clipped fill/image —
-    // only a stroke drawn with Image Frame on would paint here.
+    // Just above the portrait box's flat top edge, horizontally centered
+    // so it's away from the rounded corners. Never touched by the
+    // portrait's own clipped fill/image — only a stroke drawn with Image
+    // Frame on would paint here.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(23, 347, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(170, 131, 1, 1).data.slice(0, 3)];
     });
   }
   async function plainBackgroundPixel() {
-    // Far from any UI element, same y as the border sample, so it reads
-    // the plain card background gradient at that row.
+    // Same y as the border sample (so it's the same point on the vertical
+    // gradient), far to the right where nothing else is drawn.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(10, 347, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(700, 131, 1, 1).data.slice(0, 3)];
     });
   }
   // Leader's fixed accent color (TYPE_PRESETS.Leader.accent in
-  // cardRenderer.js — Gamegenic Prime "Orange") — used as the expected
-  // border color rather than sampling another spot on the card, so this
-  // doesn't depend on guessing which other pixels happen to be pure
-  // accent color.
-  const LEADER_ACCENT_RGB = [0xf9, 0x73, 0x16];
+  // cardRenderer.js — a punchy Gamegenic Prime "Orange") — used as the
+  // expected border color rather than sampling another spot on the card,
+  // so this doesn't depend on guessing which other pixels happen to be
+  // pure accent color.
+  const LEADER_ACCENT_RGB = [0xf6, 0x93, 0x0a];
 
   // ---- 2. No image yet, Image Frame off: no border stroke — the sample
   // point just outside the box matches the plain card background. ----
@@ -82,17 +87,22 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(400);
 
   async function transparentCornerPixel() {
-    // Same spot verify15 uses: near the portrait box's top-left corner,
-    // which the circular fixture leaves transparent.
+    // Near the portrait box's top-left corner (same offset from the box's
+    // origin verify15 originally used), which the circular fixture leaves
+    // transparent.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(30, 140, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(6, 140, 1, 1).data.slice(0, 3)];
     });
   }
   async function plainBackgroundNearTop() {
+    // Same y as the corner sample (vertical gradient). The portrait
+    // (x:0-340) and Stats (x:340-726) boxes now span the row at y=140
+    // between them with no gap, so the only open background left at that
+    // y is past Stats' right edge, near the card's right margin.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(10, 140, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(745, 140, 1, 1).data.slice(0, 3)];
     });
   }
 

@@ -1,8 +1,9 @@
 // verify29.js — Level badge improvements:
 // 1. The level number's font size increased (44px -> 60px) so it fills the
 //    46px-radius badge circle with much less surrounding empty space, while
-//    a worst-case two-digit level (the Level field allows up to 20) still
-//    stays clear of the ring.
+//    a worst-case two-digit level (the Level field allowed up to 20 before
+//    it became a 0-4 dropdown — see verify30.js — and old saved cards can
+//    still carry such a value) still stays clear of the ring.
 // 2. Classical's badge fill changed from a near-white cream (#fdf8f0) to a
 //    warm bronze/brown medallion look (fill #8a5a34, dark ink ring
 //    #3d2614, cream text #f5e8cf) — the old white circle drew the eye away
@@ -42,7 +43,7 @@ function closeTo(rgb, hex, tol = 12) {
   // farthest-from-center white pixel belonging to the glyph itself.
   async function textReach(cardType, level) {
     await page.selectOption('#f-cardType', cardType);
-    await page.fill('#f-level', String(level));
+    await page.selectOption('#f-level', String(level));
     await page.waitForTimeout(120);
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
@@ -60,6 +61,37 @@ function closeTo(rgb, hex, tol = 12) {
       }
       return maxDist;
     });
+  }
+
+  // The Level field is now a 0-4 dropdown (a later change — see
+  // verify30.js), so a two-digit level can no longer be typed in through
+  // the UI. But old saved cards from before that change can still have a
+  // two-digit value (the field used to allow up to 20), and those still
+  // need to render safely — so this renders directly through the app's
+  // own renderCard()/collectFormData() pipeline with an injected level,
+  // simulating what happens when such a legacy card is opened or printed.
+  async function textReachRawLevel(level) {
+    return page.evaluate((lvl) => {
+      const canvas = document.getElementById('card-canvas');
+      const data = collectFormData();
+      data.portraitImg = null;
+      data.portraitView = { scale: 1, offsetX: 0, offsetY: 0 };
+      data.level = lvl;
+      renderCard(canvas, data);
+      const ctx = canvas.getContext('2d');
+      const cx = 85, cy = 59;
+      let maxDist = 0;
+      for (let y = cy - 46; y <= cy + 46; y++) {
+        for (let x = cx - 46; x <= cx + 46; x++) {
+          const d = ctx.getImageData(x, y, 1, 1).data;
+          if (d[0] > 235 && d[1] > 235 && d[2] > 235 && d[3] > 200) {
+            const dist = Math.hypot(x - cx, y - cy);
+            if (dist > maxDist) maxDist = dist;
+          }
+        }
+      }
+      return maxDist;
+    }, level);
   }
 
   // Compare directly against what the OLD 44px font would have produced,
@@ -94,11 +126,12 @@ function closeTo(rgb, hex, tol = 12) {
   assert(reach4 > reachOld44, `expected the larger 60px level digit to reach further from badge center than the old 44px font (${reachOld44.toFixed(1)}px), got ${reach4.toFixed(1)}px`);
   ok(`Level number now reaches ${reach4.toFixed(1)}px from the badge center, up from ${reachOld44.toFixed(1)}px at the old 44px font size — fills the circle better`);
 
-  // ---- 2. A worst-case two-digit level ("20", the field's max) still
-  // stays clear of the badge ring (ring is centered on radius 46, 4px
-  // wide, so its inner edge is ~44px from center). ----
-  const reach20 = await textReach('Leader', 20);
-  assert(reach20 < 42, `expected "20" (max allowed level) to stay clear of the badge ring (~44px from center), got ${reach20}`);
+  // ---- 2. A worst-case two-digit level ("20", the highest a pre-dropdown
+  // saved card could have) still stays clear of the badge ring (ring is
+  // centered on radius 46, 4px wide, so its inner edge is ~44px from
+  // center). ----
+  const reach20 = await textReachRawLevel(20);
+  assert(reach20 < 42, `expected "20" (max legacy level) to stay clear of the badge ring (~44px from center), got ${reach20}`);
   ok(`Worst-case two-digit level "20" stays clear of the ring (reaches ${reach20.toFixed(1)}px, ring inner edge ~44px)`);
 
   // ---- 3. Classical's badge is no longer a bright white/cream circle —
@@ -107,9 +140,11 @@ function closeTo(rgb, hex, tol = 12) {
   await page.waitForTimeout(150);
   const badgeFillPixel = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
-    // A point inside the badge that's fill, not text or ring: (85, 40) —
-    // above center, away from the level-number glyph and the ring stroke.
-    return [...ctx.getImageData(85, 40, 1, 1).data.slice(0, 3)];
+    // A point inside the badge that's fill, not text or ring: (50, 59) —
+    // 35px left of center (badge center is (85,59), radius 46) clears the
+    // level-number glyph horizontally regardless of which digit(s) are
+    // shown, and stays well inside the ring (~44px inner edge).
+    return [...ctx.getImageData(50, 59, 1, 1).data.slice(0, 3)];
   });
   assert(closeTo(badgeFillPixel, '#8a5a34', 12), `expected Classical's badge fill to be the new bronze tone #8a5a34, got rgb(${badgeFillPixel})`);
   ok('Classical badge fill is the new bronze/brown medallion color, not the old near-white cream');

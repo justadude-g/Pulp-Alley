@@ -26,19 +26,30 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   them never overrides values you already set. The d6* asterisk means no
   Down state — a Follower is knocked straight to Out on a failed Health
   check, and the card's Health bar reflects that (just D6* → OUT, no DOWN
-  pill).
+  pill). Level itself is a dropdown limited to 0-4 — 4 is the rulebook
+  maximum, so there's no reason to allow anything higher. A card saved
+  before this change with a higher level (Level used to be a free-typed
+  number) clamps to 4 the next time it's opened for editing.
 - **Accent Color by Card Type (Gamegenic Prime Sleeves palette)** — each
   Card Type also defaults Accent Color to the matching Gamegenic Prime
   Sleeves color, so a card's look corresponds to the sleeve color you'd
   actually use for that role: Leader = Orange, Sidekick = Green, Ally =
   Blue, Follower = Black, Gang = Dark Gray, Villain = Red, Creature =
-  Purple, Custom = Lime. It's a normal, editable color picker afterward —
+  Purple, Custom = Lime. Leader's orange is tuned toward yellow rather than
+  red — a more red-leaning orange reads coral/pink once it's tinted light
+  for the Stats/Card Type/Health backgrounds, and this stays unmistakably
+  orange even at low opacity. It's a normal, editable color picker afterward —
   picking a Card Type or Card Background re-applies the default (same as
   Level/Health/Stats above), and a manual color choice sticks until the
   next time either of those changes. If Card Background is set to either
   Classical (parchment) variant, every Card Type defaults to plain black
   instead — a bright accent clashes with the aged-parchment look — until
   you pick your own color.
+- **Consistent typeface across Stats and Abilities** — the Stats dice-pool
+  value (e.g. "3d10") renders in Inter, the same family used for Abilities
+  text, instead of the Rajdhani display face used for headline elements
+  (Level, Card Type tag, Health pills) — keeps the card's body text reading
+  as one consistent typeface rather than mixing two families.
 - **Reset Stats to Card Type** — a "↺ Reset to Card Type" button above
   Stats re-applies the current Card Type's p. 9 dice budget on demand — for
   snapping a hand-edited stat back to spec without having to reselect Card
@@ -94,28 +105,31 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   card drops straight into a Standard sleeve (Magic/Pokémon-size). The Card
   Type tag (top right) and the Health track pills (bottom) are sized for
   legibility at that print size, not just on screen.
-- **Ivory background by default** — designed for home inkjet/laser printing:
-  color used only in thin lines, small fills, and text (never a solid fill),
-  so a page of 9 cards uses a fraction of the ink a solid dark card would.
-  Ivory warms that same near-zero-ink design off pure white — stark white
-  reads as printer paper next to pulp-adventure art and shows print
-  imperfections more, while a warm off-white reads like real card stock for
-  virtually the same ink cost. Pure white is still available as the Light
-  option for anyone who wants zero tint. All four corners are clean on both
-  — no accent lines. A Dark theme is also available (Card Background
-  dropdown) if you want the punchier look for screen use, and two Classical
-  (aged parchment) variants — with or without the background skull
-  watermark — for a heavier period feel. Under Classical, the DOWN and OUT
-  health pills render in an opaque grey (matching the Might/Finesse/Cunning
-  stat row) instead of a faint dark overlay — the Classical health bar
-  itself is a solid olive-khaki color, so the old faint fill barely showed
-  up against it and made DOWN/OUT hard to read.
+- **Classical (no skull) background by default** — the Card Background
+  dropdown defaults to the aged-parchment Classical look (no skull
+  watermark), with the skull-watermark Classical variant right below it as
+  the second option, then Ivory and Light after that for anyone who wants a
+  lighter-ink, less thematic look. A Dark theme used to round out the
+  dropdown but has been removed — it wasn't practical to print — though any
+  card saved with it before this change still renders correctly. Under
+  Classical, the DOWN and OUT health pills render in an opaque grey
+  (matching the Might/Finesse/Cunning stat row) instead of a faint dark
+  overlay — the Classical health bar itself is a solid olive-khaki color,
+  so the old faint fill barely showed up against it and made DOWN/OUT hard
+  to read. Ivory (warm off-white, easy on home inkjet/laser ink) and Light
+  (pure white, lightest on ink) are both still one dropdown pick away; all
+  four options keep clean corners with no accent lines.
 - **Level badge** (top-left circle) — the level number is sized to fill the
   badge with much less surrounding empty space, while still staying clear
-  of the ring for a worst-case two-digit level (the Level field allows up
-  to 20). Under Classical, the badge itself is a bronze/brown medallion
-  (dark ink ring, cream number) instead of a near-white cream circle — the
-  white fill drew the eye away from the rest of the aged-parchment card.
+  of the ring even for an old saved card with a two-digit level from
+  before Level became a 0-4 dropdown (see below). Under Classical, the
+  badge itself is a bronze/brown medallion (dark ink ring, cream number)
+  instead of a near-white cream circle — the white fill drew the eye away
+  from the rest of the aged-parchment card.
+- **Portrait runs edge-to-edge** — the portrait box spans from the card's
+  left edge all the way to the Stats table's left edge, with no side
+  margins or gap, instead of floating in a narrower box — giving the
+  character image the largest area the layout allows.
 - **Image Frame (off by default)** — a checkbox next to the Portrait Image
   picker controls the bordered look around the portrait. Off (the default)
   drops the accent-colored border entirely, giving the portrait the full

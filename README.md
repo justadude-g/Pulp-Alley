@@ -79,7 +79,9 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   by hand, never picked from the catalog) keeps a fully editable text box.
 - Cards render at true **Gamegenic Standard sleeve size** — 64mm × 89mm at
   300dpi (756×1051px) — so exported PNGs are print-ready and a printed
-  card drops straight into a Standard sleeve (Magic/Pokémon-size).
+  card drops straight into a Standard sleeve (Magic/Pokémon-size). The Card
+  Type tag (top right) and the Health track pills (bottom) are sized for
+  legibility at that print size, not just on screen.
 - **Ivory background by default** — designed for home inkjet/laser printing:
   color used only in thin lines, small fills, and text (never a solid fill),
   so a page of 9 cards uses a fraction of the ink a solid dark card would.

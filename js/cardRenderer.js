@@ -368,10 +368,10 @@ function renderCard(canvas, data) {
 
   // Type tag (top-right pill)
   if (data.cardType) {
-    ctx.font = '700 20px Rajdhani, Inter, sans-serif';
+    ctx.font = '700 23px Rajdhani, Inter, sans-serif';
     const label = data.cardType.toUpperCase();
     const tw = ctx.measureText(label).width;
-    const padX = 16, pillH = 32;
+    const padX = 16, pillH = 36;
     const pillW = tw + padX * 2;
     const px = CARD_W - 24 - pillW, py = 18;
     roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
@@ -614,7 +614,7 @@ function renderCard(canvas, data) {
   const noDownState = isGangHealth || !!data.health?.asterisk;
   const seq = (data.health?.sequence && data.health.sequence.length) ? data.health.sequence : (isGangHealth ? ['5', '4', '3'] : ['d6']);
   const pills = noDownState ? [...seq, 'Out'] : [...seq, 'Down', 'Out'];
-  ctx.font = '700 27px Rajdhani, Inter, sans-serif';
+  ctx.font = '700 30px Rajdhani, Inter, sans-serif';
   const gap = 14;
   let totalW = 0;
   const widths = pills.map(p => {
@@ -624,7 +624,7 @@ function renderCard(canvas, data) {
   });
   totalW -= gap;
   let px = (CARD_W - totalW) / 2;
-  const pillH = 38;
+  const pillH = 42;
   const pillY = hbY + (healthBarH - pillH) / 2; // vertically centered in the bar, not top-hugging
   pills.forEach((p, i) => {
     const w = widths[i];

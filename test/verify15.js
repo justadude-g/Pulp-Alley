@@ -89,8 +89,13 @@ function ok(label) { console.log('OK  ', label); }
   ok('Both Classical variants share the identical parchment palette elsewhere on the card');
 
   // ---- 3. Transparent PNG portrait blends with the accent tint ----
+  // This tinted-fill-behind-transparency look is now specifically the
+  // Image Frame ON behavior (added later — see verify24.js), since Image
+  // Frame defaults OFF and off blends into the card's own background
+  // instead. Turn it on here to keep exercising the original behavior.
   await page.selectOption('#f-cardType', 'Leader');
   await page.selectOption('#f-theme', 'light');
+  await page.check('#f-portrait-frame');
   await page.waitForTimeout(150);
   const fixture = path.join(__dirname, 'fixture-transparent.png');
   await page.setInputFiles('#f-portrait', fixture);

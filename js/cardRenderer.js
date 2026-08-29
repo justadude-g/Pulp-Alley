@@ -412,16 +412,24 @@ function renderCard(canvas, data) {
   }
 
   // ---- Portrait ----
+  // Image Frame (data.portraitFrame, OFF by default): ON reproduces the
+  // original look — an accent-tinted fill behind any transparent areas of
+  // the upload, plus a 3px accent border around the whole box. OFF instead
+  // fills transparent areas with the card's own background gradient (the
+  // same `bg` gradient painted for the whole card above) so a
+  // transparent-background PNG blends directly into the card instead of
+  // sitting inside a visibly tinted box, and skips the border entirely so
+  // the portrait gets the full box. Fully opaque uploads cover this fill
+  // completely either way, so it only shows through actual transparency.
+  const showFrame = !!data.portraitFrame;
   roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
   ctx.save();
   ctx.clip();
-  // When a portrait is uploaded, fill behind it with the same accent tint
-  // used elsewhere on the card (not the neutral upload-placeholder color)
-  // — a transparent-background PNG then blends into the card's own color
-  // scheme instead of showing a mismatched gray box behind the character.
-  // Fully opaque portraits cover this fill completely, so it's invisible
-  // for ordinary (non-transparent) uploads.
-  ctx.fillStyle = data.portraitImg ? tint : T.placeholderBg;
+  if (data.portraitImg) {
+    ctx.fillStyle = showFrame ? tint : bg;
+  } else {
+    ctx.fillStyle = T.placeholderBg;
+  }
   ctx.fillRect(PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h);
 
   if (data.portraitImg) {
@@ -456,10 +464,12 @@ function renderCard(canvas, data) {
     ctx.fillText('IMAGE', PORTRAIT.x + PORTRAIT.w / 2, PORTRAIT.y + PORTRAIT.h / 2 + 14);
   }
   ctx.restore();
-  roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = accent;
-  ctx.stroke();
+  if (showFrame) {
+    roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = accent;
+    ctx.stroke();
+  }
 
   // ---- Stats table ----
   {

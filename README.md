@@ -92,12 +92,23 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   dropdown) if you want the punchier look for screen use, and two Classical
   (aged parchment) variants — with or without the background skull
   watermark — for a heavier period feel.
+- **Image Frame (off by default)** — a checkbox next to the Portrait Image
+  picker controls the bordered look around the portrait. Off (the default)
+  drops the accent-colored border entirely, giving the portrait the full
+  box, and fills any transparent area of an uploaded PNG with the card's
+  own background instead of a tinted box — so a transparent-background
+  cutout blends directly into the card rather than sitting in a visible
+  frame. On reproduces the original look: an accent-tinted fill behind
+  transparent areas plus the bordered box. It's a per-card setting that
+  saves and reloads with the card, like every other field.
 - **Transparent portrait blending** — upload a character image with a
-  transparent background (PNG/WebP/GIF) and the portrait box's fill behind it
-  uses the card's own accent tint instead of a mismatched neutral gray, so
-  only the character stands out against the card's color scheme. Previously
-  transparent areas flattened to solid black; images are now re-encoded to
-  preserve alpha instead of forcing JPEG.
+  transparent background (PNG/WebP/GIF) and, with Image Frame on, the
+  portrait box's fill behind it uses the card's own accent tint instead of
+  a mismatched neutral gray, so only the character stands out against the
+  card's color scheme (with Image Frame off, see above — it blends with
+  the card's plain background instead). Previously transparent areas
+  flattened to solid black; images are now re-encoded to preserve alpha
+  instead of forcing JPEG.
 - **My Cards** — save cards locally in your browser (IndexedDB), edit or
   delete them later, no server required.
 - **League Roster** — build a league following the Core Rules' roster math

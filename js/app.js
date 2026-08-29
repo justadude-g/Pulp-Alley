@@ -610,6 +610,7 @@ function collectFormData() {
     abilities: state.abilities,
     quote: document.getElementById('f-quote').value.trim(),
     health: collectHealth(),
+    portraitFrame: document.getElementById('f-portrait-frame').checked,
   };
 }
 
@@ -627,6 +628,12 @@ const fileInput = document.getElementById('f-portrait');
 const portraitControls = document.getElementById('portrait-controls');
 const zoomSlider = document.getElementById('f-zoom');
 const previewPanel = document.getElementById('preview-panel');
+const portraitFrameCheckbox = document.getElementById('f-portrait-frame');
+
+// Lives in the preview panel outside <form id="card-form"> (like f-portrait
+// itself), so it needs its own listener rather than relying on the form's
+// delegated input/change -> updatePreview wiring.
+portraitFrameCheckbox.addEventListener('change', updatePreview);
 
 // Shared by both the file-picker input and drag-and-drop below, so a
 // dropped file goes through exactly the same resize/load/state pipeline
@@ -809,10 +816,12 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   applyDefaultStatsForType(document.getElementById('f-cardType').value);
   updateResetStatsVisibility(document.getElementById('f-cardType').value);
   updateNpcHintVisibility(document.getElementById('f-cardType').value);
-  // f-portrait now lives in the preview panel, outside <form id="card-form">
-  // (see index.html), so form.reset() above no longer clears it — clear it
-  // explicitly instead, otherwise the old filename stays shown.
+  // f-portrait (and f-portrait-frame) now live in the preview panel,
+  // outside <form id="card-form"> (see index.html), so form.reset() above
+  // doesn't touch them — reset explicitly instead. Image Frame defaults
+  // off, same as a genuinely new, never-saved card.
   fileInput.value = '';
+  portraitFrameCheckbox.checked = false;
   portraitControls.style.display = 'none';
   renderAbilityRows();
   updateHealthPreview();
@@ -881,6 +890,7 @@ async function loadCardIntoForm(record) {
   document.getElementById('f-cardType').value = d.cardType;
   document.getElementById('f-accentColor').value = d.accentColor;
   document.getElementById('f-theme').value = d.theme || 'ivory';
+  document.getElementById('f-portrait-frame').checked = !!d.portraitFrame;
   document.getElementById('f-abilityFontSize').value = d.abilityFontSize || 33;
   document.getElementById('f-name').value = d.name;
   document.getElementById('f-level').value = d.level;

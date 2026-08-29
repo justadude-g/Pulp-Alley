@@ -110,6 +110,12 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   stat row) instead of a faint dark overlay — the Classical health bar
   itself is a solid olive-khaki color, so the old faint fill barely showed
   up against it and made DOWN/OUT hard to read.
+- **Level badge** (top-left circle) — the level number is sized to fill the
+  badge with much less surrounding empty space, while still staying clear
+  of the ring for a worst-case two-digit level (the Level field allows up
+  to 20). Under Classical, the badge itself is a bronze/brown medallion
+  (dark ink ring, cream number) instead of a near-white cream circle — the
+  white fill drew the eye away from the rest of the aged-parchment card.
 - **Image Frame (off by default)** — a checkbox next to the Portrait Image
   picker controls the bordered look around the portrait. Off (the default)
   drops the accent-colored border entirely, giving the portrait the full

@@ -117,9 +117,13 @@ const CLASSICAL_BASE = {
   downOutBorder: 'rgba(36,27,19,0.45)',
   downOutText: '#241b13',
   cornerAccentAlpha: 0,
-  badgeFill: '#fdf8f0',
-  badgeRing: '#865536',
-  badgeText: '#241b13',
+  // A plain cream/white badge fill was too bright against the aged-parchment
+  // palette — it drew the eye away from the rest of the card. A bronze
+  // medallion look (warm brown fill, dark ink ring, cream number) reads as
+  // period-appropriate and still gives the level number strong contrast.
+  badgeFill: '#8a5a34',
+  badgeRing: '#3d2614',
+  badgeText: '#f5e8cf',
 };
 
 // 'ivory' is the default: same near-zero ink-coverage design as 'light'
@@ -377,7 +381,10 @@ function renderCard(canvas, data) {
   ctx.strokeStyle = T.badgeRing || shade(accent, -0.3);
   ctx.stroke();
   ctx.fillStyle = T.badgeText || '#ffffff';
-  ctx.font = '700 44px Rajdhani, Inter, sans-serif';
+  // Sized to fill the 46px-radius badge with much less surrounding empty
+  // space, while still leaving safe clearance inside the ring for a
+  // worst-case two-digit level (the Level field allows up to 20).
+  ctx.font = '700 60px Rajdhani, Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(String(data.level ?? ''), badgeCx, badgeCy + 3);

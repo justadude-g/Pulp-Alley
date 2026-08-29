@@ -1322,6 +1322,113 @@ window.addEventListener('afterprint', () => {
   document.body.classList.remove('printing-roster-sheet');
 });
 
+// Plain-text rendering of the same roster data, used as a fallback for
+// Copy Roster when a rich copy isn't possible, and as the pre-filled text
+// for the last-resort manual-copy prompt.
+function buildRosterPlainText(data) {
+  const lines = [];
+  lines.push(data.name);
+  lines.push(rosterSlotSummaryText(data));
+  lines.push('');
+
+  lines.push('COLLEAGUES');
+  if (!data.members.length) {
+    lines.push('No colleagues on this roster.');
+  } else {
+    data.members.forEach(m => lines.push(`${m.name} (${m.cardType}) — ${m.slots} slot${m.slots === 1 ? '' : 's'}`));
+  }
+  lines.push('');
+
+  lines.push('PERKS');
+  if (!data.perks.length) {
+    lines.push('No perks on this roster.');
+  } else {
+    data.perks.forEach(p => {
+      lines.push(`${p.name} — ${p.slots} slot${p.slots === 1 ? '' : 's'}`);
+      if (p.text) lines.push(p.text);
+      lines.push('');
+    });
+  }
+
+  lines.push('ASSOCIATES');
+  if (!data.associates.length) {
+    lines.push('No Associates on this roster.');
+  } else {
+    data.associates.forEach(a => {
+      lines.push(a.name);
+      if (!a.abilities.length) {
+        lines.push('No abilities picked yet.');
+      } else {
+        a.abilities.forEach(ab => {
+          lines.push(ab.name);
+          if (ab.text) lines.push(ab.text);
+        });
+      }
+      lines.push('');
+    });
+  }
+
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// Copy Roster — for pasting the same info into Apple Notes or any other
+// app, no printer needed. Three layers, each falling back to the next:
+//   1. Select the actual rendered sheet and use the browser's own copy
+//      command. This is what carries headings/bold into rich-text apps
+//      (Apple Notes, Notion, Word) instead of dumping flat text, and it
+//      works offline / from file:// where the async Clipboard API's
+//      secure-context requirement can be unreliable.
+//   2. navigator.clipboard.writeText() with the plain-text rendering, if
+//      the selection-based copy didn't work.
+//   3. A prompt() pre-filled with the plain text, so the user can always
+//      manually select-all + copy even with no clipboard API at all.
+document.getElementById('roster-copy-btn').addEventListener('click', async () => {
+  const data = renderRosterPrintSheet();
+  const btn = document.getElementById('roster-copy-btn');
+  const originalLabel = btn.textContent;
+
+  function flash(label) {
+    btn.textContent = label;
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = originalLabel;
+      btn.disabled = false;
+    }, 1400);
+  }
+
+  const sheet = document.getElementById('roster-print-sheet');
+  document.body.classList.add('copying-roster-sheet');
+  let copied = false;
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(sheet);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    copied = document.execCommand('copy');
+    selection.removeAllRanges();
+  } catch (err) {
+    copied = false;
+  }
+  document.body.classList.remove('copying-roster-sheet');
+
+  if (!copied) {
+    try {
+      await navigator.clipboard.writeText(buildRosterPlainText(data));
+      copied = true;
+    } catch (err) {
+      copied = false;
+    }
+  }
+
+  if (!copied) {
+    window.prompt('Copy this roster (select all, then copy):', buildRosterPlainText(data));
+    return;
+  }
+
+  flash('✓ Copied!');
+});
+
 document.getElementById('roster-download-pdf').addEventListener('click', () => {
   const data = renderRosterPrintSheet();
   downloadRosterPDF(data);

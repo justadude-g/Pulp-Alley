@@ -118,17 +118,20 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   informational only) flag more than the normal 2-Associate starting cap,
   the same ability picked twice on one Associate, or the same Associate
   Ability reused across different Associates in the league.
-- **Print Roster / Download PDF** — the on-screen roster columns only show
-  names and slot costs, which isn't enough at the table. "Print Roster"
-  and "Download PDF" (top of the League Roster tab) generate a plain,
-  ink-friendly reference sheet instead: league name and slot summary,
-  every colleague with type and slot cost, and — the actual point of this
-  — the *full rules text* of every perk and every Associate's chosen
-  abilities, not just their names. Print Roster opens the browser's print
-  dialog (from which you can also "Save as PDF"); Download PDF generates a
-  ready-to-save file directly via the bundled PDF library, with real
-  wrapped/paginated text rather than a fixed-size image, so it holds up
-  whether the roster has 2 colleagues or 12.
+- **Print Roster / Copy Roster / Download PDF** — the on-screen roster
+  columns only show names and slot costs, which isn't enough at the table.
+  These three buttons (top of the League Roster tab) all generate the same
+  plain, ink-friendly reference sheet instead: league name and slot
+  summary, every colleague with type and slot cost, and — the actual point
+  of this — the *full rules text* of every perk and every Associate's
+  chosen abilities, not just their names. Print Roster opens the browser's
+  print dialog (from which you can also "Save as PDF"); Download PDF
+  generates a ready-to-save file directly via the bundled PDF library, with
+  real wrapped/paginated text rather than a fixed-size image, so it holds
+  up whether the roster has 2 colleagues or 12; Copy Roster puts the same
+  sheet on the clipboard (as rich formatted text where the browser
+  supports it, so headings and bold survive) for pasting straight into
+  Apple Notes, Google Docs, or anywhere else — no printer needed.
 - **Gangs** — pick "Gang" as the Card Type and the Stats section becomes a
   "Current Models" field (default 5) that auto-fills Brawl/Shoot/Might as
   1d6 per 2 models and Dodge/Cunning/Finesse as a flat 1d6, matching the

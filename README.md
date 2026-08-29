@@ -27,6 +27,18 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Down state — a Follower is knocked straight to Out on a failed Health
   check, and the card's Health bar reflects that (just D6* → OUT, no DOWN
   pill).
+- **Accent Color by Card Type (Gamegenic Prime Sleeves palette)** — each
+  Card Type also defaults Accent Color to the matching Gamegenic Prime
+  Sleeves color, so a card's look corresponds to the sleeve color you'd
+  actually use for that role: Leader = Orange, Sidekick = Green, Ally =
+  Blue, Follower = Black, Gang = Dark Gray, Villain = Red, Creature =
+  Purple, Custom = Lime. It's a normal, editable color picker afterward —
+  picking a Card Type or Card Background re-applies the default (same as
+  Level/Health/Stats above), and a manual color choice sticks until the
+  next time either of those changes. If Card Background is set to either
+  Classical (parchment) variant, every Card Type defaults to plain black
+  instead — a bright accent clashes with the aged-parchment look — until
+  you pick your own color.
 - **Reset Stats to Card Type** — a "↺ Reset to Card Type" button above
   Stats re-applies the current Card Type's p. 9 dice budget on demand — for
   snapping a hand-edited stat back to spec without having to reselect Card

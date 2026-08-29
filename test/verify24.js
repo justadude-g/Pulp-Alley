@@ -50,10 +50,11 @@ function ok(label) { console.log('OK  ', label); }
     });
   }
   // Leader's fixed accent color (TYPE_PRESETS.Leader.accent in
-  // cardRenderer.js) — used as the expected border color rather than
-  // sampling another spot on the card, so this doesn't depend on guessing
-  // which other pixels happen to be pure accent color.
-  const LEADER_ACCENT_RGB = [0xc2, 0x65, 0x0a];
+  // cardRenderer.js — Gamegenic Prime "Orange") — used as the expected
+  // border color rather than sampling another spot on the card, so this
+  // doesn't depend on guessing which other pixels happen to be pure
+  // accent color.
+  const LEADER_ACCENT_RGB = [0xf9, 0x73, 0x16];
 
   // ---- 2. No image yet, Image Frame off: no border stroke — the sample
   // point just outside the box matches the plain card background. ----

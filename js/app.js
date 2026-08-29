@@ -435,10 +435,33 @@ const form = document.getElementById('card-form');
 form.addEventListener('input', updatePreview);
 form.addEventListener('change', updatePreview);
 
+// Accent Color's default depends on both Card Type (TYPE_PRESETS in
+// cardRenderer.js — each corresponds to a Gamegenic Prime Sleeves color)
+// and Card Background: the Classical (parchment) themes override every
+// Card Type's colorful default to plain black instead, since a bright
+// modern accent clashes with the aged-parchment look. Used by both the
+// Card Type and Card Background change handlers below so switching either
+// one keeps Accent Color in sync — it's still a normal, editable color
+// picker afterward, same as every other auto-filled field in this app.
+function defaultAccentForCardType(cardType, theme) {
+  if (theme === 'classical' || theme === 'classicalNoSkull') return '#000000';
+  const preset = TYPE_PRESETS[cardType];
+  return preset ? preset.accent : '#000000';
+}
+
+document.getElementById('f-theme').addEventListener('change', (e) => {
+  document.getElementById('f-accentColor').value = defaultAccentForCardType(
+    document.getElementById('f-cardType').value, e.target.value
+  );
+  updatePreview();
+});
+
 document.getElementById('f-cardType').addEventListener('change', (e) => {
   const preset = TYPE_PRESETS[e.target.value];
   if (preset) {
-    document.getElementById('f-accentColor').value = preset.accent;
+    document.getElementById('f-accentColor').value = defaultAccentForCardType(
+      e.target.value, document.getElementById('f-theme').value
+    );
     // Leader/Sidekick/Ally/Follower have a rules-fixed Level and starting
     // Health die (Core Rules p. 8-9); Gang is fixed at Level 2 (p. 21).
     // Villain/Creature/Custom aren't part of that table, so preset.level

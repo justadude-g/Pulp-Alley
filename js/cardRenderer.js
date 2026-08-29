@@ -16,6 +16,16 @@ const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 
 // Saturated-but-print-safe accents: dark enough to stay legible as text/line
 // color on a white background, still read fine on the dark theme too.
+// Each default accent corresponds to a Gamegenic Prime Sleeves color, so a
+// card's on-screen/printed accent matches the sleeve color a player would
+// actually use for that role: Leader=Orange, Sidekick=Green, Ally=Blue,
+// Follower=Black, Gang=Dark Gray, Villain=Red, Creature=Purple,
+// Custom=Lime. accentColor stays a normal, editable color picker per card
+// (see app.js), so this is only ever the starting point. When Card
+// Background is one of the Classical (parchment) themes, app.js overrides
+// this table and defaults every Card Type to black instead — Classical's
+// fixed brown/tan palette reads better with a plain "ink" accent than a
+// bright modern color.
 //
 // level/healthStart/healthAsterisk/maxAbilities/maxAbilityLevel/skillDiceHint
 // mirror the fixed character-creation table on Core Rules p. 8-9:
@@ -38,7 +48,7 @@ const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 // afterward, same as everywhere else in the app.
 const TYPE_PRESETS = {
   Leader: {
-    accent: '#c2650a', level: 4, healthStart: 'd10', healthAsterisk: false,
+    accent: '#f97316', level: 4, healthStart: 'd10', healthAsterisk: false,
     maxAbilities: 3, maxAbilityLevel: 4,
     skillDiceHint: 'Leader (p.9): pick 4 skills to start at 3d10, the other 2 at 2d8.',
     defaultStats: {
@@ -47,7 +57,7 @@ const TYPE_PRESETS = {
     },
   },
   Sidekick: {
-    accent: '#0d9488', level: 3, healthStart: 'd8', healthAsterisk: false,
+    accent: '#16a34a', level: 3, healthStart: 'd8', healthAsterisk: false,
     maxAbilities: 2, maxAbilityLevel: 3,
     skillDiceHint: 'Sidekick (p.9): pick 3 skills to start at 3d8, the other 3 at 2d6.',
     defaultStats: {
@@ -65,7 +75,7 @@ const TYPE_PRESETS = {
     },
   },
   Follower: {
-    accent: '#64748b', level: 1, healthStart: 'd6', healthAsterisk: true,
+    accent: '#000000', level: 1, healthStart: 'd6', healthAsterisk: true,
     maxAbilities: 1, maxAbilityLevel: 1,
     skillDiceHint: 'Follower (p.9): all skills start at 1d6.',
     defaultStats: {
@@ -75,8 +85,8 @@ const TYPE_PRESETS = {
   },
   Villain:  { accent: '#dc2626' },
   Creature: { accent: '#9333ea' },
-  Gang:     { accent: '#57534e', level: 2 },
-  Custom:   { accent: '#0d9488' },
+  Gang:     { accent: '#3f3f46', level: 2 },
+  Custom:   { accent: '#84cc16' },
 };
 
 // Shared palette for both Classical variants (see THEMES.classical /

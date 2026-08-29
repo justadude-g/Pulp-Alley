@@ -205,6 +205,8 @@
       <div class="gallery-meta">
         <select id="roster-picker"><option value="">＋ New roster…</option></select>
         <button id="roster-delete" class="btn-ghost">Delete</button>
+        <button id="roster-print-btn" class="btn-secondary">🖨 Print Roster</button>
+        <button id="roster-download-pdf" class="btn-secondary">⬇ Download PDF</button>
         <button id="roster-save" class="btn-primary">💾 Save Roster</button>
       </div>
     </div>
@@ -275,6 +277,34 @@
 </section>
 
 </main>
+
+<!-- ===================== LEAGUE ROSTER — PRINT SHEET =====================
+     Hidden on screen; populated from rosterState and shown full-page for
+     Print Roster / Download PDF. Unlike the on-screen Perks/Associates
+     columns (name + slot cost only), this sheet includes the full rules
+     text of every perk and every Associate ability, since that's the whole
+     point of a printed reference for the table. -->
+<div id="roster-print-sheet">
+  <div class="rps-header">
+    <h1 id="rps-name"></h1>
+    <div id="rps-summary" class="rps-summary"></div>
+  </div>
+  <div class="rps-section">
+    <h2>Colleagues</h2>
+    <div id="rps-colleagues"></div>
+    <p id="rps-colleagues-empty" class="rps-empty" style="display:none">No colleagues on this roster.</p>
+  </div>
+  <div class="rps-section">
+    <h2>Perks</h2>
+    <div id="rps-perks"></div>
+    <p id="rps-perks-empty" class="rps-empty" style="display:none">No perks on this roster.</p>
+  </div>
+  <div class="rps-section">
+    <h2>Associates</h2>
+    <div id="rps-associates"></div>
+    <p id="rps-associates-empty" class="rps-empty" style="display:none">No Associates on this roster.</p>
+  </div>
+</div>
 
 <!-- ===================== ABILITY LIBRARY MODAL ===================== -->
 <div id="ability-library-modal" class="modal-overlay hidden">

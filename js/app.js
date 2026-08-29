@@ -1233,6 +1233,188 @@ function renderAssociates() {
   associateWarningsEl.innerHTML = warnings.map(w => `<div class="roster-warning">⚠ ${escapeHtml(w)}</div>`).join('');
 }
 
+// ---- Roster Print Sheet (Print Roster / Download PDF) ----
+// The on-screen Perks and Associates columns only show names and slot
+// costs (that's fine for building the roster, but useless at the table).
+// This builds a plain reference document with the full rules text of
+// every perk and every Associate ability actually printed on it.
+function buildRosterPrintData() {
+  const { used, remaining, memberSlots, perkSlots, associateSlots } = computeRosterSlots();
+  return {
+    name: rosterState.name || 'Untitled League',
+    used, remaining, total: BASE_ROSTER_SLOTS, memberSlots, perkSlots, associateSlots,
+    members: rosterState.members.map(m => ({
+      name: m.name || 'Unnamed',
+      cardType: m.cardType || 'Custom',
+      slots: m.slots || 0,
+    })),
+    perks: rosterState.perks.map(p => ({
+      name: p.name,
+      slots: p.slots,
+      text: (PERKS.find(x => x.name === p.name) || {}).text || '',
+    })),
+    associates: rosterState.associates.map((a, i) => ({
+      name: (a.name || '').trim() || `Associate ${i + 1}`,
+      abilities: a.abilities.filter(Boolean).map(n => {
+        const found = findAssociateAbilityByName(n);
+        return { name: n, text: found ? found.text : '' };
+      }),
+    })),
+  };
+}
+
+function rosterSlotSummaryText(data) {
+  return `${data.used} / ${data.total} roster slots used` +
+    (data.remaining < 0 ? ` — over by ${-data.remaining}` : ` (${data.remaining} remaining)`) +
+    ` · Colleagues: ${data.memberSlots} · Perks: ${data.perkSlots} · Associates: ${data.associateSlots}`;
+}
+
+function renderRosterPrintSheet() {
+  const data = buildRosterPrintData();
+
+  document.getElementById('rps-name').textContent = data.name;
+  document.getElementById('rps-summary').textContent = rosterSlotSummaryText(data);
+
+  const colleaguesEl = document.getElementById('rps-colleagues');
+  colleaguesEl.innerHTML = data.members.map(m => `
+    <div class="rps-colleague-row">
+      <span>${escapeHtml(m.name)} <span class="rps-block-meta">(${escapeHtml(m.cardType)})</span></span>
+      <span>${m.slots} slot${m.slots === 1 ? '' : 's'}</span>
+    </div>
+  `).join('');
+  document.getElementById('rps-colleagues-empty').style.display = data.members.length ? 'none' : 'block';
+
+  const perksEl = document.getElementById('rps-perks');
+  perksEl.innerHTML = data.perks.map(p => `
+    <div class="rps-block">
+      <div class="rps-block-name">${escapeHtml(p.name)} <span class="rps-block-meta">— ${p.slots} slot${p.slots === 1 ? '' : 's'}</span></div>
+      ${p.text ? `<p class="rps-block-text">${escapeHtml(p.text)}</p>` : ''}
+    </div>
+  `).join('');
+  document.getElementById('rps-perks-empty').style.display = data.perks.length ? 'none' : 'block';
+
+  const associatesEl = document.getElementById('rps-associates');
+  associatesEl.innerHTML = data.associates.map(a => `
+    <div class="rps-associate-block">
+      <div class="rps-associate-name">${escapeHtml(a.name)}</div>
+      ${a.abilities.map(ab => `
+        <div class="rps-block">
+          <div class="rps-block-name">${escapeHtml(ab.name)}</div>
+          ${ab.text ? `<p class="rps-block-text">${escapeHtml(ab.text)}</p>` : ''}
+        </div>
+      `).join('') || '<p class="rps-empty">No abilities picked yet.</p>'}
+    </div>
+  `).join('');
+  document.getElementById('rps-associates-empty').style.display = data.associates.length ? 'none' : 'block';
+
+  return data;
+}
+
+document.getElementById('roster-print-btn').addEventListener('click', () => {
+  renderRosterPrintSheet();
+  document.body.classList.add('printing-roster-sheet');
+  window.print();
+});
+// Some browsers/environments never fire afterprint (e.g. the print dialog
+// is cancelled in a way that doesn't trigger it) — belt-and-suspenders
+// cleanup on focus return as well, so the class can't get stuck.
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-roster-sheet');
+});
+
+document.getElementById('roster-download-pdf').addEventListener('click', () => {
+  const data = renderRosterPrintSheet();
+  downloadRosterPDF(data);
+});
+
+function downloadRosterPDF(data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const marginX = 18, marginTop = 20, marginBottom = 18, pageW = 210, pageH = 297;
+  const contentW = pageW - marginX * 2;
+  let y = marginTop;
+
+  // jsPDF works in points internally for font size; converts to a mm line
+  // height using its default 1.15 line-height factor so wrapped paragraphs
+  // and manual page-break checks agree with what actually gets drawn.
+  function mmPerLine(pt) { return pt * 1.15 / 72 * 25.4; }
+  function ensureSpace(h) {
+    if (y + h > pageH - marginBottom) { doc.addPage(); y = marginTop; }
+  }
+  function heading(text, size) {
+    ensureSpace(mmPerLine(size) + 2);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(size);
+    doc.text(text, marginX, y);
+    y += mmPerLine(size) + 2;
+  }
+  function paragraph(text, size, opts) {
+    opts = opts || {};
+    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+    doc.setFontSize(size);
+    const lines = doc.splitTextToSize(text, contentW);
+    const lh = mmPerLine(size);
+    ensureSpace(lines.length * lh + (opts.gap || 0));
+    doc.text(lines, marginX, y);
+    y += lines.length * lh + (opts.gap || 0);
+  }
+  function twoCol(left, right, size) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(size);
+    const lh = mmPerLine(size);
+    ensureSpace(lh);
+    doc.text(left, marginX, y);
+    doc.text(right, pageW - marginX, y, { align: 'right' });
+    y += lh;
+  }
+
+  heading(data.name, 18);
+  paragraph(rosterSlotSummaryText(data), 10, { gap: 6 });
+
+  heading('Colleagues', 13);
+  if (!data.members.length) {
+    paragraph('No colleagues on this roster.', 10, { gap: 4 });
+  } else {
+    data.members.forEach(m => {
+      twoCol(`${m.name}  (${m.cardType})`, `${m.slots} slot${m.slots === 1 ? '' : 's'}`, 10.5);
+    });
+    y += 4;
+  }
+
+  heading('Perks', 13);
+  if (!data.perks.length) {
+    paragraph('No perks on this roster.', 10, { gap: 4 });
+  } else {
+    data.perks.forEach(p => {
+      paragraph(`${p.name} — ${p.slots} slot${p.slots === 1 ? '' : 's'}`, 11, { bold: true, gap: 1 });
+      if (p.text) paragraph(p.text, 10, { gap: 4 });
+      else y += 4;
+    });
+  }
+
+  heading('Associates', 13);
+  if (!data.associates.length) {
+    paragraph('No Associates on this roster.', 10, { gap: 4 });
+  } else {
+    data.associates.forEach(a => {
+      paragraph(a.name, 12, { bold: true, gap: 2 });
+      if (!a.abilities.length) {
+        paragraph('No abilities picked yet.', 10, { gap: 4 });
+      } else {
+        a.abilities.forEach(ab => {
+          paragraph(ab.name, 10.5, { bold: true, gap: 1 });
+          if (ab.text) paragraph(ab.text, 10, { gap: 3 });
+          else y += 3;
+        });
+      }
+      y += 2;
+    });
+  }
+
+  const safeName = (data.name || 'roster').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'roster';
+  doc.save(`${safeName}-roster.pdf`);
+}
+
 // ---- Add-colleague picker ----
 const colleaguePickerModal = document.getElementById('colleague-picker-modal');
 const colleaguePickerList = document.getElementById('colleague-picker-list');

@@ -692,3 +692,41 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   .sheet-stage { padding: 0; background: white; }
   #sheet-canvas { width: 210mm; height: 297mm; box-shadow: none; }
 }
+
+/* ---- League Roster print sheet (Print Roster / Download PDF) ----
+   A plain, ink-friendly reference document, separate from the on-screen
+   roster columns and the Print Sheet's card canvas. Hidden on screen at
+   all times; shown full-page only while body.printing-roster-sheet is set
+   (see roster-print-btn's click handler in app.js), so it never interferes
+   with the rest of the app's own print rules above. */
+#roster-print-sheet { display: none; }
+
+.rps-header { margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+.rps-header h1 { margin: 0 0 4px; font-size: 22px; color: #000; }
+.rps-summary { font-size: 12px; color: #333; }
+.rps-section { margin-bottom: 22px; }
+.rps-section h2 {
+  font-size: 15px; margin: 0 0 8px; padding-bottom: 4px;
+  border-bottom: 1px solid #999; color: #000;
+}
+.rps-colleague-row {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 4px 0; border-bottom: 1px dotted #ccc; font-size: 12px; color: #000;
+}
+.rps-block { margin-bottom: 10px; page-break-inside: avoid; }
+.rps-block-name { font-weight: 700; font-size: 13px; color: #000; }
+.rps-block-meta { font-weight: 400; font-size: 11px; color: #555; }
+.rps-block-text { font-size: 12px; line-height: 1.4; margin: 2px 0 0; color: #111; }
+.rps-associate-block { margin-bottom: 14px; page-break-inside: avoid; }
+.rps-associate-name { font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #000; }
+.rps-empty { font-size: 12px; color: #777; font-style: italic; }
+
+@media print {
+  body.printing-roster-sheet > *:not(#roster-print-sheet) { display: none !important; }
+  body.printing-roster-sheet #roster-print-sheet {
+    display: block !important;
+    background: #fff;
+    color: #000;
+    padding: 0;
+  }
+}

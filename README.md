@@ -105,7 +105,11 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   — no accent lines. A Dark theme is also available (Card Background
   dropdown) if you want the punchier look for screen use, and two Classical
   (aged parchment) variants — with or without the background skull
-  watermark — for a heavier period feel.
+  watermark — for a heavier period feel. Under Classical, the DOWN and OUT
+  health pills render in an opaque grey (matching the Might/Finesse/Cunning
+  stat row) instead of a faint dark overlay — the Classical health bar
+  itself is a solid olive-khaki color, so the old faint fill barely showed
+  up against it and made DOWN/OUT hard to read.
 - **Image Frame (off by default)** — a checkbox next to the Portrait Image
   picker controls the bordered look around the portrait. Off (the default)
   drops the accent-colored border entirely, giving the portrait the full

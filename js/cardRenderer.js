@@ -107,9 +107,15 @@ const CLASSICAL_BASE = {
   placeholderText: 'rgba(36,27,19,0.45)',
   fixedTint: '#ebb185',
   fixedTint2: '#c1ac9c',
-  downOutFill: 'rgba(36,27,19,0.05)',
-  downOutBorder: 'rgba(36,27,19,0.4)',
-  downOutText: 'rgba(36,27,19,0.75)',
+  // Down/Out pills sit on the health bar's own olive-khaki background
+  // (healthBarBg above), so they need an opaque fill of their own — a
+  // low-alpha tint (like the other themes use) barely shows up against
+  // that background color, leaving Down/Out nearly unreadable. Match the
+  // grey already used for the Might/Finesse/Cunning stat row (fixedTint2)
+  // instead, with solid dark-ink border/text for contrast.
+  downOutFill: '#c1ac9c',
+  downOutBorder: 'rgba(36,27,19,0.45)',
+  downOutText: '#241b13',
   cornerAccentAlpha: 0,
   badgeFill: '#fdf8f0',
   badgeRing: '#865536',

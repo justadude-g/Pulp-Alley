@@ -110,7 +110,12 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   flattened to solid black; images are now re-encoded to preserve alpha
   instead of forcing JPEG.
 - **My Cards** — save cards locally in your browser (IndexedDB), edit or
-  delete them later, no server required.
+  delete them later, no server required. Click cards to select up to 9 for
+  the Print Sheet, or use "Select All" next to the counter to grab all of
+  them in one click instead of one at a time — it's a toggle, so pressing
+  it again clears the selection back to zero. With more than 9 saved
+  cards, Select All takes the first 9 and lets you know, matching the
+  Print Sheet's own per-page limit.
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
   (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight

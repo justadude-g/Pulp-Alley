@@ -834,9 +834,16 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
 const galleryGrid = document.getElementById('gallery-grid');
 const galleryEmpty = document.getElementById('gallery-empty');
 const selectedCountEl = document.getElementById('selected-count');
+const selectAllBtn = document.getElementById('select-all-btn');
+
+// Tracks the cards currently shown in the gallery (same order as
+// rendered), so Select All can pick "the first 9" consistently with what's
+// on screen without a redundant extra fetch from IndexedDB.
+let latestGalleryCards = [];
 
 async function refreshGallery() {
   const cards = await getAllCards();
+  latestGalleryCards = cards;
   galleryEmpty.style.display = cards.length ? 'none' : 'block';
   galleryGrid.innerHTML = '';
   cards.forEach(record => {
@@ -883,7 +890,24 @@ function toggleSelect(id) {
 
 function updateSelectedCount() {
   selectedCountEl.textContent = `${state.selected.size} / 9 selected`;
+  // A single toggle button: nothing selected -> "Select All" selects up to
+  // 9; anything selected (all or partial) -> "Deselect All" clears it, so
+  // pressing it a second time always gets you back to zero.
+  selectAllBtn.textContent = state.selected.size > 0 ? 'Deselect All' : 'Select All';
 }
+
+selectAllBtn.addEventListener('click', () => {
+  if (state.selected.size > 0) {
+    state.selected.clear();
+  } else {
+    const ids = latestGalleryCards.map(c => c.id).slice(0, 9);
+    ids.forEach(id => state.selected.add(id));
+    if (latestGalleryCards.length > 9) {
+      alert(`You have ${latestGalleryCards.length} saved cards — selected the first 9 for the A4 print sheet.`);
+    }
+  }
+  refreshGallery();
+});
 
 async function loadCardIntoForm(record) {
   const d = record.formData;

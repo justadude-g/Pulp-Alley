@@ -626,6 +626,12 @@ function collectFormData() {
     cardType: document.getElementById('f-cardType').value,
     accentColor: document.getElementById('f-accentColor').value,
     theme: document.getElementById('f-theme').value,
+    // "collection" is this card's user-defined Theme/category (e.g. "Star
+    // Wars", "Die Hard") — named differently from the "theme" field above
+    // (Card Background: ivory/classical/etc.) to avoid confusing the two
+    // completely separate concepts in code, even though both are labelled
+    // "Theme" somewhere in the UI... only this one actually is.
+    collection: document.getElementById('f-collection').value.trim(),
     abilityFontSize: +document.getElementById('f-abilityFontSize').value,
     name: document.getElementById('f-name').value,
     level: +document.getElementById('f-level').value,
@@ -806,6 +812,10 @@ document.getElementById('btn-save-card').addEventListener('click', async () => {
   };
   await saveCard(record);
   state.editingId = id;
+  // Refreshes the Theme autocomplete right away if this card introduced a
+  // brand-new Theme name, so it's available for the very next card without
+  // needing a trip through My Cards first.
+  getAllCards().then(refreshThemeOptions);
   saveStatus.textContent = `Saved “${data.name || 'Unnamed Character'}” to My Cards.`;
   setTimeout(() => { saveStatus.textContent = ''; }, 3500);
 });
@@ -853,21 +863,77 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   setTimeout(() => { saveStatus.textContent = ''; }, 2000);
 });
 
+// ---------------- Themes (user-defined card collections) ----------------
+// A card's "collection" is the free-text Theme the user typed in the
+// Designer (e.g. "Die Hard", "Star Wars") — kept under this name internally
+// so it's never confused with the pre-existing "theme" field, which is the
+// Card Background (ivory/classical/etc.). Both the Designer's autocomplete
+// list and the two Theme filter dropdowns (My Cards, League Roster's
+// colleague picker) are derived from whatever collections currently exist
+// across all saved cards, so a brand-new Theme name typed on any card shows
+// up everywhere else automatically — there's no separate place to manage
+// the list of Themes.
+const collectionInput = document.getElementById('f-collection');
+const collectionOptionsList = document.getElementById('collection-options');
+
+function distinctCollections(cards) {
+  const set = new Set();
+  cards.forEach(c => {
+    const name = (c.formData?.collection || '').trim();
+    if (name) set.add(name);
+  });
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+// Repopulates the Designer's Theme autocomplete plus both Theme filter
+// dropdowns from the current set of saved cards, preserving whatever each
+// filter dropdown currently has selected (so refreshing the list mid-filter
+// doesn't silently reset the user back to "All Themes").
+function refreshThemeOptions(cards) {
+  const names = distinctCollections(cards);
+  collectionOptionsList.innerHTML = names.map(n => `<option value="${escapeAttr(n)}"></option>`).join('');
+  [galleryThemeFilterSelect, colleagueThemeFilterSelect].forEach(sel => {
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All Themes</option>' + names.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
+    sel.value = names.includes(current) ? current : '';
+  });
+}
+
 // ---------------- Gallery ----------------
 const galleryGrid = document.getElementById('gallery-grid');
 const galleryEmpty = document.getElementById('gallery-empty');
+const galleryNoMatch = document.getElementById('gallery-no-match');
 const selectedCountEl = document.getElementById('selected-count');
 const selectAllBtn = document.getElementById('select-all-btn');
+const gallerySearchInput = document.getElementById('gallery-search');
+const galleryThemeFilterSelect = document.getElementById('gallery-theme-filter');
 
 // Tracks the cards currently shown in the gallery (same order as
-// rendered), so Select All can pick "the first 9" consistently with what's
-// on screen without a redundant extra fetch from IndexedDB.
+// rendered, i.e. after search/Theme filtering), so Select All can pick
+// "the first 9" consistently with what's on screen without a redundant
+// extra fetch from IndexedDB.
 let latestGalleryCards = [];
 
+gallerySearchInput.addEventListener('input', refreshGallery);
+galleryThemeFilterSelect.addEventListener('change', refreshGallery);
+
 async function refreshGallery() {
-  const cards = await getAllCards();
+  const allCards = await getAllCards();
+  refreshThemeOptions(allCards);
+
+  const searchText = gallerySearchInput.value.trim().toLowerCase();
+  const themeFilter = galleryThemeFilterSelect.value;
+  const cards = allCards.filter(c => {
+    const matchesSearch = !searchText || (c.formData?.name || '').toLowerCase().includes(searchText);
+    const matchesTheme = !themeFilter || (c.formData?.collection || '') === themeFilter;
+    return matchesSearch && matchesTheme;
+  });
+
   latestGalleryCards = cards;
-  galleryEmpty.style.display = cards.length ? 'none' : 'block';
+  const filtering = !!(searchText || themeFilter);
+  galleryEmpty.style.display = (!allCards.length && !filtering) ? 'block' : 'none';
+  galleryNoMatch.style.display = (allCards.length && filtering && !cards.length) ? 'block' : 'none';
   galleryGrid.innerHTML = '';
   cards.forEach(record => {
     const el = document.createElement('div');
@@ -937,6 +1003,7 @@ async function loadCardIntoForm(record) {
   document.getElementById('f-cardType').value = d.cardType;
   document.getElementById('f-accentColor').value = d.accentColor;
   document.getElementById('f-theme').value = d.theme || 'ivory';
+  document.getElementById('f-collection').value = d.collection || '';
   document.getElementById('f-portrait-frame').checked = !!d.portraitFrame;
   document.getElementById('f-abilityFontSize').value = d.abilityFontSize || 33;
   document.getElementById('f-name').value = d.name;
@@ -1587,9 +1654,13 @@ function downloadRosterPDF(data) {
 // ---- Add-colleague picker ----
 const colleaguePickerModal = document.getElementById('colleague-picker-modal');
 const colleaguePickerList = document.getElementById('colleague-picker-list');
+const colleagueSearchInput = document.getElementById('colleague-search');
+const colleagueThemeFilterSelect = document.getElementById('colleague-theme-filter');
 
 document.getElementById('open-colleague-picker').addEventListener('click', async () => {
   colleaguePickerModal.classList.remove('hidden');
+  colleagueSearchInput.value = '';
+  colleagueThemeFilterSelect.value = '';
   await renderColleaguePicker();
 });
 document.getElementById('close-colleague-picker').addEventListener('click', () => {
@@ -1598,13 +1669,26 @@ document.getElementById('close-colleague-picker').addEventListener('click', () =
 colleaguePickerModal.addEventListener('click', (e) => {
   if (e.target === colleaguePickerModal) colleaguePickerModal.classList.add('hidden');
 });
+colleagueSearchInput.addEventListener('input', renderColleaguePicker);
+colleagueThemeFilterSelect.addEventListener('change', renderColleaguePicker);
 
 async function renderColleaguePicker() {
   const cards = await getAllCards();
+  refreshThemeOptions(cards);
   const addedIds = new Set(rosterState.members.map(m => m.cardId));
-  const available = cards.filter(c => !addedIds.has(c.id));
+  const searchText = colleagueSearchInput.value.trim().toLowerCase();
+  const themeFilter = colleagueThemeFilterSelect.value;
+  const available = cards.filter(c => {
+    if (addedIds.has(c.id)) return false;
+    if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;
+    if (themeFilter && (c.formData?.collection || '') !== themeFilter) return false;
+    return true;
+  });
   if (!available.length) {
-    colleaguePickerList.innerHTML = '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>';
+    const allAdded = cards.length && cards.every(c => addedIds.has(c.id));
+    colleaguePickerList.innerHTML = allAdded
+      ? '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>'
+      : '<div class="library-empty">No cards match your search/Theme filter.</div>';
     return;
   }
   colleaguePickerList.innerHTML = available.map(c => `
@@ -1777,3 +1861,8 @@ importBackupFile.addEventListener('change', async (e) => {
 // ---------------- Init ----------------
 document.fonts.ready.then(updatePreview);
 updatePreview();
+// Populate the Designer's Theme autocomplete (and both Theme filter
+// dropdowns) from whatever's already saved, so it's ready immediately
+// rather than waiting for the user to first open My Cards or the roster's
+// colleague picker.
+getAllCards().then(refreshThemeOptions);

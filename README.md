@@ -162,7 +162,19 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   them in one click instead of one at a time — it's a toggle, so pressing
   it again clears the selection back to zero. With more than 9 saved
   cards, Select All takes the first 9 and lets you know, matching the
-  Print Sheet's own per-page limit.
+  Print Sheet's own per-page limit. A search box finds a card by (partial,
+  case-insensitive) name, and Select All only grabs whatever's currently
+  shown — handy once you've got more cards than fit on one screen.
+- **Themes — organize cards into your own collections** — the Card
+  Designer has an optional "Theme" field where you can type any category
+  you like ("Die Hard", "Star Wars", "Cyberpunk" — anything) to group
+  related cards. Once you've used a Theme on one card, it shows up in the
+  field's autocomplete so you can reuse it on the next one instead of
+  retyping it, and a "Filter by Theme" dropdown appears in both My Cards
+  and the League Roster's "Add from My Cards" picker, so you can narrow
+  either list down to just one Theme's cards. Leave it blank on any card
+  that doesn't need one — Theme is entirely optional and has no effect on
+  how the card itself renders.
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
   (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight

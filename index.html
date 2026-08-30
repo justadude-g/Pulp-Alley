@@ -72,6 +72,14 @@
       </div>
 
       <div class="field-row">
+        <label class="grow">Theme
+          <input type="text" id="f-collection" list="collection-options" placeholder="Type a new one or pick an existing Theme" maxlength="40">
+          <datalist id="collection-options"></datalist>
+        </label>
+      </div>
+      <p class="hint">Optional. Group cards under a Theme so they're easy to filter later in My Cards and League Roster. Leave blank for no Theme.</p>
+
+      <div class="field-row">
         <label class="grow">Character Name
           <input type="text" id="f-name" placeholder="The Raven" maxlength="40">
         </label>
@@ -196,6 +204,10 @@
     <div class="gallery-toolbar">
       <h2>My Cards</h2>
       <div class="gallery-meta">
+        <input type="text" id="gallery-search" class="gallery-search" placeholder="🔍 Search by name…">
+        <select id="gallery-theme-filter" class="theme-filter-select">
+          <option value="">All Themes</option>
+        </select>
         <span id="selected-count">0 / 9 selected</span>
         <button id="select-all-btn" class="btn-secondary">Select All</button>
         <button id="go-print" class="btn-primary">Go to Print Sheet →</button>
@@ -203,6 +215,7 @@
     </div>
     <div id="gallery-grid" class="gallery-grid"></div>
     <p id="gallery-empty" class="hint">No saved cards yet. Build one in the Card Designer tab and hit “Save to My Cards.”</p>
+    <p id="gallery-no-match" class="hint" style="display:none">No cards match your search/filter.</p>
   </div>
 </section>
 
@@ -367,6 +380,14 @@
     <div class="modal-header">
       <h2>Add from My Cards</h2>
       <button type="button" id="close-colleague-picker" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-toolbar">
+      <div class="field-row">
+        <select id="colleague-theme-filter" class="theme-filter-select">
+          <option value="">All Themes</option>
+        </select>
+        <input type="text" id="colleague-search" placeholder="🔍 Search by name…">
+      </div>
     </div>
     <div id="colleague-picker-list" class="library-list"></div>
   </div>

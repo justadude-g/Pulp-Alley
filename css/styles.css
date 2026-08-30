@@ -337,6 +337,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .gallery-toolbar h2 { font-family: 'Rajdhani', sans-serif; margin: 0; font-size: 22px; }
 .gallery-meta { display: flex; align-items: center; gap: 14px; }
 #selected-count { color: var(--text-dim); font-size: 13px; }
+.gallery-search { width: 180px; }
+.theme-filter-select { width: 150px; }
 
 .gallery-grid {
   display: grid;
@@ -603,6 +605,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 #library-search {
   width: 100%;
 }
+
+#colleague-theme-filter { width: 160px; flex: 0 0 auto; }
+#colleague-search { flex: 1 1 auto; }
 
 .library-list {
   overflow-y: auto;

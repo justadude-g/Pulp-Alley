@@ -10,9 +10,11 @@
 //    any card saved with it before this change).
 // 4. Level is now a 0-4 dropdown instead of a free-typed number (the
 //    rulebook maximum is 4) — old saved cards above 4 are clamped on load.
-// 5. The portrait box now runs flush to the card's left edge and flush to
-//    the Stats table's left edge, instead of floating in a margin with a
-//    gap before Stats.
+// 5. The portrait box's right edge runs flush to the Stats table's left
+//    edge, instead of floating with a gap before Stats. (Its left edge was
+//    x=0, the card's literal edge, when this test was written; a later
+//    change moved it to x=28 to align with the Abilities text margin
+//    instead — see verify31.js.)
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -47,19 +49,27 @@ function hue(r, g, b) {
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(400);
 
-  // ---- 1. Stats dice-pool value renders in Inter, not Rajdhani. ----
-  // Font-fingerprinting this from rendered pixels is unreliable (a single
-  // scanline through mixed-height digit glyphs doesn't give a clean,
-  // reproducible ink width), so this checks the actual font declaration in
-  // the source directly — a precise, non-flaky way to confirm the family
-  // actually in use, since we know exactly what changed.
+  // ---- 1. Stats dice-pool value renders in Inter, not Rajdhani, at the
+  // exact same size variable that drives the Stats label and the
+  // Abilities text (sharedFontSize) — a later change made Stats and
+  // Abilities share one literal font-size variable, not just visually
+  // similar sizes. Font-fingerprinting this from rendered pixels is
+  // unreliable (a single scanline through mixed-height digit glyphs
+  // doesn't give a clean, reproducible ink width), so this checks the
+  // actual source declaration directly.
   const rendererSrc = fs.readFileSync(path.join(ROOT, 'js', 'cardRenderer.js'), 'utf8');
   const dieStrFontMatch = rendererSrc.match(/const dieStr[\s\S]{0,200}/);
   assert(dieStrFontMatch, 'expected to find the dice-pool ("dieStr") rendering code in cardRenderer.js');
-  assert(/ctx\.font = '700 \d+px Inter, sans-serif'/.test(dieStrFontMatch[0]),
-    'expected the Stats dice-pool value to use an Inter font declaration (matching Abilities text), not Rajdhani');
+  assert(/ctx\.font = `700 \$\{sharedFontSize\}px Inter, sans-serif`/.test(dieStrFontMatch[0]),
+    'expected the Stats dice-pool value to use an Inter font declaration driven by sharedFontSize (same variable as Abilities text), not Rajdhani or a fixed size');
   assert(!/Rajdhani/.test(dieStrFontMatch[0]), 'expected the Stats dice-pool font declaration to no longer reference Rajdhani');
-  ok('Stats dice-pool value is declared in Inter (same family as Abilities text), not Rajdhani');
+  ok('Stats dice-pool value shares the exact sharedFontSize variable with the Abilities text, in Inter not Rajdhani');
+
+  // The stat label ("Brawl", "Finesse", etc.) uses the same sharedFontSize
+  // variable too, not a separate fixed size.
+  const statLabelFontDecl = rendererSrc.match(/ctx\.font = `600 \$\{sharedFontSize\}px Inter, sans-serif`/);
+  assert(statLabelFontDecl, 'expected the Stats label to use an Inter font declaration driven by sharedFontSize, matching the dice value and Abilities text');
+  ok('Stats label ("Brawl", "Finesse", etc.) shares the same sharedFontSize variable too');
 
   // Sanity-check it still actually renders something legible in that row
   // (not blank / not throwing) — a lightweight smoke check alongside the
@@ -72,7 +82,9 @@ function hue(r, g, b) {
     const rowY = 132, rowH = 430 / 6;
     const midY = Math.round(rowY + rowH / 2 + 1);
     const accent = ctx.getImageData(85, 59, 1, 1).data;
-    for (let x = 340 + 20; x <= 340 + 386 - 15; x++) {
+    // STATS = {x:440, y:132, w:316, h:430} as of the portrait/stats width
+    // rebalance (see verify31.js) — scan its content span for accent ink.
+    for (let x = 440 + 20; x <= 440 + 316 - 15; x++) {
       const d = ctx.getImageData(x, midY, 1, 1).data;
       if (Math.abs(d[0] - accent[0]) + Math.abs(d[1] - accent[1]) + Math.abs(d[2] - accent[2]) < 40) return true;
     }
@@ -91,7 +103,10 @@ function hue(r, g, b) {
 
   const tintPixel = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
-    return [...ctx.getImageData(400, 150, 1, 1).data.slice(0, 3)]; // Brawl row tint background
+    // Brawl row tint background. STATS now starts at x=440 (not 340), so
+    // this must sample inside the current Stats box, not the wider
+    // portrait that now occupies the space up to x=440 — see verify31.js.
+    return [...ctx.getImageData(460, 150, 1, 1).data.slice(0, 3)];
   });
   const tintHue = hue(...tintPixel);
   assert(tintHue >= 33, `expected the light Stats-row tint to read as a clear peach/orange (hue >= 33°), got hue ${tintHue.toFixed(1)}° from rgb(${tintPixel})`);
@@ -170,14 +185,17 @@ function hue(r, g, b) {
   assert.strictEqual(clampedLevel, '4', `expected a legacy level of 9 to clamp to the max valid option (4) on load, got ${clampedLevel}`);
   ok('A legacy card with an out-of-range level (from before the dropdown) clamps to a valid option on load');
 
-  // ---- 5. Portrait box runs flush to the card's left edge and flush to
-  // the Stats table (no side margins/gap). ----
+  // ---- 5. Portrait box's right edge stays flush to the Stats table (no
+  // gap). (Its left edge originally ran flush to the card's literal left
+  // edge (x=0) when this test was written; a later change moved it to
+  // x=28 to line up with the Abilities text's left margin instead — see
+  // verify31.js for that. Stats' own x also moved from 340 to 440 in that
+  // same change, freeing width for the portrait.) ----
   await page.click('#btn-new-card');
   await page.waitForTimeout(150);
   const box = await page.evaluate(() => getPortraitBox());
-  assert.strictEqual(box.x, 0, `expected the portrait box to start at the card's left edge (x=0), got x=${box.x}`);
-  assert.strictEqual(box.x + box.w, 340, `expected the portrait box's right edge to touch the Stats table's left edge (340), got ${box.x + box.w}`);
-  ok('Portrait box runs flush to the card\'s left edge and flush to the Stats table, with no gap');
+  assert.strictEqual(box.x + box.w, 440, `expected the portrait box's right edge to touch the Stats table's left edge (440), got ${box.x + box.w}`);
+  ok('Portrait box\'s right edge stays flush to the Stats table, with no gap');
 
   console.log('\nAll verify30 checks passed.');
   await browser.close();

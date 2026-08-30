@@ -104,9 +104,13 @@ function ok(label) { console.log('OK  ', label); }
   const portraitCornerPixel = await page.evaluate(() => {
     const c = document.getElementById('card-canvas');
     const ctx = c.getContext('2d');
-    // PORTRAIT box is {x:24, y:132, w:300, h:430} — sample near its top-left
-    // corner, which the circular fixture image leaves transparent.
-    const d = ctx.getImageData(30, 140, 1, 1).data;
+    // PORTRAIT box is currently {x:28, y:132, w:412, h:430} (moved by a
+    // later change to align with the Abilities text margin — see
+    // verify31.js). Sample near its top-left corner, at the same offset
+    // from the box origin this test has always used (6,8), which the
+    // circular fixture image leaves transparent — must stay clear of the
+    // rounded corner's accent stroke band, not just its interior.
+    const d = ctx.getImageData(28 + 6, 132 + 8, 1, 1).data;
     return [d[0], d[1], d[2]];
   });
   assert(!(portraitCornerPixel[0] < 20 && portraitCornerPixel[1] < 20 && portraitCornerPixel[2] < 20),
@@ -132,7 +136,7 @@ function ok(label) { console.log('OK  ', label); }
   const centerPixel = await page.evaluate(() => {
     const c = document.getElementById('card-canvas');
     const ctx = c.getContext('2d');
-    const d = ctx.getImageData(24 + 150, 132 + 215, 1, 1).data; // approx portrait box center
+    const d = ctx.getImageData(28 + 206, 132 + 215, 1, 1).data; // approx portrait box center (x:28,w:412,y:132,h:430)
     return [d[0], d[1], d[2]];
   });
   assert(centerPixel[0] > 150 && centerPixel[1] < 150, `expected reddish center pixel, got rgb(${centerPixel})`);

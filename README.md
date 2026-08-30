@@ -45,11 +45,15 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Classical (parchment) variant, every Card Type defaults to plain black
   instead — a bright accent clashes with the aged-parchment look — until
   you pick your own color.
-- **Consistent typeface across Stats and Abilities** — the Stats dice-pool
-  value (e.g. "3d10") renders in Inter, the same family used for Abilities
-  text, instead of the Rajdhani display face used for headline elements
-  (Level, Card Type tag, Health pills) — keeps the card's body text reading
-  as one consistent typeface rather than mixing two families.
+- **Stats and Abilities share one font size** — the Stats label ("Brawl",
+  "Finesse", etc.) and dice-pool value (e.g. "3d10") render in Inter, the
+  same family used for Abilities text, instead of the Rajdhani display face
+  used for headline elements (Level, Card Type tag, Health pills) — and,
+  beyond just matching family, all three literally share one font-size
+  value. Changing the Ability Text Size dropdown (Small/Medium/Large/Extra
+  Large) resizes Stats right along with the Abilities text, and if long
+  ability text triggers the auto-shrink-to-fit, Stats shrinks in lockstep
+  with it too — there's never a mismatch between how big the two read.
 - **Reset Stats to Card Type** — a "↺ Reset to Card Type" button above
   Stats re-applies the current Card Type's p. 9 dice budget on demand — for
   snapping a hand-edited stat back to spec without having to reselect Card
@@ -126,10 +130,15 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   badge itself is a bronze/brown medallion (dark ink ring, cream number)
   instead of a near-white cream circle — the white fill drew the eye away
   from the rest of the aged-parchment card.
-- **Portrait runs edge-to-edge** — the portrait box spans from the card's
-  left edge all the way to the Stats table's left edge, with no side
-  margins or gap, instead of floating in a narrower box — giving the
-  character image the largest area the layout allows.
+- **Portrait aligned with Abilities, Stats tightened up to make room** —
+  the portrait's left edge lines up with the Abilities text's left margin
+  (rather than sitting flush against the card's literal edge) so the two
+  columns of content read as aligned, and its right edge stays flush to
+  the Stats table with no gap. Stats itself starts further right than it
+  used to: its label-to-dice-value spacing is tighter, and its row
+  backgrounds now extend all the way to the card's right edge instead of
+  stopping short of it — the width that frees up goes to the portrait,
+  which is meaningfully wider as a result.
 - **Image Frame (off by default)** — a checkbox next to the Portrait Image
   picker controls the bordered look around the portrait. Off (the default)
   drops the accent-colored border entirely, giving the portrait the full

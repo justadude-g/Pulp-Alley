@@ -317,12 +317,16 @@ function drawSkullWatermark(ctx, cx, cy, w, color) {
   ctx.restore();
 }
 
-// Portrait box runs flush to the card's left edge and flush to the Stats
-// table's left edge (no side margins/gap), giving the image the largest
-// possible area instead of floating in a 24px-margin box with a 16px gap
-// before Stats.
-const PORTRAIT = { x: 0, y: 132, w: 340, h: 430 };
-const STATS = { x: 340, y: 132, w: 386, h: 430 };
+// Portrait's left edge lines up with the Abilities text's left inset
+// (abilLeft, below) rather than the card's literal edge, so the two
+// columns of content read as aligned; its right edge stays flush to the
+// Stats table's left edge (no gap). Stats itself now runs flush to the
+// card's right edge (background fill included) instead of stopping short
+// of it, and starts further right than before — tightening the label-to-
+// dice-value gap inside each row — which hands the reclaimed width to the
+// portrait.
+const PORTRAIT = { x: 28, y: 132, w: 412, h: 430 };
+const STATS = { x: 440, y: 132, w: CARD_W - 440, h: 430 };
 const NAME_BAR_H = 118;
 
 function getPortraitBox() { return { ...PORTRAIT }; }
@@ -506,6 +510,45 @@ function renderCard(canvas, data) {
     ctx.stroke();
   }
 
+  // ---- Abilities geometry + shared font size (computed before Stats so
+  // Stats can render at the exact same final size — see below) ----
+  const abilTop = PORTRAIT.y + PORTRAIT.h + 22;
+  const abilLeft = 28;
+  const abilRight = CARD_W - 28;
+  const abilMaxWidth = abilRight - abilLeft;
+  const healthBarH = 78;
+  const abilBottom = CARD_H - healthBarH - (data.quote ? 72 : 14);
+
+  const abilities = (data.abilities || []).filter(a => a.name || a.text);
+  // Stats (labels + dice values) and Abilities text all read as one
+  // consistent typeface at one consistent size — sharedFontSize starts at
+  // the selected Ability Text Size and, if the abilities are long enough
+  // to need it, auto-shrinks to fit; Stats always renders at whatever
+  // sharedFontSize ends up being, never a different fixed size.
+  let sharedFontSize = data.abilityFontSize || 33;
+  let lineHeight;
+  if (abilities.length) {
+    const buildBlocks = (fs) => {
+      ctx.font = `400 ${fs}px Inter, sans-serif`;
+      lineHeight = Math.round(fs * 1.28);
+      let totalLines = 0;
+      const out = abilities.map(a => {
+        const nameStr = a.name ? a.name + (a.text ? ': ' : '') : '';
+        const full = nameStr + (a.text || '');
+        const lines = wrapLines(ctx, full, abilMaxWidth);
+        totalLines += lines.length;
+        return { nameStr, text: a.text || '', lines };
+      });
+      return { out, totalLines };
+    };
+    var res = buildBlocks(sharedFontSize);
+    while ((res.totalLines * (sharedFontSize * 1.28) + (abilities.length - 1) * 10) > (abilBottom - abilTop) && sharedFontSize > 16) {
+      sharedFontSize -= 1;
+      res = buildBlocks(sharedFontSize);
+    }
+    lineHeight = Math.round(sharedFontSize * 1.28);
+  }
+
   // ---- Stats table ----
   {
     const rows = [
@@ -528,19 +571,17 @@ function renderCard(canvas, data) {
         ctx.globalAlpha = 1;
       }
       ctx.fillStyle = T.textPrimary;
-      ctx.font = '600 28px Inter, sans-serif';
+      ctx.font = `600 ${sharedFontSize}px Inter, sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(label, STATS.x + 20, ry + rowH / 2 + 1);
 
-      // Dice pool is the single most important thing to read at a glance
-      // during play, so it's set larger than the stat label. Uses Inter
-      // (same family as the Abilities text) rather than the Rajdhani
-      // display face used for headline elements (Level, Card Type tag,
-      // Health pills) — keeps the card's two text blocks (Stats + Abilities)
-      // reading as one consistent typeface instead of mixing two families.
+      // Dice pool value uses the same Inter family and the same size as
+      // the stat label and the Abilities text (sharedFontSize) — bold
+      // weight keeps it the visual focal point of the row without making
+      // it a different size from everything else on the card.
       const dieStr = val ? `${val.n}d${val.d}` : '—';
-      ctx.font = '700 32px Inter, sans-serif';
+      ctx.font = `700 ${sharedFontSize}px Inter, sans-serif`;
       ctx.textAlign = 'right';
       ctx.fillStyle = accent;
       ctx.fillText(dieStr, STATS.x + STATS.w - 20, ry + rowH / 2 + 1);
@@ -551,14 +592,6 @@ function renderCard(canvas, data) {
     ctx.strokeRect(STATS.x + 0.5, STATS.y + 0.5, STATS.w - 1, STATS.h - 1);
   }
 
-  // ---- Abilities + quote area ----
-  const abilTop = PORTRAIT.y + PORTRAIT.h + 22;
-  const abilLeft = 28;
-  const abilRight = CARD_W - 28;
-  const abilMaxWidth = abilRight - abilLeft;
-  const healthBarH = 78;
-  const abilBottom = CARD_H - healthBarH - (data.quote ? 72 : 14);
-
   if (T.skullWatermark) {
     drawSkullWatermark(ctx, CARD_W / 2, (abilTop + abilBottom) / 2, 260, T.skullWatermark);
   }
@@ -566,29 +599,8 @@ function renderCard(canvas, data) {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
-  const abilities = (data.abilities || []).filter(a => a.name || a.text);
   if (abilities.length) {
-    let fontSize = data.abilityFontSize || 33;
-    let lineHeight;
-    const buildBlocks = (fs) => {
-      ctx.font = `400 ${fs}px Inter, sans-serif`;
-      lineHeight = Math.round(fs * 1.28);
-      let totalLines = 0;
-      const out = abilities.map(a => {
-        const nameStr = a.name ? a.name + (a.text ? ': ' : '') : '';
-        const full = nameStr + (a.text || '');
-        const lines = wrapLines(ctx, full, abilMaxWidth);
-        totalLines += lines.length;
-        return { nameStr, text: a.text || '', lines };
-      });
-      return { out, totalLines };
-    };
-    let res = buildBlocks(fontSize);
-    while ((res.totalLines * (fontSize * 1.28) + (abilities.length - 1) * 10) > (abilBottom - abilTop) && fontSize > 16) {
-      fontSize -= 1;
-      res = buildBlocks(fontSize);
-    }
-    lineHeight = Math.round(fontSize * 1.28);
+    const fontSize = sharedFontSize;
     let y = abilTop + fontSize;
     for (const block of res.out) {
       ctx.font = `400 ${fontSize}px Inter, sans-serif`;

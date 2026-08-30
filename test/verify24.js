@@ -31,11 +31,12 @@ function ok(label) { console.log('OK  ', label); }
   await page.selectOption('#f-theme', 'light');
   await page.waitForTimeout(150);
 
-  // The portrait box now runs flush to the card's left edge and flush to
-  // the Stats table (x:0-340, y:132-562, see PORTRAIT in cardRenderer.js)
-  // — there's no open background margin beside it any more, only above and
-  // below it (the card's vertical gradient means a comparison pixel must
-  // share the same y as its subject, since color only varies with y).
+  // The portrait box currently runs {x:28, y:132, w:412, h:430} — its left
+  // edge lines up with the Abilities text margin (not the card's literal
+  // edge) and its right edge stays flush to the Stats table (x:440), so
+  // there's no open background margin beside it, only above and below (the
+  // card's vertical gradient means a comparison pixel must share the same
+  // y as its subject, since color only varies with y).
   async function borderPixel() {
     // Just above the portrait box's flat top edge, horizontally centered
     // so it's away from the rounded corners. Never touched by the
@@ -43,7 +44,7 @@ function ok(label) { console.log('OK  ', label); }
     // Frame on would paint here.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(170, 131, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(234, 131, 1, 1).data.slice(0, 3)];
     });
   }
   async function plainBackgroundPixel() {
@@ -88,21 +89,25 @@ function ok(label) { console.log('OK  ', label); }
 
   async function transparentCornerPixel() {
     // Near the portrait box's top-left corner (same offset from the box's
-    // origin verify15 originally used), which the circular fixture leaves
+    // origin verify15 originally used — (6,8) — which stays safely inside
+    // the rounded corner's fill and clear of its stroke band regardless of
+    // where the box origin itself sits), which the circular fixture leaves
     // transparent.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(6, 140, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(28 + 6, 140, 1, 1).data.slice(0, 3)];
     });
   }
   async function plainBackgroundNearTop() {
     // Same y as the corner sample (vertical gradient). The portrait
-    // (x:0-340) and Stats (x:340-726) boxes now span the row at y=140
-    // between them with no gap, so the only open background left at that
-    // y is past Stats' right edge, near the card's right margin.
+    // (x:28-440) and Stats (x:440-756) boxes now span the row at y=140
+    // all the way from x=28 to the card's right edge with no gap, so the
+    // only open background left at that y is the sliver left of the
+    // portrait's own left edge (x:0-28, since it's now inset to match the
+    // Abilities text margin instead of starting at the card's edge).
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(745, 140, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(10, 140, 1, 1).data.slice(0, 3)];
     });
   }
 

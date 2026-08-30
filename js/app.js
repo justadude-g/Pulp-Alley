@@ -52,8 +52,7 @@ function renderAbilityRows() {
         <input type="text" placeholder="Ability name (e.g. Marksman)" value="${escapeAttr(a.name)}" data-idx="${i}" data-field="name" autocomplete="off">
         ${renamed ? `<div class="ability-rename-note">Originally: <strong>${escapeHtml(a.baseName)}</strong> · <a href="#" class="ability-reset-name" data-idx="${i}">reset</a></div>` : ''}
       </div>
-      <textarea placeholder="Ability description..." data-idx="${i}" data-field="text"${isOfficial ? ' readonly' : ''}>${escapeHtml(a.text)}</textarea>
-      ${isOfficial ? '<p class="ability-text-locked-note">🔒 Official rules text — not editable. Rename the ability above if you want, its effect stays as written.</p>' : ''}
+      <textarea placeholder="Ability description..." data-idx="${i}" data-field="text">${escapeHtml(a.text)}</textarea>
       <button type="button" class="ability-remove" data-idx="${i}">Remove</button>
     `;
     abilitiesList.appendChild(row);
@@ -239,6 +238,20 @@ function addAbilityToCard(ability) {
 
 function escapeHtml(s) { return (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+// Formats a Date as YYYY-MM-DD using the browser's own local timezone.
+// date.toISOString() (used for the export backup filename until this fix)
+// always reports UTC regardless of the computer's clock/timezone, so
+// anyone west of UTC (all of North America, for instance) could get a
+// filename dated a day ahead of their actual local date once past ~5-8pm.
+// Reading the local getters (getFullYear/getMonth/getDate) instead makes
+// the filename match whatever date it actually is where the user is.
+function localDateStamp(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 // ---------------- Ability Library modal ----------------
 const libraryModal = document.getElementById('ability-library-modal');
@@ -1812,7 +1825,7 @@ document.getElementById('btn-export-backup').addEventListener('click', async () 
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const stamp = new Date(data.exportedAt).toISOString().slice(0, 10);
+  const stamp = localDateStamp(new Date(data.exportedAt));
   const link = document.createElement('a');
   link.download = `pulp-alley-backup-${stamp}.json`;
   link.href = url;

@@ -63,8 +63,10 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
 - **Ability autocomplete** — start typing an ability name and pick from all
   153 official abilities (Level 1–4 + Epic, transcribed from the Core Rules,
   plus the "New Special Burst Abilities" and "Non-Player Characters: Advanced
-  Abilities" supplements) to fill in its exact rules text automatically. You
-  can still type any custom/homebrew ability name — it just won't autocomplete.
+  Abilities" supplements) to fill in its exact rules text automatically. That
+  text is a starting point, not locked in — edit it freely afterward to tweak
+  wording or write a homebrew variant, same as the name. You can still type
+  any custom/homebrew ability name from scratch — it just won't autocomplete.
 - **Ability Library** — "Browse Ability Library" opens a searchable, filterable
   catalog of all 153 abilities sorted by level exactly as in the rulebook
   (Level 1 → 2 → 3 → 4 → Epic). Filter to one level or search by name/text,
@@ -226,7 +228,10 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   this browser's IndexedDB (see Data & privacy below), so "Export Backup" in
   the top bar bundles all of it — including portrait images and rendered
   card art, already embedded as data URLs on each record — into one JSON
-  file. "Import Backup" reads that file back in on this browser, a
+  file, named `pulp-alley-backup-YYYY-MM-DD.json` using your computer's own
+  local date (not UTC) — so it always matches whatever date it actually is
+  where you are, even late in the evening when UTC has already rolled over
+  to the next day. "Import Backup" reads that file back in on this browser, a
   different browser, or a different device. Import merges by ID: anything
   in the backup overwrites a local card/roster with the same ID, but
   nothing already saved locally is deleted.

@@ -1,7 +1,8 @@
 // verify13.js — Abilities hint text split into short paragraphs, and the
-// ability description textarea becomes read-only (locked to the official
-// rules text) once an ability is picked from autocomplete/library, while
-// freeform/homebrew abilities (typed by hand, never picked) stay editable.
+// ability description textarea stays fully editable even after picking an
+// ability from autocomplete/library (the earlier "locked to official rules
+// text" behavior has been removed — the library text is just a starting
+// point the player can freely rewrite).
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -29,7 +30,8 @@ function ok(label) { console.log('OK  ', label); }
   assert(hints[2].includes('rename an ability'), `unexpected hint[2]: ${hints[2]}`);
   ok('Abilities intro hint is split into 3 short paragraphs');
 
-  // ---- 2. Picking an official ability locks its text ----
+  // ---- 2. Picking an official ability fills in its text, but leaves it
+  // fully editable (no readonly attribute, no "locked" note). ----
   await page.click('#open-ability-library');
   await page.fill('#library-search', 'Marksman');
   await page.waitForTimeout(150);
@@ -39,32 +41,36 @@ function ok(label) { console.log('OK  ', label); }
 
   let textarea = await page.$('.ability-item textarea[data-field="text"]');
   let isReadonly = await textarea.evaluate(el => el.readOnly);
-  assert.strictEqual(isReadonly, true, 'expected the picked ability\'s text to be readonly');
-  ok('Picking "Marksman" from the library locks its description text');
+  assert.strictEqual(isReadonly, false, 'expected the picked ability\'s text to NOT be readonly');
+  ok('Picking "Marksman" from the library leaves its description text editable');
 
-  const lockNoteVisible = await page.isVisible('.ability-text-locked-note');
-  assert.strictEqual(lockNoteVisible, true, 'expected a "locked" note under the readonly textarea');
-  ok('A "locked" note explains why the text can\'t be edited');
+  const lockNoteCount = await page.locator('.ability-text-locked-note').count();
+  assert.strictEqual(lockNoteCount, 0, 'expected no "locked" note anywhere, the lock feature has been removed');
+  ok('No "locked" note appears — the text-lock feature is gone');
 
-  // Attempting to type into a readonly textarea via the keyboard should not change its value.
-  const before = await textarea.inputValue();
+  // Typing into the textarea should actually change its value now.
+  const officialText = await textarea.inputValue();
   await textarea.click();
-  await page.keyboard.type('trying to sneak in an edit');
-  const after = await textarea.inputValue();
-  assert.strictEqual(after, before, 'expected readonly textarea value to be unchanged after attempted typing');
-  ok('Typing into the locked textarea has no effect');
+  await textarea.fill('A custom rewritten effect for this character.');
+  const afterEdit = await textarea.inputValue();
+  assert.strictEqual(afterEdit, 'A custom rewritten effect for this character.', 'expected the textarea to accept edits');
+  assert.notStrictEqual(afterEdit, officialText, 'expected the edited text to differ from the original official wording');
+  ok('The description text can be freely edited after picking an ability from the library');
 
-  // Renaming should NOT unlock the text (only the name is customizable).
+  // Renaming the ability (name field) still works independently, and the
+  // hand-edited description survives the rename/re-render.
   const nameInput = await page.$('.ability-item input[data-field="name"]');
   await nameInput.fill('Sharpshooter');
   await page.click('#f-name'); // blur
   await page.waitForTimeout(250);
   textarea = await page.$('.ability-item textarea[data-field="text"]');
+  const textAfterRename = await textarea.inputValue();
+  assert.strictEqual(textAfterRename, 'A custom rewritten effect for this character.', 'expected the hand-edited text to survive renaming the ability');
   isReadonly = await textarea.evaluate(el => el.readOnly);
-  assert.strictEqual(isReadonly, true, 'expected text to remain locked after renaming the ability');
-  ok('Renaming "Marksman" to "Sharpshooter" keeps its rules text locked');
+  assert.strictEqual(isReadonly, false, 'expected text to remain editable after renaming the ability');
+  ok('Renaming "Marksman" to "Sharpshooter" keeps the custom-edited text and stays editable');
 
-  // ---- 3. A freeform/homebrew ability (typed by hand) stays editable ----
+  // ---- 3. A freeform/homebrew ability (typed by hand) is editable too, as before. ----
   await page.click('#btn-new-card');
   await page.waitForTimeout(150);
   await page.fill('.ability-item input[data-field="name"]', 'Homebrew Ability');

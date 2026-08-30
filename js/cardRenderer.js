@@ -458,8 +458,13 @@ function renderCard(canvas, data) {
   // same `bg` gradient painted for the whole card above) so a
   // transparent-background PNG blends directly into the card instead of
   // sitting inside a visibly tinted box, and skips the border entirely so
-  // the portrait gets the full box. Fully opaque uploads cover this fill
-  // completely either way, so it only shows through actual transparency.
+  // the portrait gets the full box. At the default Zoom (1x, the tightest
+  // "just covers the box" size) a fully opaque upload covers this fill
+  // completely either way, so it only shows through actual transparency —
+  // but Zoom can also go below 1x (view.scale below) to shrink the image
+  // and show more of it, in which case this same fill shows as visible
+  // padding around an otherwise-opaque image too, not just through
+  // transparency.
   const showFrame = !!data.portraitFrame;
   roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
   ctx.save();

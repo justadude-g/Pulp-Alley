@@ -13,7 +13,11 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   buried at the bottom of the form, so it's always in view. Upload your own
   character artwork with the file picker, or just drop an image file
   anywhere on the card preview — then zoom/drag it directly on the preview
-  to frame it.
+  to frame it. Zoom runs from 0.3x up to 3x: 1x (the default) crops the
+  image just enough to fill the portrait box edge-to-edge, same as before;
+  below 1x shrinks the image so more of it fits — handy for a miniature
+  photo with a lot of surrounding space — and the card's own background
+  fills in as padding around it instead of forcing a crop.
 - **Level, Health & Stats auto-fill by Card Type** — Leader, Sidekick, Ally,
   Follower, and Gang each have a rules-fixed Level, starting Health die, and
   starting stat-dice budget (Core Rules p. 8-9: Leader = Level 4/d10 with 4

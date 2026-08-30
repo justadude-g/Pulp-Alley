@@ -1,4 +1,5 @@
 node_modules/
 test/*.png
 !test/fixture-transparent.png
+!test/fixture-opaque-square.png
 .DS_Store

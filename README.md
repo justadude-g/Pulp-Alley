@@ -18,6 +18,13 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   below 1x shrinks the image so more of it fits — handy for a miniature
   photo with a lot of surrounding space — and the card's own background
   fills in as padding around it instead of forcing a crop.
+- **Duplicate** — "⧉ Duplicate" next to "New Card" makes a variation of
+  the character you're currently editing: every field (Stats, Abilities,
+  Quote, Theme, Card Background, the portrait art and its pan/zoom framing)
+  carries over as-is, the name gets " (copy)" appended, and it's staged as
+  a new, unsaved card — hit Save to keep both the original and the
+  variation as separate cards in My Cards. Handy for a squad of similar
+  Gang members, or a Leader's alternate-Level/alternate-loadout version.
 - **Level, Health & Stats auto-fill by Card Type** — Leader, Sidekick, Ally,
   Follower, and Gang each have a rules-fixed Level, starting Health die, and
   starting stat-dice budget (Core Rules p. 8-9: Leader = Level 4/d10 with 4

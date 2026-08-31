@@ -876,6 +876,28 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   setTimeout(() => { saveStatus.textContent = ''; }, 2000);
 });
 
+// Duplicate: for making variations of a character (different Level,
+// different Abilities, a recolored gang lieutenant, etc.) without
+// retyping everything. Unlike New Card, this deliberately leaves every
+// field — Stats, Abilities, Quote, Theme, Card Background, portrait art
+// and its pan/zoom framing — exactly as currently shown; the only two
+// things that change are clearing state.editingId/createdAt (so Save
+// writes a brand-new record instead of overwriting the card this was
+// copied from) and appending " (copy)" to the name so the two are easy
+// to tell apart in My Cards until renamed. Nothing is saved to My Cards
+// by this action itself — it just stages the duplicate in the form for
+// editing, same as loading any other card would.
+document.getElementById('btn-duplicate-card').addEventListener('click', () => {
+  const nameField = document.getElementById('f-name');
+  const currentName = nameField.value.trim();
+  state.editingId = null;
+  state.createdAt = null;
+  nameField.value = currentName ? `${currentName} (copy)` : '(copy)';
+  updatePreview();
+  saveStatus.textContent = `Duplicated “${currentName || 'Unnamed Character'}” — edit the copy, then Save to keep both.`;
+  setTimeout(() => { saveStatus.textContent = ''; }, 4000);
+});
+
 // ---------------- Themes (user-defined card collections) ----------------
 // A card's "collection" is the free-text Theme the user typed in the
 // Designer (e.g. "Die Hard", "Star Wars") — kept under this name internally

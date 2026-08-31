@@ -64,6 +64,12 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Type (which would also re-trigger the Level/Health/Accent Color auto-fill).
   Hidden for Gang (has its own model-based auto-fill) and Villain/Creature/
   Custom (no rulebook default).
+- **No specific skill in a stat** — each stat's dice-type dropdown now
+  offers 0 alongside the normal 6/8/10/12. Set a skill to 0 dice of 0 faces
+  ("0" and "0") for a character who has no rating in it at all, and the
+  card prints "–d–" in that row instead of the literal "0d0" — a clear,
+  deliberate "nothing here" mark rather than something that reads as a
+  data-entry mistake.
 - **Ability autocomplete** — start typing an ability name and pick from all
   153 official abilities (Level 1–4 + Epic, transcribed from the Core Rules,
   plus the "New Special Burst Abilities" and "Non-Player Characters: Advanced

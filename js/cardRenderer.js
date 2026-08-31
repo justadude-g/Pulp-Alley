@@ -584,8 +584,12 @@ function renderCard(canvas, data) {
       // Dice pool value uses the same Inter family and the same size as
       // the stat label and the Abilities text (sharedFontSize) — bold
       // weight keeps it the visual focal point of the row without making
-      // it a different size from everything else on the card.
-      const dieStr = val ? `${val.n}d${val.d}` : '—';
+      // it a different size from everything else on the card. A skill set
+      // to 0d0 means the character has no rating in it at all (as opposed
+      // to a normal, if weak, 1d6) — printed as "–d–" instead of the
+      // literal "0d0", which reads as a data-entry mistake rather than a
+      // deliberate "no skill here" mark.
+      const dieStr = !val ? '—' : (val.n === 0 && val.d === 0) ? '–d–' : `${val.n}d${val.d}`;
       ctx.font = `700 ${sharedFontSize}px Inter, sans-serif`;
       ctx.textAlign = 'right';
       ctx.fillStyle = accent;

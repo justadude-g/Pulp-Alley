@@ -48,6 +48,7 @@ body {
 
 .backup-actions { display: flex; align-items: center; gap: 8px; }
 .backup-actions .btn-secondary { padding: 7px 12px; font-size: 12.5px; }
+.backup-theme-filter { width: 130px; }
 
 .tabs { display: flex; gap: 6px; }
 .tab-btn {

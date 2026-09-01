@@ -21,7 +21,10 @@
     <button class="tab-btn" data-tab="print">Print Sheet (A4)</button>
   </nav>
   <div class="backup-actions">
-    <button type="button" id="btn-export-backup" class="btn-secondary" title="Download every saved card and roster as one file">⬇ Export Backup</button>
+    <select id="backup-theme-filter" class="theme-filter-select backup-theme-filter" title="Limit Export Backup to one Theme — leave as All Themes to export everything, including rosters">
+      <option value="">All Themes</option>
+    </select>
+    <button type="button" id="btn-export-backup" class="btn-secondary" title="Download saved cards (and, for a full export, rosters too) as one file">⬇ Export Backup</button>
     <button type="button" id="btn-import-backup" class="btn-secondary" title="Restore cards and rosters from a backup file">⬆ Import Backup</button>
     <input type="file" id="import-backup-file" accept="application/json,.json" style="display:none">
   </div>

@@ -252,7 +252,14 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   file, named `pulp-alley-backup-YYYY-MM-DD.json` using your computer's own
   local date (not UTC) — so it always matches whatever date it actually is
   where you are, even late in the evening when UTC has already rolled over
-  to the next day. "Import Backup" reads that file back in on this browser, a
+  to the next day. A Theme dropdown next to the button defaults to "All
+  Themes" (everything, as above); picking a specific Theme instead exports
+  only that Theme's cards, named e.g. `pulp-alley-backup-star-wars-YYYY-MM-DD.json`
+  — handy for keeping exports small and self-contained once you've got a lot
+  of cards across several Themes. A Theme-filtered export leaves rosters out
+  entirely, since a roster can mix colleagues from more than one Theme, so
+  there's no single Theme a roster itself belongs to. "Import Backup" reads
+  any backup file back in — full or Theme-filtered — on this browser, a
   different browser, or a different device. Import merges by ID: anything
   in the backup overwrites a local card/roster with the same ID, but
   nothing already saved locally is deleted.

@@ -122,12 +122,24 @@ async function getRoster(id) {
 const BACKUP_APP_ID = 'pulp-alley-card-maker';
 const BACKUP_SCHEMA_VERSION = 1;
 
-async function exportAllData() {
-  const [cards, rosters] = await Promise.all([getAllCards(), getAllRosters()]);
+// themeFilter, when given, limits the export to cards whose Theme
+// (formData.collection) matches exactly, and drops rosters from the export
+// entirely — a roster can mix colleagues from several Themes, so there's no
+// single Theme a roster itself belongs to, and silently including every
+// roster in a "Star Wars only" export would defeat the point of filtering
+// (keeping a themed export small and self-contained). Leaving themeFilter
+// unset exports everything, unchanged from before this option existed.
+async function exportAllData(themeFilter) {
+  const [allCards, allRosters] = await Promise.all([getAllCards(), getAllRosters()]);
+  const cards = themeFilter
+    ? allCards.filter(c => (c.formData?.collection || '') === themeFilter)
+    : allCards;
+  const rosters = themeFilter ? [] : allRosters;
   return {
     app: BACKUP_APP_ID,
     schemaVersion: BACKUP_SCHEMA_VERSION,
     exportedAt: Date.now(),
+    themeFilter: themeFilter || null,
     cards,
     rosters,
   };

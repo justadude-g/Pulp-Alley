@@ -910,6 +910,7 @@ document.getElementById('btn-duplicate-card').addEventListener('click', () => {
 // the list of Themes.
 const collectionInput = document.getElementById('f-collection');
 const collectionOptionsList = document.getElementById('collection-options');
+const backupThemeFilterSelect = document.getElementById('backup-theme-filter');
 
 function distinctCollections(cards) {
   const set = new Set();
@@ -927,7 +928,7 @@ function distinctCollections(cards) {
 function refreshThemeOptions(cards) {
   const names = distinctCollections(cards);
   collectionOptionsList.innerHTML = names.map(n => `<option value="${escapeAttr(n)}"></option>`).join('');
-  [galleryThemeFilterSelect, colleagueThemeFilterSelect].forEach(sel => {
+  [galleryThemeFilterSelect, colleagueThemeFilterSelect, backupThemeFilterSelect].forEach(sel => {
     if (!sel) return;
     const current = sel.value;
     sel.innerHTML = '<option value="">All Themes</option>' + names.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
@@ -1843,17 +1844,26 @@ function renderPerkLibrary() {
 // on this browser, a different browser, or a different device entirely.
 const importBackupFile = document.getElementById('import-backup-file');
 
+// Turns a Theme name into a safe filename fragment ("Star Wars" -> "star-wars").
+function slugify(text) {
+  return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 document.getElementById('btn-export-backup').addEventListener('click', async () => {
-  const data = await exportAllData();
+  const themeFilter = backupThemeFilterSelect.value;
+  const data = await exportAllData(themeFilter || undefined);
   if (!data.cards.length && !data.rosters.length) {
-    alert('Nothing saved yet — build and save a card or roster first.');
+    alert(themeFilter
+      ? `No cards found in the “${themeFilter}” Theme yet.`
+      : 'Nothing saved yet — build and save a card or roster first.');
     return;
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const stamp = localDateStamp(new Date(data.exportedAt));
+  const themeSuffix = themeFilter ? `-${slugify(themeFilter)}` : '';
   const link = document.createElement('a');
-  link.download = `pulp-alley-backup-${stamp}.json`;
+  link.download = `pulp-alley-backup${themeSuffix}-${stamp}.json`;
   link.href = url;
   link.click();
   URL.revokeObjectURL(url);

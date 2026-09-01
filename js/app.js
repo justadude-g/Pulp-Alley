@@ -943,6 +943,7 @@ const selectedCountEl = document.getElementById('selected-count');
 const selectAllBtn = document.getElementById('select-all-btn');
 const gallerySearchInput = document.getElementById('gallery-search');
 const galleryThemeFilterSelect = document.getElementById('gallery-theme-filter');
+const galleryTypeFilterSelect = document.getElementById('gallery-type-filter');
 
 // Tracks the cards currently shown in the gallery (same order as
 // rendered, i.e. after search/Theme filtering), so Select All can pick
@@ -952,6 +953,7 @@ let latestGalleryCards = [];
 
 gallerySearchInput.addEventListener('input', refreshGallery);
 galleryThemeFilterSelect.addEventListener('change', refreshGallery);
+galleryTypeFilterSelect.addEventListener('change', refreshGallery);
 
 async function refreshGallery() {
   const allCards = await getAllCards();
@@ -959,14 +961,16 @@ async function refreshGallery() {
 
   const searchText = gallerySearchInput.value.trim().toLowerCase();
   const themeFilter = galleryThemeFilterSelect.value;
+  const typeFilter = galleryTypeFilterSelect.value;
   const cards = allCards.filter(c => {
     const matchesSearch = !searchText || (c.formData?.name || '').toLowerCase().includes(searchText);
     const matchesTheme = !themeFilter || (c.formData?.collection || '') === themeFilter;
-    return matchesSearch && matchesTheme;
+    const matchesType = !typeFilter || (c.formData?.cardType || '') === typeFilter;
+    return matchesSearch && matchesTheme && matchesType;
   });
 
   latestGalleryCards = cards;
-  const filtering = !!(searchText || themeFilter);
+  const filtering = !!(searchText || themeFilter || typeFilter);
   galleryEmpty.style.display = (!allCards.length && !filtering) ? 'block' : 'none';
   galleryNoMatch.style.display = (allCards.length && filtering && !cards.length) ? 'block' : 'none';
   galleryGrid.innerHTML = '';

@@ -183,7 +183,11 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   cards, Select All takes the first 9 and lets you know, matching the
   Print Sheet's own per-page limit. A search box finds a card by (partial,
   case-insensitive) name, and Select All only grabs whatever's currently
-  shown — handy once you've got more cards than fit on one screen.
+  shown — handy once you've got more cards than fit on one screen. A
+  "Card Type" filter dropdown next to the search box narrows My Cards down
+  to a single type (Leader, Sidekick, Ally, Follower, Villain, Creature,
+  Gang, Custom) and combines with the Theme filter below, so e.g. "Leaders
+  only from the Star Wars Theme" is one dropdown pick each.
 - **Themes — organize cards into your own collections** — the Card
   Designer has an optional "Theme" field where you can type any category
   you like ("Die Hard", "Star Wars", "Cyberpunk" — anything) to group

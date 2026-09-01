@@ -263,6 +263,15 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   different browser, or a different device. Import merges by ID: anything
   in the backup overwrites a local card/roster with the same ID, but
   nothing already saved locally is deleted.
+- **Quick Reference** — a one-page cheat sheet distilled from the Core
+  Rules, Terms & Flow v1.2, and the official Action Sequence reference,
+  laid out in two columns: the Director, key terms, the Direct & Act
+  sequence, Health/Recovery, and Engagement/Dodge on the left; blocking
+  Hits, dice modifiers, the Shooting and Brawling sequences, Fortune Cards
+  — Peril and Challenge, and Competitive Rolls on the right. Viewable right
+  in the tab, or "Save as PDF" downloads a real single-page PDF (drawn
+  directly, not a screenshot of the page) sized to print on one sheet of
+  A4 — no double-siding needed.
 - Fully offline-capable: fonts and the PDF library are bundled in the repo,
   no third-party CDN calls at runtime.
 
@@ -299,11 +308,13 @@ from `file://`.
   straight edge or guillotine cutter.
 - For the crispest results, use "Download PDF" and print that file rather
   than printing straight from the browser tab.
+- Quick Reference's "Save as PDF" produces exactly 1 page — the whole
+  cheat sheet on a single sheet of A4, no double-siding needed.
 
 ## Project structure
 
 ```
-index.html          Single-page app (Card Designer / My Cards / Print Sheet)
+index.html          Single-page app (Card Designer / My Cards / League Roster / Print Sheet / Quick Reference)
 css/styles.css       App UI styling
 css/fonts.css         Self-hosted Inter + Rajdhani font faces
 js/cardRenderer.js    Canvas renderer for a single card (750x1050px)

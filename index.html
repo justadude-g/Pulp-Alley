@@ -19,6 +19,7 @@
     <button class="tab-btn" data-tab="gallery">My Cards</button>
     <button class="tab-btn" data-tab="roster">League Roster</button>
     <button class="tab-btn" data-tab="print">Print Sheet (A4)</button>
+    <button class="tab-btn" data-tab="quickref">Quick Reference</button>
   </nav>
   <div class="backup-actions">
     <select id="backup-theme-filter" class="theme-filter-select backup-theme-filter" title="Limit Export Backup to one Theme — leave as All Themes to export everything, including rosters">
@@ -310,6 +311,162 @@
     <p class="hint">Cards render at true Gamegenic Standard sleeve size (64mm × 89mm) on an A4 page with crop marks. Print at 100% scale / “Actual size” — do not use “Fit to page.”</p>
     <div class="sheet-stage">
       <canvas id="sheet-canvas"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== QUICK REFERENCE ===================== -->
+<section id="tab-quickref" class="tab-panel">
+  <div class="panel">
+    <div class="gallery-toolbar">
+      <h2>Quick Reference</h2>
+      <div class="gallery-meta">
+        <button id="btn-qr-save-pdf" class="btn-primary">⬇ Save as PDF</button>
+      </div>
+    </div>
+    <p class="hint">A one-page cheat sheet distilled from the Core Rules, Terms &amp; Flow, and the official Action Sequence reference — everything you need at the table without opening the rulebook. Save as PDF and print on a single sheet of A4.</p>
+
+    <div class="qr-sheet qr-sheet-onepage">
+      <div class="qr-sheet-head">
+        <span class="qr-sheet-title">Pulp Alley — Quick Reference</span>
+        <span class="qr-sheet-sub">Everything on one sheet</span>
+      </div>
+      <div class="qr-columns">
+        <div class="qr-col">
+          <div class="qr-callout">Success is a <strong>4+</strong> on any die.</div>
+
+          <div class="qr-section">
+            <h4>Director</h4>
+            <ul>
+              <li>Decides which player Activates next.</li>
+              <li>Changes if a player wins a combat — inflicts an Injury while suffering none — or collects a Plot Point.</li>
+            </ul>
+          </div>
+
+          <div class="qr-section">
+            <h4>Key Terms</h4>
+            <ul>
+              <li><strong>Ready</strong> — a figure that hasn't Activated yet.</li>
+              <li><strong>Activation</strong> — a Ready figure is selected to act.</li>
+              <li><strong>Active Player</strong> — whoever's figure is currently Activated.</li>
+              <li><strong>Actions</strong> — Shoot, Brawl, or a Special Action (an Action ability, or a Challenge). Movement is <em>not</em> an Action.</li>
+            </ul>
+          </div>
+
+          <div class="qr-section">
+            <h4>Action Sequence — Direct &amp; Act</h4>
+            <ol>
+              <li><strong>Direct.</strong> The Director picks any player with a Ready figure — including themselves — to Activate one.</li>
+              <li><strong>Fortune Effects.</strong> Give other players a chance to play Fortune cards.</li>
+              <li><strong>Automatic Effects.</strong> Resolve anything that triggers on Activation — perilous areas, horror, and so on.</li>
+              <li><strong>Fight On.</strong> Already in contact with an enemy? You must fight immediately.</li>
+              <li><strong>Move.</strong> Up to 12".
+                <ul>
+                  <li>Move more than 6" and you forfeit any Special Action this Activation.</li>
+                  <li>May move past other figures, keeping 1" clearance.</li>
+                </ul>
+              </li>
+              <li><strong>Attack or Action.</strong> Moved into contact with an enemy? You must fight. Otherwise, if unengaged, you may Shoot or perform an Action.</li>
+              <li><strong>End of Activation.</strong> After a fight or an Action resolves, the Activation is over.</li>
+            </ol>
+            <p class="qr-note">Repeat Direct &amp; Act until no Ready figures remain — that ends the Turn.</p>
+          </div>
+
+          <div class="qr-section">
+            <h4>Health &amp; Recovery</h4>
+            <ul>
+              <li>Health Status ladder: <strong>d10 → d8 → d6 → Down → Out.</strong></li>
+              <li>Any failed Health roll (however many) means <strong>Injured</strong> — drop one step on the ladder.</li>
+              <li>In Cover: one failed Health roll may be rerolled.</li>
+              <li><strong>Down</strong> — can't be targeted, ignored for movement.</li>
+              <li><strong>Recovery</strong> (end of Turn): each figure with Injuries rolls 1d6 — a 4+ improves Health one step (Down → d6 → d8 → d10). Failed while Down = the figure is <strong>Out</strong>. Recovered from Down: may move 1" to Disengage.</li>
+            </ul>
+          </div>
+
+          <div class="qr-section">
+            <h4>Engagement &amp; Dodge</h4>
+            <ul>
+              <li>Figures stay <strong>Engaged</strong> after a Brawl — across Turns — until one Disengages or either is Down.</li>
+              <li><strong>Disengage:</strong> choose Dodge and take no Hits this round → move 1" away (from just that figure, if Engaged by several).</li>
+              <li>Dodge is unaffected by multiple fights, but is affected by Fortune Cards or Injuries.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="qr-col">
+          <div class="qr-section">
+            <h4>Blocking Hits (Shooting &amp; Brawling)</h4>
+            <ul>
+              <li><strong>Shoot/Brawl back:</strong> the Active Player may block the non-Active player's successful Hits, one-for-one, if their Hit die is ≥ the non-Active player's Hit die.</li>
+              <li><strong>Dodge:</strong> the Non-Active Player may block the Active Player's Hits, one-for-one, if the Dodge die is ≥ the Hit die.</li>
+            </ul>
+          </div>
+
+          <div class="qr-section">
+            <h4>Dice Modifiers, At a Glance</h4>
+            <ul>
+              <li>Moved more than 6" this Activation: <strong>−1 die</strong> to Shoot.</li>
+              <li>Within 6" of the target: <strong>+1 die</strong> to Shoot.</li>
+              <li>Each fight already resolved this Turn: <strong>−1 die</strong> to Shoot/Brawl (Veterans/Moxie ignore this, respectively).</li>
+            </ul>
+          </div>
+
+          <div class="qr-section">
+            <h4>Shooting Sequence</h4>
+            <ol>
+              <li>Must shoot the Nearest Unengaged Target (if only enemies are Engaged, you may shoot one of them).</li>
+              <li>Determine Shoot Dice/Type — or choose Dodge instead.
+                <ul>
+                  <li>−1 die if you moved more than 6".</li>
+                  <li>+1 die if within 6".</li>
+                  <li>−1 die per fight already resolved this Turn (excluding Veterans).</li>
+                </ul>
+              </li>
+              <li>Target chooses <strong>Shoot Back</strong> or <strong>Dodge</strong>.
+                <ul>
+                  <li>Shoot Back: +1 die within 6", −1 die per fight this Turn (excluding Veterans).</li>
+                  <li>Dodge: determine Dodge Dice/Type.</li>
+                </ul>
+              </li>
+              <li>Block Hits one-for-one (see Blocking Hits, above).</li>
+              <li>Roll a Health check for every unblocked Hit.</li>
+            </ol>
+          </div>
+
+          <div class="qr-section">
+            <h4>Brawling Sequence</h4>
+            <ol>
+              <li>Rush toward the Nearest Target (Engaged targets may be ignored).</li>
+              <li>Rushed more than 3"? Target may use Shoot dice; otherwise only Brawl or Dodge.</li>
+              <li>Determine Brawl Dice/Type — −1 die per fight already this Turn (excluding Moxie).</li>
+              <li>Target chooses Shoot, Brawl, or Dodge — same −1 die per fight this Turn (excluding Moxie).</li>
+              <li>Block Hits one-for-one (see Blocking Hits, above).</li>
+              <li>Chose Dodge and took no Hits this round? May Disengage 1".</li>
+              <li>Roll a Health check for every unblocked Hit.</li>
+              <li>Figures remain Engaged after the fight until Disengage or Down.</li>
+            </ol>
+          </div>
+
+          <div class="qr-section">
+            <h4>Fortune Cards — Peril &amp; Challenge</h4>
+            <ul>
+              <li><strong>Peril:</strong> pass the card's listed tests with the stated attribute, or use Dodge. Passed: no effect (Dodge still ends the Activation). Failed: take Hits equal to the card's X value; Activation ends.</li>
+              <li><strong>Challenge:</strong> pass the listed tests with the stated attribute. Passed: complete. Failed: incomplete — remaining points carry over to next Turn.</li>
+            </ul>
+          </div>
+
+          <div class="qr-section">
+            <h4>Competitive Rolls</h4>
+            <ul>
+              <li>Each side rolls the required attribute and dice. Most successes wins; ties go to the defender.</li>
+            </ul>
+          </div>
+
+          <div class="qr-callout qr-callout-compact">
+            <strong>At a glance:</strong> Success = 4+ · Movement isn't an Action · one Action ends your Activation · Health ladder d10 → d8 → d6 → Down → Out · Director changes on a clean combat win or a Plot Point.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>

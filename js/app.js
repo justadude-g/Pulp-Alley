@@ -1907,6 +1907,232 @@ importBackupFile.addEventListener('change', async (e) => {
   }
 });
 
+// ---------------- Quick Reference (Save as PDF) ----------------
+// Draws its own single-page PDF from scratch with jsPDF (same library/
+// approach as downloadRosterPDF above) rather than rasterizing the
+// on-screen .qr-sheet markup — that keeps text crisp at any zoom and,
+// more importantly, lets the content be hand-fit to exactly one page, so
+// "Save as PDF" always produces a single-page file that prints on one
+// sheet of A4. The on-screen tab and this function both transcribe the
+// same source rules (Core Rules, Terms & Flow v1.2, and the official
+// Action Sequence reference) independently — see the .qr-sheet markup in
+// index.html for the on-screen version — so a future rules correction
+// needs updating in both places, the same tradeoff already made between
+// renderRosterPrintSheet/downloadRosterPDF/buildRosterPlainText above.
+function downloadQuickReferencePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = 210, pageH = 297;
+  const marginX = 14, marginTop = 18, marginBottom = 10, colGap = 8;
+  const contentW = pageW - marginX * 2;
+  const colW = (contentW - colGap) / 2;
+  const colX = [marginX, marginX + colW + colGap];
+  let y = [marginTop, marginTop];
+
+  function mmPerLine(pt) { return pt * 1.15 / 72 * 25.4; }
+  function ensureRoom(col, h) {
+    // Content is hand-fit to a single page; this is a safety net only
+    // (keeps drawing rather than throwing if a future edit runs long) and
+    // intentionally does not add a page, since that would break the
+    // "always exactly 1 page" guarantee this function exists for.
+    if (y[col] + h > pageH - marginBottom) return;
+  }
+
+  function pageHeader(sub) {
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('PULP ALLEY — QUICK REFERENCE', marginX, marginTop - 6);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(90, 90, 90);
+    doc.text(sub, pageW - marginX, marginTop - 6, { align: 'right' });
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.6);
+    doc.line(marginX, marginTop - 3, pageW - marginX, marginTop - 3);
+    doc.setLineWidth(0.2);
+    doc.setTextColor(0, 0, 0);
+  }
+
+  function heading(col, text) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    ensureRoom(col, mmPerLine(9.5) + 3);
+    doc.setTextColor(0, 0, 0);
+    doc.text(text.toUpperCase(), colX[col], y[col]);
+    y[col] += mmPerLine(9.5) - 1.5;
+    doc.setDrawColor(170, 170, 170);
+    doc.setLineWidth(0.2);
+    doc.line(colX[col], y[col], colX[col] + colW, y[col]);
+    y[col] += 2.6;
+  }
+
+  function list(col, items, ordered) {
+    doc.setTextColor(0, 0, 0);
+    items.forEach((item, i) => {
+      const isObj = typeof item === 'object';
+      const text = isObj ? item.text : item;
+      const marker = ordered ? `${i + 1}.` : '•';
+      const markerW = ordered ? 5 : 3.5;
+      const textX = colX[col] + markerW;
+      const wrapW = colW - markerW;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      const lines = doc.splitTextToSize(text, wrapW);
+      const lh = mmPerLine(8);
+      ensureRoom(col, lines.length * lh);
+      doc.text(marker, colX[col], y[col]);
+      doc.text(lines, textX, y[col]);
+      y[col] += lines.length * lh + 0.6;
+      if (isObj && item.sub) {
+        doc.setFontSize(7);
+        doc.setTextColor(90, 90, 90);
+        item.sub.forEach(sub => {
+          const subLines = doc.splitTextToSize(`– ${sub}`, wrapW - 4);
+          const slh = mmPerLine(7);
+          ensureRoom(col, subLines.length * slh);
+          doc.text(subLines, textX + 4, y[col]);
+          y[col] += subLines.length * slh;
+        });
+        doc.setTextColor(0, 0, 0);
+        y[col] += 0.6;
+      }
+    });
+    y[col] += 2;
+  }
+
+  function callout(col, text, compact) {
+    doc.setFont('helvetica', compact ? 'normal' : 'bold');
+    doc.setFontSize(compact ? 7.3 : 8.5);
+    const lines = doc.splitTextToSize(text, colW - 6);
+    const lh = mmPerLine(compact ? 7.3 : 8.5);
+    const boxH = lines.length * lh + 4.5;
+    ensureRoom(col, boxH + 4.5);
+    doc.setDrawColor(20, 160, 145);
+    doc.setLineWidth(0.3);
+    doc.setFillColor(230, 250, 247);
+    doc.roundedRect(colX[col], y[col], colW, boxH, 1.5, 1.5, 'FD');
+    doc.setTextColor(10, 90, 80);
+    doc.text(lines, colX[col] + 3, y[col] + lh - 0.5);
+    y[col] += boxH + 4.5;
+    doc.setTextColor(0, 0, 0);
+    doc.setLineWidth(0.2);
+  }
+
+  function note(col, text) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7.3);
+    doc.setTextColor(110, 110, 110);
+    const lines = doc.splitTextToSize(text, colW);
+    const lh = mmPerLine(7.3);
+    ensureRoom(col, lines.length * lh);
+    doc.text(lines, colX[col], y[col]);
+    y[col] += lines.length * lh + 3.5;
+    doc.setTextColor(0, 0, 0);
+  }
+
+  pageHeader('Everything on one sheet');
+
+  // ---- Column A: your turn — activation, movement, staying alive ----
+  callout(0, 'Success is a 4+ on any die.');
+  heading(0, 'Director');
+  list(0, [
+    'Decides which player Activates next.',
+    'Changes if a player wins a combat — inflicts an Injury while suffering none — or collects a Plot Point.',
+  ]);
+  heading(0, 'Key Terms');
+  list(0, [
+    'Ready — a figure that hasn’t Activated yet.',
+    'Activation — a Ready figure is selected to act.',
+    'Active Player — whoever’s figure is currently Activated.',
+    'Actions — Shoot, Brawl, or a Special Action (an Action ability, or a Challenge). Movement is NOT an Action.',
+  ]);
+  heading(0, 'Action Sequence — Direct & Act');
+  list(0, [
+    'Direct. The Director picks any player with a Ready figure — including themselves — to Activate one.',
+    'Fortune Effects. Give other players a chance to play Fortune cards.',
+    'Automatic Effects. Resolve anything that triggers on Activation — perilous areas, horror, and so on.',
+    'Fight On. Already in contact with an enemy? You must fight immediately.',
+    { text: 'Move. Up to 12".', sub: [
+      'Move more than 6" and you forfeit any Special Action this Activation.',
+      'May move past other figures, keeping 1" clearance.',
+    ] },
+    'Attack or Action. Moved into contact with an enemy? You must fight. Otherwise, if unengaged, you may Shoot or perform an Action.',
+    'End of Activation. After a fight or an Action resolves, the Activation is over.',
+  ], true);
+  note(0, 'Repeat Direct & Act until no Ready figures remain — that ends the Turn.');
+
+  heading(0, 'Health & Recovery');
+  list(0, [
+    'Health Status ladder: d10 -> d8 -> d6 -> Down -> Out.',
+    'Any failed Health roll (however many) means Injured — drop one step on the ladder.',
+    'In Cover: one failed Health roll may be rerolled.',
+    'Down — can’t be targeted, ignored for movement.',
+    'Recovery (end of Turn): each figure with Injuries rolls 1d6 — a 4+ improves Health one step (Down -> d6 -> d8 -> d10). Failed while Down = the figure is Out. Recovered from Down: may move 1" to Disengage.',
+  ]);
+  heading(0, 'Engagement & Dodge');
+  list(0, [
+    'Figures stay Engaged after a Brawl — across Turns — until one Disengages or either is Down.',
+    'Disengage: choose Dodge and take no Hits this round -> move 1" away (from just that figure, if Engaged by several).',
+    'Dodge is unaffected by multiple fights, but is affected by Fortune Cards or Injuries.',
+  ]);
+
+  // ---- Column B: resolving a fight — blocking, shooting, brawling, cards ----
+  heading(1, 'Blocking Hits (Shooting & Brawling)');
+  list(1, [
+    'Shoot/Brawl back: the Active Player may block the non-Active player’s successful Hits, one-for-one, if their Hit die is >= the non-Active player’s Hit die.',
+    'Dodge: the Non-Active Player may block the Active Player’s Hits, one-for-one, if the Dodge die is >= the Hit die.',
+  ]);
+  heading(1, 'Dice Modifiers, at a Glance');
+  list(1, [
+    'Moved more than 6" this Activation: -1 die to Shoot.',
+    'Within 6" of the target: +1 die to Shoot.',
+    'Each fight already resolved this Turn: -1 die to Shoot/Brawl (Veterans/Moxie ignore this, respectively).',
+  ]);
+  heading(1, 'Shooting Sequence');
+  list(1, [
+    'Must shoot the Nearest Unengaged Target (if only enemies are Engaged, you may shoot one of them).',
+    { text: 'Determine Shoot Dice/Type — or choose Dodge instead.', sub: [
+      '-1 die if you moved more than 6".',
+      '+1 die if within 6".',
+      '-1 die per fight already resolved this Turn (excluding Veterans).',
+    ] },
+    { text: 'Target chooses Shoot Back or Dodge.', sub: [
+      'Shoot Back: +1 die within 6", -1 die per fight this Turn (excluding Veterans).',
+      'Dodge: determine Dodge Dice/Type.',
+    ] },
+    'Block Hits one-for-one (see Blocking Hits, above).',
+    'Roll a Health check for every unblocked Hit.',
+  ], true);
+
+  heading(1, 'Brawling Sequence');
+  list(1, [
+    'Rush toward the Nearest Target (Engaged targets may be ignored).',
+    'Rushed more than 3"? Target may use Shoot dice; otherwise only Brawl or Dodge.',
+    'Determine Brawl Dice/Type — -1 die per fight already this Turn (excluding Moxie).',
+    'Target chooses Shoot, Brawl, or Dodge — same -1 die per fight this Turn (excluding Moxie).',
+    'Block Hits one-for-one (see Blocking Hits, above).',
+    'Chose Dodge and took no Hits this round? May Disengage 1".',
+    'Roll a Health check for every unblocked Hit.',
+    'Figures remain Engaged after the fight until Disengage or Down.',
+  ], true);
+
+  heading(1, 'Fortune Cards — Peril & Challenge');
+  list(1, [
+    'Peril: pass the card’s listed tests with the stated attribute, or use Dodge. Passed: no effect (Dodge still ends the Activation). Failed: take Hits equal to the card’s X value; Activation ends.',
+    'Challenge: pass the listed tests with the stated attribute. Passed: complete. Failed: incomplete — remaining points carry over to next Turn.',
+  ]);
+  heading(1, 'Competitive Rolls');
+  list(1, [
+    'Each side rolls the required attribute and dice. Most successes wins; ties go to the defender.',
+  ]);
+  callout(1, 'At a glance: Success = 4+  ·  Movement isn’t an Action  ·  one Action ends your Activation  ·  Health ladder d10 -> d8 -> d6 -> Down -> Out  ·  Director changes on a clean combat win or a Plot Point.', true);
+
+  doc.save('pulp-alley-quick-reference.pdf');
+}
+
+document.getElementById('btn-qr-save-pdf').addEventListener('click', downloadQuickReferencePDF);
+
 // ---------------- Init ----------------
 document.fonts.ready.then(updatePreview);
 updatePreview();

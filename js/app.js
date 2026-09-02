@@ -808,6 +808,14 @@ const saveStatus = document.getElementById('save-status');
 
 document.getElementById('btn-save-card').addEventListener('click', async () => {
   const data = collectFormData();
+  // A blank Name silently saved as "Unnamed Character" before, with no
+  // warning — easy way for half-finished/junk cards to pile up unnoticed
+  // in My Cards. Now it's a confirm, not a hard block, since a genuinely
+  // nameless character (a mook, a placeholder) is still a valid thing to
+  // save on purpose.
+  if (!data.name.trim() && !confirm('This card has no Name — save it anyway as "Unnamed Character"?')) {
+    return;
+  }
   data.portraitImg = state.portraitImg;
   data.portraitView = state.portraitView;
   renderCard(canvas, data);
@@ -847,6 +855,7 @@ document.getElementById('btn-save-card').addEventListener('click', async () => {
   // brand-new Theme name, so it's available for the very next card without
   // needing a trip through My Cards first.
   getAllCards().then(refreshThemeOptions);
+  refreshBackupBanner();
   saveStatus.textContent = `Saved “${data.name || 'Unnamed Character'}” to My Cards.`;
   setTimeout(() => { saveStatus.textContent = ''; }, 3500);
 });
@@ -1082,10 +1091,12 @@ async function refreshGallery() {
     });
     el.querySelector('[data-act="edit"]').addEventListener('click', () => loadCardIntoForm(record));
     el.querySelector('[data-act="delete"]').addEventListener('click', async () => {
-      if (confirm(`Delete “${record.formData?.name || 'this card'}”?`)) {
-        await deleteCard(record.id);
+      if (confirm(`Delete “${record.formData?.name || 'this card'}”?\n\nIt'll sit in Recently Deleted (top bar) for 30 days in case you change your mind.`)) {
+        await trashCard(record.id);
         state.selected.delete(record.id);
         refreshGallery();
+        refreshTrashBadge();
+        refreshBackupBanner();
       }
     });
     galleryGrid.appendChild(el);
@@ -1093,24 +1104,24 @@ async function refreshGallery() {
   updateSelectedCount();
 }
 
+// No cap on how many cards can be selected — the Print Sheet fits 9 per
+// physical A4 page (that's a paper-size constant, not a UI limit) and
+// spills onto as many additional pages as needed (see renderPrintPages()).
 function toggleSelect(id) {
   if (state.selected.has(id)) {
     state.selected.delete(id);
   } else {
-    if (state.selected.size >= 9) {
-      alert('You can select up to 9 cards for the A4 print sheet.');
-      return;
-    }
     state.selected.add(id);
   }
   refreshGallery();
 }
 
 function updateSelectedCount() {
-  selectedCountEl.textContent = `${state.selected.size} / 9 selected`;
-  // A single toggle button: nothing selected -> "Select All" selects up to
-  // 9; anything selected (all or partial) -> "Deselect All" clears it, so
-  // pressing it a second time always gets you back to zero.
+  selectedCountEl.textContent = `${state.selected.size} selected`;
+  // A single toggle button: nothing selected -> "Select All" selects
+  // everything currently shown; anything selected (all or partial) ->
+  // "Deselect All" clears it, so pressing it a second time always gets you
+  // back to zero.
   selectAllBtn.textContent = state.selected.size > 0 ? 'Deselect All' : 'Select All';
 }
 
@@ -1118,11 +1129,7 @@ selectAllBtn.addEventListener('click', () => {
   if (state.selected.size > 0) {
     state.selected.clear();
   } else {
-    const ids = latestGalleryCards.map(c => c.id).slice(0, 9);
-    ids.forEach(id => state.selected.add(id));
-    if (latestGalleryCards.length > 9) {
-      alert(`You have ${latestGalleryCards.length} saved cards — selected the first 9 for the A4 print sheet.`);
-    }
+    latestGalleryCards.forEach(c => state.selected.add(c.id));
   }
   refreshGallery();
 });
@@ -1187,30 +1194,79 @@ async function loadCardIntoForm(record) {
 }
 
 // ---------------- Print sheet ----------------
-const sheetCanvas = document.getElementById('sheet-canvas');
+// One 3x3 grid (renderRosterSheet, js/roster.js) is a single physical A4
+// page — 9 cards is a paper-size fact, not a UI cap. More than 9 selected
+// cards now spill onto additional pages instead of being blocked at 9.
+const sheetStage = document.getElementById('sheet-stage');
+const printSheetHeading = document.getElementById('print-sheet-heading');
+const printDownloadPngBtn = document.getElementById('print-download-png');
+// Repopulated by refreshPrintSheet() on every visit to this tab; read by
+// the Download PNG/PDF handlers below so they don't need to re-render.
+let sheetPageCanvases = [];
+
+function chunkArray(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
 
 async function refreshPrintSheet() {
   const cards = await getAllCards();
   const selectedIds = [...state.selected];
   const records = selectedIds.map(id => cards.find(c => c.id === id)).filter(Boolean);
   const images = await Promise.all(records.map(r => loadImage(r.pngDataURL)));
-  const slots = new Array(9).fill(null);
-  images.forEach((img, i) => { slots[i] = img; });
-  renderRosterSheet(sheetCanvas, slots);
+
+  // Always render at least one (possibly empty) page, matching the
+  // previous single-canvas behavior when nothing's selected yet.
+  const pages = images.length ? chunkArray(images, 9) : [[]];
+
+  sheetStage.innerHTML = '';
+  sheetPageCanvases = pages.map((pageImages, i) => {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'sheet-page-canvas';
+    const slots = new Array(9).fill(null);
+    pageImages.forEach((img, j) => { slots[j] = img; });
+    renderRosterSheet(canvas, slots);
+    sheetStage.appendChild(canvas);
+    if (pages.length > 1) {
+      const label = document.createElement('div');
+      label.className = 'sheet-page-label';
+      label.textContent = `Page ${i + 1} of ${pages.length}`;
+      sheetStage.appendChild(label);
+    }
+    return canvas;
+  });
+
+  printSheetHeading.textContent = pages.length > 1
+    ? `Print Sheet — A4 (${images.length} cards, ${pages.length} pages)`
+    : 'Print Sheet — A4';
+
+  // A PNG can't hold multiple pages the way a PDF can, and firing off
+  // several downloads at once from one click is exactly the pattern
+  // Chrome's "multiple automatic downloads" guard blocks (silently, past
+  // the first) — so rather than a fragile multi-download or a bundled zip,
+  // PNG export is single-page-only. Use Download PDF for more than one page.
+  printDownloadPngBtn.disabled = pages.length > 1;
+  printDownloadPngBtn.title = pages.length > 1
+    ? 'PNG export is single-page only — use Download PDF for more than one page'
+    : '';
 }
 
 document.getElementById('print-download-png').addEventListener('click', () => {
+  if (sheetPageCanvases.length !== 1) return; // guarded by disabling the button above
   const link = document.createElement('a');
   link.download = 'pulp-alley-roster-a4.png';
-  link.href = sheetCanvas.toDataURL('image/png');
+  link.href = sheetPageCanvases[0].toDataURL('image/png');
   link.click();
 });
 
 document.getElementById('print-download-pdf').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const imgData = sheetCanvas.toDataURL('image/png');
-  doc.addImage(imgData, 'PNG', 0, 0, 210, 297);
+  sheetPageCanvases.forEach((canvas, i) => {
+    if (i > 0) doc.addPage();
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+  });
   doc.save('pulp-alley-roster-a4.pdf');
 });
 
@@ -1234,6 +1290,9 @@ const rosterMembersEl = document.getElementById('roster-members');
 const rosterMembersEmpty = document.getElementById('roster-members-empty');
 const rosterPerksEl = document.getElementById('roster-perks');
 const rosterPerksEmpty = document.getElementById('roster-perks-empty');
+// Filled from PERKS.length rather than hardcoded in index.html, so this
+// count can never again silently go stale as perksData.js grows.
+document.getElementById('perk-count-hint').textContent = PERKS.length;
 const rosterAssociatesEl = document.getElementById('roster-associates');
 const rosterAssociatesEmpty = document.getElementById('roster-associates-empty');
 const associateWarningsEl = document.getElementById('associate-warnings');
@@ -1293,14 +1352,17 @@ document.getElementById('roster-save').addEventListener('click', async () => {
   rosterState.editingId = id;
   rosterState.createdAt = record.createdAt;
   await refreshRosterTab();
+  refreshBackupBanner();
 });
 
 document.getElementById('roster-delete').addEventListener('click', async () => {
   if (!rosterState.editingId) return;
-  if (!confirm(`Delete “${rosterState.name || 'this roster'}”?`)) return;
-  await deleteRoster(rosterState.editingId);
+  if (!confirm(`Delete “${rosterState.name || 'this roster'}”?\n\nIt'll sit in Recently Deleted (top bar) for 30 days in case you change your mind.`)) return;
+  await trashRoster(rosterState.editingId);
   resetRosterState();
   await refreshRosterTab();
+  refreshTrashBadge();
+  refreshBackupBanner();
 });
 
 function computeRosterSlots() {
@@ -1951,6 +2013,48 @@ function slugify(text) {
   return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+// ---------------- Backup reminder banner ----------------
+// Everything lives only in this browser's IndexedDB — there's no server
+// copy. Export Backup is the only way out, but nothing used to prompt for
+// it, so a cleared browser profile or a reinstall could silently wipe an
+// entire card collection with no warning. This tracks when Export Backup
+// was last actually used (localStorage — a single small timestamp, not
+// worth a whole IndexedDB store for) and shows a dismissible banner once
+// enough has changed since then to matter.
+const LAST_BACKUP_KEY = 'pulp-alley-last-backup-at';
+const BACKUP_NAG_THRESHOLD = 5;
+const backupBanner = document.getElementById('backup-reminder-banner');
+const backupBannerText = document.getElementById('backup-reminder-text');
+let backupBannerDismissed = false; // this session only; re-evaluated on next load
+
+function getLastBackupAt() {
+  const raw = localStorage.getItem(LAST_BACKUP_KEY);
+  return raw ? +raw : 0;
+}
+function setLastBackupAt(ts) {
+  try { localStorage.setItem(LAST_BACKUP_KEY, String(ts)); } catch { /* private-browsing etc. — banner just won't persist across reloads */ }
+}
+
+async function refreshBackupBanner() {
+  if (backupBannerDismissed) { backupBanner.classList.add('hidden'); return; }
+  const lastBackupAt = getLastBackupAt();
+  const [cards, rosters] = await Promise.all([getAllCards(), getAllRosters()]);
+  const changedCount = [...cards, ...rosters].filter(r => (r.updatedAt || 0) > lastBackupAt).length;
+  if (changedCount < BACKUP_NAG_THRESHOLD) { backupBanner.classList.add('hidden'); return; }
+  backupBannerText.textContent = lastBackupAt
+    ? `${changedCount} cards/rosters changed since your last backup — everything only lives in this browser.`
+    : `${changedCount} cards/rosters saved and no backup taken yet — everything only lives in this browser.`;
+  backupBanner.classList.remove('hidden');
+}
+
+document.getElementById('backup-reminder-export').addEventListener('click', () => {
+  document.getElementById('btn-export-backup').click();
+});
+document.getElementById('backup-reminder-dismiss').addEventListener('click', () => {
+  backupBannerDismissed = true;
+  backupBanner.classList.add('hidden');
+});
+
 document.getElementById('btn-export-backup').addEventListener('click', async () => {
   const themeFilter = backupThemeFilterSelect.value;
   const data = await exportAllData(themeFilter || undefined);
@@ -1969,6 +2073,13 @@ document.getElementById('btn-export-backup').addEventListener('click', async () 
   link.href = url;
   link.click();
   URL.revokeObjectURL(url);
+  // A Theme-filtered export only covers part of the library (and drops
+  // rosters entirely — see exportAllData in db.js), so it doesn't really
+  // count as "backed up everything." Only a full export resets the clock.
+  if (!themeFilter) {
+    setLastBackupAt(data.exportedAt);
+    refreshBackupBanner();
+  }
 });
 
 document.getElementById('btn-import-backup').addEventListener('click', () => {
@@ -2002,10 +2113,92 @@ importBackupFile.addEventListener('change', async (e) => {
     state.selected.clear();
     await refreshGallery();
     await refreshRosterTab();
+    refreshBackupBanner();
     saveStatus.textContent = `Imported ${result.cardsImported} card(s) and ${result.rostersImported} roster(s).`;
     setTimeout(() => { saveStatus.textContent = ''; }, 4000);
   } catch (err) {
     alert('Import failed: ' + err.message);
+  }
+});
+
+// ---------------- Recently Deleted (undo for card/roster delete) ----------------
+// Deleting a card or roster (My Cards / League Roster) now moves it to the
+// trash store (trashCard()/trashRoster() in db.js) instead of hard-deleting
+// it outright, so it can be restored here for up to TRASH_RETENTION_DAYS.
+const trashModal = document.getElementById('trash-modal');
+const trashListEl = document.getElementById('trash-list');
+const trashCountBadge = document.getElementById('trash-count-badge');
+
+function formatDaysAgo(ts) {
+  const days = Math.floor((Date.now() - ts) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return '1 day ago';
+  return `${days} days ago`;
+}
+
+// Keeps the top-bar button's "(N)" badge current — called after every
+// delete/restore/delete-forever/purge, not just when the modal is open, so
+// the badge is accurate even if the user never opens it.
+async function refreshTrashBadge() {
+  const trash = await getAllTrash();
+  trashCountBadge.textContent = trash.length ? `(${trash.length})` : '';
+  return trash;
+}
+
+async function refreshTrashModal() {
+  const trash = await refreshTrashBadge();
+  if (!trash.length) {
+    trashListEl.innerHTML = '<div class="library-empty">Nothing in Recently Deleted.</div>';
+    return;
+  }
+  trashListEl.innerHTML = trash.map(entry => {
+    const isCard = entry.kind === 'card';
+    const name = isCard ? (entry.record.formData?.name || 'Unnamed') : (entry.record.name || 'Untitled Roster');
+    const daysLeft = Math.max(0, TRASH_RETENTION_DAYS - Math.floor((Date.now() - entry.deletedAt) / 86400000));
+    const thumb = isCard
+      ? `<img class="library-item-thumb" src="${entry.record.pngDataURL}" alt="">`
+      : `<div class="library-item-thumb trash-roster-icon">🗂️</div>`;
+    return `
+      <div class="library-item" data-trash-id="${escapeAttr(entry.id)}">
+        ${thumb}
+        <div class="library-item-body">
+          <span class="library-item-name">${escapeHtml(name)}</span><span class="library-item-level">${isCard ? 'Card' : 'Roster'}</span>
+          <div class="library-item-text">Deleted ${formatDaysAgo(entry.deletedAt)} — ${daysLeft > 0 ? `auto-removes in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : 'auto-removing soon'}</div>
+        </div>
+        <div class="library-item-actions">
+          <button type="button" class="btn-secondary" data-trash-act="restore">Restore</button>
+          <button type="button" class="btn-danger" data-trash-act="delete-forever">Delete Forever</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('btn-recently-deleted').addEventListener('click', async () => {
+  await refreshTrashModal();
+  trashModal.classList.remove('hidden');
+});
+document.getElementById('close-trash-modal').addEventListener('click', () => trashModal.classList.add('hidden'));
+trashModal.addEventListener('click', (e) => { if (e.target === trashModal) trashModal.classList.add('hidden'); });
+
+trashListEl.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-trash-act]');
+  if (!btn) return;
+  const row = btn.closest('[data-trash-id]');
+  const trashId = row.dataset.trashId;
+
+  if (btn.dataset.trashAct === 'restore') {
+    const kind = await restoreFromTrash(trashId);
+    if (kind === 'card') { await refreshGallery(); getAllCards().then(refreshThemeOptions); }
+    else if (kind === 'roster') { await refreshRosterTab(); }
+    await refreshTrashModal();
+    refreshBackupBanner();
+  } else if (btn.dataset.trashAct === 'delete-forever') {
+    const label = row.querySelector('.library-item-name').textContent;
+    if (confirm(`Permanently delete “${label}”? This can't be undone.`)) {
+      await removeFromTrash(trashId);
+      await refreshTrashModal();
+    }
   }
 });
 
@@ -2243,3 +2436,7 @@ updatePreview();
 // rather than waiting for the user to first open My Cards or the roster's
 // colleague picker.
 getAllCards().then(refreshThemeOptions);
+// Sweep anything older than TRASH_RETENTION_DAYS out of Recently Deleted
+// once per app load, then reflect whatever's left in the top-bar badge.
+purgeOldTrash().then(refreshTrashBadge);
+refreshBackupBanner();

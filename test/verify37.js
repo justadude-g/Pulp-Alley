@@ -112,7 +112,7 @@ function ok(label) { console.log('OK  ', label); }
   await page.click('#select-all-btn');
   await page.waitForTimeout(150);
   const selectedCount = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(selectedCount, '2 / 9 selected', `expected Select All to pick only the 2 filtered Leaders, got "${selectedCount}"`);
+  assert.strictEqual(selectedCount, '2 selected', `expected Select All to pick only the 2 filtered Leaders, got "${selectedCount}"`);
   ok('Select All respects the active Card Type filter (only selects the filtered-in cards)');
 
   console.log('\nAll verify37 checks passed.');

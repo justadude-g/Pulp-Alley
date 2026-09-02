@@ -28,8 +28,15 @@
     <button type="button" id="btn-export-backup" class="btn-secondary" title="Download saved cards (and, for a full export, rosters too) as one file">⬇ Export Backup</button>
     <button type="button" id="btn-import-backup" class="btn-secondary" title="Restore cards and rosters from a backup file">⬆ Import Backup</button>
     <input type="file" id="import-backup-file" accept="application/json,.json" style="display:none">
+    <button type="button" id="btn-recently-deleted" class="btn-secondary" title="Restore a card or roster deleted in the last 30 days">🗑 Recently Deleted<span id="trash-count-badge"></span></button>
   </div>
 </header>
+
+<div id="backup-reminder-banner" class="backup-reminder-banner hidden">
+  <span id="backup-reminder-text"></span>
+  <button type="button" id="backup-reminder-export" class="btn-primary">⬇ Export Backup</button>
+  <button type="button" id="backup-reminder-dismiss" class="btn-ghost" aria-label="Dismiss">✕</button>
+</div>
 
 <main>
 
@@ -230,7 +237,7 @@
         </select>
         <button id="btn-rename-theme" class="btn-secondary" type="button" disabled title="Pick a Theme above first">✎ Rename Theme</button>
         <span id="theme-rename-status" class="hint" style="margin:0"></span>
-        <span id="selected-count">0 / 9 selected</span>
+        <span id="selected-count">0 selected</span>
         <button id="select-all-btn" class="btn-secondary">Select All</button>
         <button id="go-print" class="btn-primary">Go to Print Sheet →</button>
       </div>
@@ -286,7 +293,7 @@
           <button type="button" id="open-perk-library" class="btn-secondary">📖 Browse Perk Library</button>
         </div>
         <div id="roster-perks" class="roster-list"></div>
-        <p id="roster-perks-empty" class="hint">No perks selected. Perks are optional — see the Perk Library to browse all 36.</p>
+        <p id="roster-perks-empty" class="hint">No perks selected. Perks are optional — see the Perk Library to browse all <span id="perk-count-hint"></span>.</p>
       </div>
 
       <div class="roster-column">
@@ -307,17 +314,15 @@
 <section id="tab-print" class="tab-panel">
   <div class="panel">
     <div class="gallery-toolbar">
-      <h2>Print Sheet — A4 (up to 9 cards)</h2>
+      <h2 id="print-sheet-heading">Print Sheet — A4</h2>
       <div class="gallery-meta">
         <button id="print-download-png" class="btn-secondary">⬇ Download PNG</button>
         <button id="print-download-pdf" class="btn-secondary">⬇ Download PDF</button>
         <button id="print-browser" class="btn-primary">🖨 Print</button>
       </div>
     </div>
-    <p class="hint">Cards render at true Gamegenic Standard sleeve size (64mm × 89mm) on an A4 page with crop marks. Print at 100% scale / “Actual size” — do not use “Fit to page.”</p>
-    <div class="sheet-stage">
-      <canvas id="sheet-canvas"></canvas>
-    </div>
+    <p class="hint">Cards render at true Gamegenic Standard sleeve size (64mm × 89mm) on A4 pages with crop marks, 9 per page — select more than 9 in My Cards and they spill onto additional pages automatically. Print at 100% scale / “Actual size” — do not use “Fit to page.”</p>
+    <div class="sheet-stage" id="sheet-stage"></div>
   </div>
 </section>
 
@@ -568,6 +573,18 @@
       </div>
     </div>
     <div id="colleague-picker-list" class="library-list"></div>
+  </div>
+</div>
+
+<!-- ===================== RECENTLY DELETED MODAL ===================== -->
+<div id="trash-modal" class="modal-overlay hidden">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>Recently Deleted</h2>
+      <button type="button" id="close-trash-modal" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <p class="hint" style="padding: 0 22px 4px">Deleted cards and rosters stay here for 30 days, then are gone for good.</p>
+    <div id="trash-list" class="library-list"></div>
   </div>
 </div>
 

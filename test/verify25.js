@@ -1,8 +1,9 @@
 // verify25.js — My Cards gets a "Select All" button next to the selection
 // counter, so building a Print Sheet from many saved cards doesn't require
 // clicking each one individually. It's a single toggle: press it with
-// nothing selected to select up to 9 (the Print Sheet's own cap); press it
-// again (anything selected) to clear back to zero.
+// nothing selected to select everything currently shown (no cap — the
+// Print Sheet spills onto multiple A4 pages past 9, see verify45.js);
+// press it again (anything selected) to clear back to zero.
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -45,17 +46,17 @@ const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1
 
   // ---- 1. Starting state: nothing selected, button reads "Select All". ----
   let count = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(count, '0 / 9 selected', `expected nothing selected initially, got: ${count}`);
+  assert.strictEqual(count, '0 selected', `expected nothing selected initially, got: ${count}`);
   let label = await page.$eval('#select-all-btn', el => el.textContent);
   assert.strictEqual(label, 'Select All', `expected the button to read "Select All" when nothing is selected, got: ${label}`);
-  ok('Starting state: 0/9 selected, button reads "Select All"');
+  ok('Starting state: 0 selected, button reads "Select All"');
 
   // ---- 2. Click it: all 3 cards get selected in one click, no need to
   // click each individually. ----
   await page.click('#select-all-btn');
   await page.waitForTimeout(150);
   count = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(count, '3 / 9 selected', `expected all 3 saved cards to be selected after one click, got: ${count}`);
+  assert.strictEqual(count, '3 selected', `expected all 3 saved cards to be selected after one click, got: ${count}`);
   const selectedCards = await page.$$eval('.gallery-card.selected', els => els.length);
   assert.strictEqual(selectedCards, 3, 'expected all 3 gallery cards to show as selected');
   ok('Select All selects every saved card in one click');
@@ -67,7 +68,7 @@ const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1
   await page.click('#select-all-btn');
   await page.waitForTimeout(150);
   count = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(count, '0 / 9 selected', `expected pressing the toggle again to clear the selection, got: ${count}`);
+  assert.strictEqual(count, '0 selected', `expected pressing the toggle again to clear the selection, got: ${count}`);
   label = await page.$eval('#select-all-btn', el => el.textContent);
   assert.strictEqual(label, 'Select All', 'expected the button to read "Select All" again after clearing');
   const selectedAfterClear = await page.$$eval('.gallery-card.selected', els => els.length);
@@ -79,18 +80,19 @@ const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1
   await page.locator('.gallery-card').first().click();
   await page.waitForTimeout(100);
   count = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(count, '1 / 9 selected', 'expected manually clicking one card to select just that one');
+  assert.strictEqual(count, '1 selected', 'expected manually clicking one card to select just that one');
   label = await page.$eval('#select-all-btn', el => el.textContent);
   assert.strictEqual(label, 'Deselect All', 'expected the button to already read "Deselect All" with a partial selection');
   await page.click('#select-all-btn');
   await page.waitForTimeout(100);
   count = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(count, '0 / 9 selected', 'expected the toggle to clear a partial selection back to zero, not top it up to all');
+  assert.strictEqual(count, '0 selected', 'expected the toggle to clear a partial selection back to zero, not top it up to all');
   ok('With a partial selection, the button clears everything rather than topping up');
 
-  // ---- 5. More than 9 saved cards: Select All picks the first 9 (the
-  // Print Sheet's own cap) and tells the user, rather than silently
-  // dropping cards or breaking. ----
+  // ---- 5. More than 9 saved cards: Select All selects all of them, no
+  // cap and no dialog — the Print Sheet itself now spills onto multiple A4
+  // pages instead of the selector artificially stopping at 9 (see
+  // verify45.js for the multi-page Print Sheet behavior itself). ----
   await page.evaluate(async (png) => {
     for (let i = 3; i < 12; i++) { // 9 more -> 12 total
       await saveCard({
@@ -109,9 +111,9 @@ const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1
   await page.click('#select-all-btn');
   await page.waitForTimeout(150);
   count = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(count, '9 / 9 selected', `expected Select All to cap at 9 with 12 saved cards, got: ${count}`);
-  assert(dialogs.some(m => /first 9/i.test(m)), `expected a heads-up that only the first 9 were selected, got dialogs: ${JSON.stringify(dialogs)}`);
-  ok('With more than 9 saved cards, Select All picks the first 9 and tells the user why');
+  assert.strictEqual(count, '12 selected', `expected Select All to select all 12 saved cards with no 9-card cap, got: ${count}`);
+  assert.strictEqual(dialogs.length, 0, `expected no dialog/interruption when selecting more than 9 cards, got: ${JSON.stringify(dialogs)}`);
+  ok('With more than 9 saved cards, Select All selects all of them — no cap, no dialog');
 
   console.log('\nAll verify25 checks passed.');
   await browser.close();

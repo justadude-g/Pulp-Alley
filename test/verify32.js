@@ -111,7 +111,7 @@ function ok(label) { console.log('OK  ', label); }
   await page.click('#select-all-btn');
   await page.waitForTimeout(150);
   const selectedCountText = await page.locator('#selected-count').textContent();
-  assert.strictEqual(selectedCountText.trim(), '2 / 9 selected', `expected Select All to select only the 2 filtered (Star Wars) cards, got "${selectedCountText}"`);
+  assert.strictEqual(selectedCountText.trim(), '2 selected', `expected Select All to select only the 2 filtered (Star Wars) cards, got "${selectedCountText}"`);
   ok('Select All only selects the cards currently shown by the search/Theme filter, not every saved card');
   // Clean up selection/filter state for what follows.
   await page.click('#select-all-btn'); // deselect

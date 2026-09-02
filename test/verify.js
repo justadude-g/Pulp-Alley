@@ -94,13 +94,13 @@ async function main() {
   await page.click('.tab-btn[data-tab="print"]');
   await page.waitForTimeout(500);
   const sheetSize = await page.evaluate(() => {
-    const c = document.getElementById('sheet-canvas');
+    const c = document.querySelector('.sheet-page-canvas');
     return { w: c.width, h: c.height };
   });
   console.log('sheet canvas size:', sheetSize);
   await page.screenshot({ path: path.join(__dirname, 'shot-print.png'), fullPage: true });
 
-  const sheetDataUrl = await page.evaluate(() => document.getElementById('sheet-canvas').toDataURL('image/png'));
+  const sheetDataUrl = await page.evaluate(() => document.querySelector('.sheet-page-canvas').toDataURL('image/png'));
   fs.writeFileSync(path.join(__dirname, 'sheet-export.png'), Buffer.from(sheetDataUrl.split(',')[1], 'base64'));
 
   console.log('console/page errors:', errors);

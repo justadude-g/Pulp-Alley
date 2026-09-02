@@ -182,12 +182,14 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   flattened to solid black; images are now re-encoded to preserve alpha
   instead of forcing JPEG.
 - **My Cards** — save cards locally in your browser (IndexedDB), edit or
-  delete them later, no server required. Click cards to select up to 9 for
-  the Print Sheet, or use "Select All" next to the counter to grab all of
-  them in one click instead of one at a time — it's a toggle, so pressing
-  it again clears the selection back to zero. With more than 9 saved
-  cards, Select All takes the first 9 and lets you know, matching the
-  Print Sheet's own per-page limit. A search box finds a card by (partial,
+  delete them later, no server required. Saving requires no confirmation
+  unless the Name field is blank, in which case a quick "save it anyway as
+  'Unnamed Character'?" prompt catches an accidental empty save before it
+  becomes a nameless card buried in the list. Click cards to select as many
+  as you want for the Print Sheet — selection isn't capped at 9 — or use
+  "Select All" next to the counter to grab all of them in one click instead
+  of one at a time — it's a toggle, so pressing it again clears the
+  selection back to zero. A search box finds a card by (partial,
   case-insensitive) name, and Select All only grabs whatever's currently
   shown — handy once you've got more cards than fit on one screen. A
   "Card Type" filter dropdown next to the search box narrows My Cards down
@@ -197,6 +199,13 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   dropdown controls the display order: "Name" (the default) sorts
   alphabetically, and "Latest" sorts by most-recently saved or edited
   first — pick "Latest" to find the card you were just working on.
+- **Recently Deleted (undo)** — deleting a card or roster no longer erases
+  it on the spot. It moves to "Recently Deleted" (top bar, next to Export/
+  Import Backup, with a "(N)" badge while anything's in there), where you
+  can Restore it back to My Cards/your roster list or Delete Forever it for
+  real. Anything left untouched for 30 days is purged automatically the
+  next time the app loads — long enough to catch a mistake, not a permanent
+  second copy of everything you delete.
 - **Themes — organize cards into your own collections** — the Card
   Designer has an optional "Theme" field where you can type any category
   you like ("Die Hard", "Star Wars", "Cyberpunk" — anything) to group
@@ -264,9 +273,14 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   specific Level 1-2 abilities Gangs are allowed to take (p. 22). The Health
   section also notes the Gangs & Horror errata: Gangs roll 1d6 for Horror
   checks, and may roll 1d6 to Recover from Horror cards/effects.
-- **Print Sheet (A4)** — pick up to 9 saved cards and lay them out on an A4
-  page at true size with crop marks. Download as PNG, download as PDF, or
-  print directly from the browser.
+- **Print Sheet (A4)** — pick any number of saved cards and lay them out on
+  A4 page(s) at true size with crop marks, 9 per page (3x3 grid). More than
+  9 selected spills onto as many pages as needed — each one labeled "Page N
+  of M" and the heading summarizing the card/page counts — instead of being
+  capped. Download as PDF (one file, all pages) or print directly from the
+  browser either way; Download PNG stays available for a single page but is
+  disabled once a sheet spans more than one, since a PNG can only hold one
+  page's worth of image (Download PDF is the multi-page path).
 - **Export / Import Backup** — every saved card and roster lives only in
   this browser's IndexedDB (see Data & privacy below), so "Export Backup" in
   the top bar bundles all of it — including portrait images and rendered
@@ -284,7 +298,14 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   any backup file back in — full or Theme-filtered — on this browser, a
   different browser, or a different device. Import merges by ID: anything
   in the backup overwrites a local card/roster with the same ID, but
-  nothing already saved locally is deleted.
+  nothing already saved locally is deleted. Since everything lives only in
+  this browser with no server copy, a dismissible reminder banner appears
+  once 5 or more cards/rosters have changed since your last full (non-Theme-
+  filtered) export — a nudge to back up before a cleared profile or a
+  browser reinstall silently takes everything with it. It resets the clock
+  on its own "Export Backup" button, or on the header one; dismissing it
+  (✕) clears it for the rest of the session, and it reappears next time you
+  reload if 5 more changes have piled up since.
 - **Quick Reference** — a one-page cheat sheet distilled from the Core
   Rules, Terms & Flow v1.2, and the official Action Sequence reference,
   laid out in two columns: the Director, key terms, the Direct & Act

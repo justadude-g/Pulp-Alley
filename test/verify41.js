@@ -101,7 +101,7 @@ function ok(label) { console.log('OK  ', label); }
   await page.click('#select-all-btn');
   await page.waitForTimeout(150);
   const selectedCount = await page.$eval('#selected-count', el => el.textContent);
-  assert.strictEqual(selectedCount, '3 / 9 selected', `expected Select All to still pick up all 3 cards under Name sort, got "${selectedCount}"`);
+  assert.strictEqual(selectedCount, '3 selected', `expected Select All to still pick up all 3 cards under Name sort, got "${selectedCount}"`);
   ok('Select All still works correctly regardless of the active sort mode');
 
   console.log('\nAll verify41 checks passed.');

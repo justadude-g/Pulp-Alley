@@ -466,7 +466,10 @@ function renderCard(canvas, data) {
   // padding around an otherwise-opaque image too, not just through
   // transparency.
   const showFrame = !!data.portraitFrame;
-  roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
+  // Square corners (radius 0) to match the Stats box beside it — the two
+  // sit flush together, and rounded portrait corners next to Stats'
+  // square ones used to look mismatched.
+  roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 0);
   ctx.save();
   ctx.clip();
   if (data.portraitImg) {
@@ -509,7 +512,8 @@ function renderCard(canvas, data) {
   }
   ctx.restore();
   if (showFrame) {
-    roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 18);
+    // Square corners, matching the clip path above.
+    roundedRectPath(ctx, PORTRAIT.x, PORTRAIT.y, PORTRAIT.w, PORTRAIT.h, 0);
     ctx.lineWidth = 3;
     ctx.strokeStyle = accent;
     ctx.stroke();

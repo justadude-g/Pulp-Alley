@@ -951,6 +951,8 @@ const gallerySearchInput = document.getElementById('gallery-search');
 const galleryThemeFilterSelect = document.getElementById('gallery-theme-filter');
 const galleryTypeFilterSelect = document.getElementById('gallery-type-filter');
 const gallerySortSelect = document.getElementById('gallery-sort');
+const btnRenameTheme = document.getElementById('btn-rename-theme');
+const themeRenameStatus = document.getElementById('theme-rename-status');
 
 // Tracks the cards currently shown in the gallery (same order as
 // rendered, i.e. after search/Theme/Type filtering and sorting), so Select
@@ -959,9 +961,61 @@ const gallerySortSelect = document.getElementById('gallery-sort');
 let latestGalleryCards = [];
 
 gallerySearchInput.addEventListener('input', refreshGallery);
-galleryThemeFilterSelect.addEventListener('change', refreshGallery);
+galleryThemeFilterSelect.addEventListener('change', () => { refreshGallery(); updateRenameThemeButtonState(); });
 galleryTypeFilterSelect.addEventListener('change', refreshGallery);
 gallerySortSelect.addEventListener('change', refreshGallery);
+
+// "Rename Theme" only makes sense once a specific Theme is picked in the
+// filter above — not on "All Themes" or "No Theme", neither of which name
+// an actual Theme to rename.
+function updateRenameThemeButtonState() {
+  const theme = galleryThemeFilterSelect.value;
+  const isRealTheme = !!theme && theme !== '__none__';
+  btnRenameTheme.disabled = !isRealTheme;
+  btnRenameTheme.title = isRealTheme
+    ? `Rename the "${theme}" Theme on every card that uses it`
+    : 'Pick a Theme above first';
+}
+
+// Renames a Theme in bulk: every saved card currently in the selected
+// Theme gets its formData.collection updated and re-saved (id, art, and
+// every other field untouched — and updatedAt is deliberately left alone,
+// so a bulk rename doesn't reshuffle "Sort: Latest"). Typing the name of
+// an existing different Theme merges the two, which is called out in the
+// confirmation message so it's never a silent surprise.
+btnRenameTheme.addEventListener('click', async () => {
+  const oldTheme = galleryThemeFilterSelect.value;
+  if (!oldTheme || oldTheme === '__none__') return;
+
+  const input = window.prompt(
+    `Rename the "${oldTheme}" Theme to:\n\n(Updates every card currently in this Theme. Nothing else about those cards changes.)`,
+    oldTheme
+  );
+  if (input === null) return; // cancelled
+  const newTheme = input.trim();
+  if (!newTheme) { alert("Theme name can't be blank."); return; }
+  if (newTheme === oldTheme) return; // no actual change
+
+  const allCards = await getAllCards();
+  const affected = allCards.filter(c => (c.formData?.collection || '') === oldTheme);
+  const mergingIntoExisting = allCards.some(c => !affected.includes(c) && (c.formData?.collection || '') === newTheme);
+  for (const record of affected) {
+    record.formData.collection = newTheme;
+    await saveCard(record);
+  }
+
+  await refreshGallery(); // rebuilds the Theme dropdown so newTheme is now a valid option
+  galleryThemeFilterSelect.value = newTheme;
+  await refreshGallery(); // re-filters the grid to the renamed Theme
+  updateRenameThemeButtonState();
+
+  const count = affected.length;
+  themeRenameStatus.textContent = `Renamed "${oldTheme}" to "${newTheme}" on ${count} card${count === 1 ? '' : 's'}` +
+    (mergingIntoExisting ? ` (merged into the existing "${newTheme}" Theme).` : '.');
+  setTimeout(() => { themeRenameStatus.textContent = ''; }, 5000);
+});
+
+updateRenameThemeButtonState();
 
 async function refreshGallery() {
   const allCards = await getAllCards();

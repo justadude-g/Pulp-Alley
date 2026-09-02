@@ -203,7 +203,11 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   how the card itself renders. My Cards' Theme filter also offers a "No
   Theme" option (right after "All Themes") that shows only the cards you
   haven't assigned a Theme to yet — handy for catching stragglers before
-  you tidy everything into Themes.
+  you tidy everything into Themes. To fix a typo or reorganize without
+  opening every card, pick a Theme in the filter and hit "Rename Theme"
+  (it's disabled until a real Theme is selected): every card currently in
+  that Theme is bulk-updated to the new name in one go. Renaming to an
+  existing Theme's name merges the two.
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
   (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight

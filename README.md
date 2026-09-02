@@ -187,7 +187,10 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   "Card Type" filter dropdown next to the search box narrows My Cards down
   to a single type (Leader, Sidekick, Ally, Follower, Villain, Creature,
   Gang, Custom) and combines with the Theme filter below, so e.g. "Leaders
-  only from the Star Wars Theme" is one dropdown pick each.
+  only from the Star Wars Theme" is one dropdown pick each. A "Sort"
+  dropdown controls the display order: "Name" (the default) sorts
+  alphabetically, and "Latest" sorts by most-recently saved or edited
+  first — pick "Latest" to find the card you were just working on.
 - **Themes — organize cards into your own collections** — the Card
   Designer has an optional "Theme" field where you can type any category
   you like ("Die Hard", "Star Wars", "Cyberpunk" — anything) to group

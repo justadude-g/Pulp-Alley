@@ -945,16 +945,18 @@ const selectAllBtn = document.getElementById('select-all-btn');
 const gallerySearchInput = document.getElementById('gallery-search');
 const galleryThemeFilterSelect = document.getElementById('gallery-theme-filter');
 const galleryTypeFilterSelect = document.getElementById('gallery-type-filter');
+const gallerySortSelect = document.getElementById('gallery-sort');
 
 // Tracks the cards currently shown in the gallery (same order as
-// rendered, i.e. after search/Theme filtering), so Select All can pick
-// "the first 9" consistently with what's on screen without a redundant
-// extra fetch from IndexedDB.
+// rendered, i.e. after search/Theme/Type filtering and sorting), so Select
+// All can pick "the first 9" consistently with what's on screen without a
+// redundant extra fetch from IndexedDB.
 let latestGalleryCards = [];
 
 gallerySearchInput.addEventListener('input', refreshGallery);
 galleryThemeFilterSelect.addEventListener('change', refreshGallery);
 galleryTypeFilterSelect.addEventListener('change', refreshGallery);
+gallerySortSelect.addEventListener('change', refreshGallery);
 
 async function refreshGallery() {
   const allCards = await getAllCards();
@@ -969,6 +971,15 @@ async function refreshGallery() {
     const matchesType = !typeFilter || (c.formData?.cardType || '') === typeFilter;
     return matchesSearch && matchesTheme && matchesType;
   });
+
+  // "Name" (the default) sorts A-Z, case-insensitively; "Latest" sorts by
+  // most-recently-saved first. getAllCards() already returns latest-first,
+  // but sorting explicitly here doesn't depend on that staying true.
+  if (gallerySortSelect.value === 'latest') {
+    cards.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  } else {
+    cards.sort((a, b) => (a.formData?.name || '').localeCompare(b.formData?.name || '', undefined, { sensitivity: 'base' }));
+  }
 
   latestGalleryCards = cards;
   const filtering = !!(searchText || themeFilter || typeFilter);

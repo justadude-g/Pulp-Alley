@@ -332,6 +332,36 @@ const NAME_BAR_H = 118;
 function getPortraitBox() { return { ...PORTRAIT }; }
 function getThemeNames() { return Object.keys(THEMES); }
 
+// Renders exactly the portion of `img` that's visible inside the portrait
+// box at the given pan/zoom (`view`), onto a PORTRAIT.w x PORTRAIT.h
+// canvas, and returns it as a PNG data URL. Uses the identical cover-fit +
+// clamped-offset math as the portrait block in renderCard() below, so the
+// result is pixel-for-pixel what that block would have drawn — just
+// captured on its own, sized to only what's ever actually shown, instead
+// of keeping the full (possibly much larger) uploaded photo around.
+// Transparent areas (possible when `view.scale` is zoomed below 1) are
+// left transparent, not filled — matching how the live render lets the
+// card's own background gradient show through rather than baking one in.
+function renderPortraitCrop(img, view) {
+  const boxW = PORTRAIT.w, boxH = PORTRAIT.h;
+  const c = document.createElement('canvas');
+  c.width = boxW;
+  c.height = boxH;
+  const ctx = c.getContext('2d');
+  const v = view || { scale: 1, offsetX: 0, offsetY: 0 };
+  const coverScale = Math.max(boxW / img.width, boxH / img.height) * (v.scale || 1);
+  const dw = img.width * coverScale;
+  const dh = img.height * coverScale;
+  const maxOffX = Math.max(0, (dw - boxW) / 2);
+  const maxOffY = Math.max(0, (dh - boxH) / 2);
+  const ox = Math.max(-maxOffX, Math.min(maxOffX, v.offsetX || 0));
+  const oy = Math.max(-maxOffY, Math.min(maxOffY, v.offsetY || 0));
+  const dx = (boxW - dw) / 2 + ox;
+  const dy = (boxH - dh) / 2 + oy;
+  ctx.drawImage(img, dx, dy, dw, dh);
+  return c.toDataURL('image/png');
+}
+
 // data: {
 //   name, level, cardType, accentColor, theme: 'light'|'dark',
 //   stats: {brawl:{n,d}, shoot:{n,d}, dodge:{n,d}, might:{n,d}, finesse:{n,d}, cunning:{n,d}},

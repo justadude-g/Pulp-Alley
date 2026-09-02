@@ -79,9 +79,15 @@ function ok(label) { console.log('OK  ', label); }
   assert.strictEqual(collection, 'Star Wars', 'expected the Theme to carry over to the duplicate');
   const portraitAfterDuplicate = await page.evaluate(() => state.portraitOriginalDataURL);
   assert.strictEqual(portraitAfterDuplicate, originalPortraitDataURL, 'expected the portrait art to carry over to the duplicate unchanged');
+  // Saving crops the stored portrait down to exactly what was framed (see
+  // verify44.js) and resets the zoom to 1, since the saved art already IS
+  // that exact framing — so the duplicate (built from the saved record)
+  // correctly shows zoom 1, not the original pre-save zoom of 0.6. The
+  // framing itself (what's visually shown) still carries over unchanged,
+  // just baked into the art instead of expressed as a zoom value.
   const zoomAfterDuplicate = await page.inputValue('#f-zoom');
-  assert.strictEqual(zoomAfterDuplicate, '0.6', 'expected the portrait\'s zoom framing to carry over to the duplicate');
-  ok('Stats, Abilities, Quote, Theme, and the portrait art (with its zoom framing) all carry over unchanged');
+  assert.strictEqual(zoomAfterDuplicate, '1', `expected the duplicate's zoom to read 1 (the saved portrait is already cropped to its exact framing), got "${zoomAfterDuplicate}"`);
+  ok('Stats, Abilities, Quote, Theme, and the portrait art (already cropped to its framing) all carry over unchanged');
 
   // ---- 3. Saving the duplicate creates a second, separate card — the
   // original is untouched. ----

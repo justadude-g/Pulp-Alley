@@ -855,10 +855,10 @@ document.getElementById('btn-save-card').addEventListener('click', async () => {
   };
   await saveCard(record);
   state.editingId = id;
-  // Refreshes the Theme autocomplete right away if this card introduced a
-  // brand-new Theme name, so it's available for the very next card without
-  // needing a trip through My Cards first.
-  getAllCards().then(refreshThemeOptions);
+  // Refreshes the Theme and Affiliation autocomplete lists right away if
+  // this card introduced a brand-new Theme/Affiliation, so it's available
+  // for the very next card without needing a trip through My Cards first.
+  getAllCards().then(cards => { refreshThemeOptions(cards); refreshAffiliationOptions(cards); });
   refreshBackupBanner();
   saveStatus.textContent = `Saved “${data.name || 'Unnamed Character'}” to My Cards.`;
   setTimeout(() => { saveStatus.textContent = ''; }, 3500);
@@ -2637,11 +2637,11 @@ document.getElementById('btn-qr-save-pdf').addEventListener('click', downloadQui
 // ---------------- Init ----------------
 document.fonts.ready.then(updatePreview);
 updatePreview();
-// Populate the Designer's Theme autocomplete (and both Theme filter
-// dropdowns) from whatever's already saved, so it's ready immediately
-// rather than waiting for the user to first open My Cards or the roster's
-// colleague picker.
-getAllCards().then(refreshThemeOptions);
+// Populate the Designer's Theme and Affiliation autocomplete (and both
+// filter dropdowns for each) from whatever's already saved, so they're
+// ready immediately rather than waiting for the user to first open My
+// Cards or the roster's colleague picker.
+getAllCards().then(cards => { refreshThemeOptions(cards); refreshAffiliationOptions(cards); });
 // Sweep anything older than TRASH_RETENTION_DAYS out of Recently Deleted
 // once per app load, then reflect whatever's left in the top-bar badge.
 purgeOldTrash().then(refreshTrashBadge);

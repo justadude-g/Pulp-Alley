@@ -62,6 +62,17 @@ function ok(label) { console.log('OK  ', label); }
   // ---- 3. Seed the rest of the roster: a Die Hard card with no
   // Affiliation, to exercise the optional / "No Affiliation" path. ----
   await saveCard('McClane', 'Die Hard', '');
+
+  // ---- 3b. Saving a card with a brand-new Affiliation refreshes the
+  // Designer's own Affiliation autocomplete right away — same as Theme —
+  // without needing a trip through My Cards first. Checked while still on
+  // the Designer tab, straight after the save above (McClane introduced no
+  // new Affiliation, but Twin A's "Rebel"/"Empire" from steps 1-2 should
+  // already be there from their own saves). ----
+  const designerAffiliationOptions = await page.$$eval('#affiliation-options option', els => els.map(e => e.value).sort());
+  assert.deepStrictEqual(designerAffiliationOptions, ['Empire', 'Rebel'], `expected the Designer's own Affiliation autocomplete to already list "Rebel"/"Empire" right after saving, without visiting My Cards, got ${JSON.stringify(designerAffiliationOptions)}`);
+  ok('Saving a card refreshes the Designer\'s Affiliation autocomplete immediately, same as Theme');
+
   await page.click('.tab-btn[data-tab="gallery"]');
   await page.waitForTimeout(300);
 
@@ -148,6 +159,19 @@ function ok(label) { console.log('OK  ', label); }
   const pickerNames = await page.$$eval('.library-item-name', els => els.map(e => e.textContent));
   assert.deepStrictEqual(pickerNames, ['Twin A', 'Twin A'], `expected the picker's Affiliation filter to narrow to just the "Rebel Alliance" cards, got ${JSON.stringify(pickerNames)}`);
   ok('The "Add from My Cards" picker gets its own Affiliation filter, narrowing the list the same way Theme does');
+
+  // ---- 10. A fresh page load (a new session against the same IndexedDB —
+  // e.g. tomorrow, or a browser restart) populates the Designer's
+  // Affiliation autocomplete immediately from whatever's already saved,
+  // without requiring a first trip through My Cards or the colleague
+  // picker. This is the actual bug report this test guards against: the
+  // init-time refresh used to cover Theme only, leaving Affiliation's
+  // autocomplete empty until My Cards was opened at least once. ----
+  await page.reload();
+  await page.waitForTimeout(400);
+  const freshLoadAffiliationOptions = await page.$$eval('#affiliation-options option', els => els.map(e => e.value).sort());
+  assert.deepStrictEqual(freshLoadAffiliationOptions, ['Rebel Alliance'], `expected a fresh page load to populate the Affiliation autocomplete from already-saved cards immediately, without visiting My Cards first, got ${JSON.stringify(freshLoadAffiliationOptions)}`);
+  ok('A fresh page load populates the Affiliation autocomplete right away, same as Theme — no trip through My Cards required');
 
   console.log('\nAll verify50 checks passed.');
   await browser.close();

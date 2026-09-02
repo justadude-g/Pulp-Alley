@@ -2308,17 +2308,24 @@ trashListEl.addEventListener('click', async (e) => {
 });
 
 // ---------------- Quick Reference (Save as PDF) ----------------
-// Draws its own single-page PDF from scratch with jsPDF (same library/
+// Draws its own two-page PDF from scratch with jsPDF (same library/
 // approach as downloadRosterPDF above) rather than rasterizing the
 // on-screen .qr-sheet markup — that keeps text crisp at any zoom and,
-// more importantly, lets the content be hand-fit to exactly one page, so
-// "Save as PDF" always produces a single-page file that prints on one
-// sheet of A4. The on-screen tab and this function both transcribe the
-// same source rules (Core Rules, Terms & Flow v1.2, and the official
-// Action Sequence reference) independently — see the .qr-sheet markup in
-// index.html for the on-screen version — so a future rules correction
-// needs updating in both places, the same tradeoff already made between
-// renderRosterPrintSheet/downloadRosterPDF/buildRosterPlainText above.
+// more importantly, lets the content be hand-fit to exactly two pages, so
+// "Save as PDF" always produces the same two-page file that prints on two
+// sheets of A4 (page 1: turn sequence, health, and the core fight/shoot
+// rules; page 2: Dodging, Modifiers, Splitting Dice, Cover, Bursts &
+// Stealth — Core Rules p. 57-73). The on-screen tab and this function both
+// transcribe the same source rules (Core Rules, Terms & Flow v1.2, and the
+// official Action Sequence reference) independently — see the .qr-sheet
+// markup in index.html for the on-screen version — so a future rules
+// correction needs updating in both places, the same tradeoff already made
+// between renderRosterPrintSheet/downloadRosterPDF/buildRosterPlainText
+// above. jsPDF's built-in Helvetica font only supports WinAnsi encoding —
+// arrows, the U+2212 minus sign, and >=/<= silently render as garbage
+// instead of throwing — so every string drawn here sticks to ASCII (->,
+// plain hyphen "-", "at least"/"over") even though the on-screen HTML
+// version is free to use →/≥/− since browsers don't have that limitation.
 function downloadQuickReferencePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -2331,10 +2338,11 @@ function downloadQuickReferencePDF() {
 
   function mmPerLine(pt) { return pt * 1.15 / 72 * 25.4; }
   function ensureRoom(col, h) {
-    // Content is hand-fit to a single page; this is a safety net only
-    // (keeps drawing rather than throwing if a future edit runs long) and
-    // intentionally does not add a page, since that would break the
-    // "always exactly 1 page" guarantee this function exists for.
+    // Content on each page is hand-fit to fit that page; this is a safety
+    // net only (keeps drawing rather than throwing if a future edit runs
+    // long) and intentionally does not add a page on its own — the two
+    // pages this function draws are a deliberate, fixed split (see above),
+    // not overflow-driven pagination.
     if (y[col] + h > pageH - marginBottom) return;
   }
 
@@ -2431,7 +2439,7 @@ function downloadQuickReferencePDF() {
     doc.setTextColor(0, 0, 0);
   }
 
-  pageHeader('Everything on one sheet');
+  pageHeader('Page 1 of 2 — Turns, Health & Combat Basics');
 
   // ---- Column A: your turn — activation, movement, staying alive ----
   callout(0, 'Success is a 4+ on any die.');
@@ -2527,6 +2535,99 @@ function downloadQuickReferencePDF() {
     'Each side rolls the required attribute and dice. Most successes wins; ties go to the defender.',
   ]);
   callout(1, 'At a glance: Success = 4+  ·  Movement isn’t an Action  ·  one Action ends your Activation  ·  Health ladder d10 -> d8 -> d6 -> Down -> Out  ·  Director changes on a clean combat win or a Plot Point.', true);
+
+  // ---- Page 2: Dodging, Modifiers, Splitting Dice, Cover, Bursts & Stealth ----
+  // Same hand-fit-to-one-page approach as page 1 above, just a second page —
+  // still a single call to doc.save() below produces one PDF file with both
+  // pages, same as the existing multi-page Print Sheet/Roster PDFs.
+  doc.addPage();
+  y = [marginTop, marginTop];
+  pageHeader('Page 2 of 2 — Dodging, Modifiers, Splitting Dice, Cover, Bursts & Stealth');
+
+  // ---- Column A: Dodging, Disengage, Modifiers, Defensive Fire, Splitting Dice ----
+  heading(0, 'Dodging');
+  list(0, [
+    'Dodge can be used instead of Brawl or Shoot in any fight.',
+    'Dodging a Peril: roll Dodge instead of the peril’s normal attribute. Pass: no Hits, Activation ends. Fail: take Hits equal to the challenge number, Activation ends.',
+    'The attacker can Dodge too — a harrying attack or suppressive fire.',
+  ]);
+
+  heading(0, 'Disengage');
+  list(0, [
+    'Choosing Dodge and taking no Hits lets you move 1" away (Disengage) — also available when you Recover from Down.',
+    'You must end at least 1" from every enemy. If that’s not possible, you can’t Disengage.',
+    'Can’t move through another figure or a barrier while disengaging.',
+    'Moving into a perilous or difficult area while disengaging doesn’t trigger a peril.',
+    'Both sides disengaging from each other at once: the active character moves first.',
+  ]);
+
+  heading(0, 'Basic Modifiers');
+  list(0, [
+    'Close Range (target within 6"): +1 Shoot — always applies to Defensive Fire too.',
+    'Long Range (target over 24" away): -1 Shoot.',
+    'Multiple Fights: -1 Brawl and -1 Shoot per fight this character already resolved this Turn, regardless of which skill was used (Veterans/Moxie ignore this for Shoot/Brawl respectively).',
+    'Moving Fast: -1 Shoot if you moved over 6" and shoot in the same Activation.',
+  ]);
+
+  heading(0, 'Defensive Fire');
+  list(0, [
+    'Rushed by an attacker who moved over 3"? You may use Shoot instead of just Brawl or Dodge.',
+    'Defensive Fire always gets the Close Range +1, even if the attacker rushed from beyond 6".',
+    'Not available if you’re already Engaged with another enemy.',
+  ]);
+
+  heading(0, 'Splitting Dice — Multiple Enemies');
+  list(0, [
+    'Rushing into, or activating already in contact with, more than one enemy: split your Brawl dice, at least 1 die per enemy, and resolve each fight in the order you choose.',
+    'Shooting more than one target: split your Shoot dice the same way, starting with the nearest enemy — only that first target gets the Close Range bonus.',
+    'Splitting your dice counts as ONE fight for the Multiple Fights penalty, however many targets you split against.',
+    'Injured partway through resolving the split fights? The injury applies immediately and may drop your dice-type — or knock you down — before the rest resolve. Dodging and avoiding all Hits in a split fight lets you Disengage, cancelling any fights left.',
+  ]);
+
+  // ---- Column B: Cover, Shooting Engaged Characters, Bursts, Stealth ----
+  heading(1, 'Cover Save');
+  list(1, [
+    'You’re in Cover if you’re in contact with terrain between you and the shooter — or on higher ground at least 3" above them.',
+    'In Cover, you may re-roll 1 (only 1) failed Health die per Shootout.',
+    'An obscuring area (smoke, foliage) also puts you in Cover if it fully crosses the line-of-sight to you — even without being in contact with it.',
+  ]);
+
+  heading(1, 'Shooting Engaged Characters');
+  list(1, [
+    'No unengaged enemy to target? You may shoot into a group of engaged characters — but never a group that includes a friendly.',
+    'Resolved as an unopposed attack: apply your modifiers, roll, and assign each success as a Hit to a random character in the group. The target doesn’t roll.',
+  ]);
+
+  heading(1, 'Bursts');
+  list(1, [
+    'Placing a burst is an action and a special attack (not a fight) — needs an ability such as Burst Fire or Long Burst.',
+    'Can’t place a burst’s edge within 1" of a friendly, or of an enemy Engaged with a friendly, or through a wall/barrier.',
+    'Resolving: anyone in contact with the template draws one peril challenge immediately, then the burst is removed.',
+    'Hold Fire: if nobody’s in contact when it’s placed, the burst stays in play as a trap — the first figure (friend or foe) to touch it triggers the peril, then it’s removed. It doesn’t block line-of-sight and isn’t otherwise perilous ground.',
+    'A burst is also removed the instant its owner is injured or enters a fight; otherwise all bursts clear at the end of the Turn.',
+  ]);
+
+  heading(1, 'Stealth — Hide & Sneak');
+  list(1, [
+    'Hide (an action) only works while you’re out of every enemy’s line-of-sight — you become Hidden.',
+    'Hidden figures don’t block line-of-sight or movement, and can’t be rushed, attacked, or targeted.',
+    'Sneak: move up to 3" this Activation and stay Hidden. Move farther, take any action, or get spotted, and Hidden ends.',
+  ]);
+
+  heading(1, 'Spotting');
+  list(1, [
+    'Automatic opposed check whenever an enemy activates or moves within 12" of a Hidden figure who’d otherwise be in their line-of-sight — the searcher rolls Cunning, the Hidden figure rolls Finesse to stay hidden.',
+    'Can’t re-roll a spotting check against the same figure more than once per Activation.',
+  ]);
+
+  heading(1, 'Ambush');
+  list(1, [
+    'A Hidden figure attacking (Shoot or Brawl) rolls a spotting check against the target first.',
+    'Win it: the attack is unopposed. Knock the target Down/Out and you remain Hidden — otherwise you’re spotted.',
+    'Lose it: you’re spotted immediately, and the attack resolves as a normal fight.',
+  ]);
+
+  callout(1, 'At a glance: Dodge always beats no roll at all  ·  Disengage needs 1" clear of every enemy  ·  Close Range +1 / Long Range -1 Shoot  ·  a burst resolves once, on contact  ·  Hidden can’t be targeted until spotted.', true);
 
   doc.save('pulp-alley-quick-reference.pdf');
 }

@@ -321,15 +321,20 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   on its own "Export Backup" button, or on the header one; dismissing it
   (✕) clears it for the rest of the session, and it reappears next time you
   reload if 5 more changes have piled up since.
-- **Quick Reference** — a one-page cheat sheet distilled from the Core
+- **Quick Reference** — a two-page cheat sheet distilled from the Core
   Rules, Terms & Flow v1.2, and the official Action Sequence reference,
-  laid out in two columns: the Director, key terms, the Direct & Act
-  sequence, Health/Recovery, and Engagement/Dodge on the left; blocking
-  Hits, dice modifiers, the Shooting and Brawling sequences, Fortune Cards
-  — Peril and Challenge, and Competitive Rolls on the right. Viewable right
-  in the tab, or "Save as PDF" downloads a real single-page PDF (drawn
-  directly, not a screenshot of the page) sized to print on one sheet of
-  A4 — no double-siding needed.
+  each page laid out in two columns. Page 1 covers the turn/health basics:
+  the Director, key terms, the Direct & Act sequence, Health/Recovery, and
+  Engagement/Dodge on the left; blocking Hits, dice modifiers, the Shooting
+  and Brawling sequences, Fortune Cards — Peril and Challenge, and
+  Competitive Rolls on the right. Page 2 (Core Rules p. 57-73) goes deeper
+  on fights: Dodging, Disengage, Basic Modifiers (Close/Long Range,
+  Multiple Fights, Moving Fast), and Defensive Fire on the left; Splitting
+  Dice across multiple enemies, Cover Save, Shooting Engaged Characters,
+  Bursts, and Stealth (Hide & Sneak, Spotting, Ambush) on the right.
+  Viewable right in the tab, or "Save as PDF" downloads a real two-page PDF
+  (drawn directly, not a screenshot of the page) sized to print on two
+  sheets of A4 — no double-siding needed.
 - Fully offline-capable: fonts and the PDF library are bundled in the repo,
   no third-party CDN calls at runtime.
 
@@ -366,8 +371,8 @@ from `file://`.
   straight edge or guillotine cutter.
 - For the crispest results, use "Download PDF" and print that file rather
   than printing straight from the browser tab.
-- Quick Reference's "Save as PDF" produces exactly 1 page — the whole
-  cheat sheet on a single sheet of A4, no double-siding needed.
+- Quick Reference's "Save as PDF" produces exactly 2 pages — the whole
+  cheat sheet across two sheets of A4, no double-siding needed.
 
 ## Project structure
 

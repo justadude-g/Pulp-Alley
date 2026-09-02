@@ -1,8 +1,10 @@
-// verify39.js — new "Quick Reference" tab: an on-screen, one-page cheat
+// verify39.js — the "Quick Reference" tab: an on-screen, two-page cheat
 // sheet distilled from the Core Rules, Terms & Flow v1.2, and the official
 // Action Sequence reference, plus a "Save as PDF" button that downloads a
-// real single-page PDF (drawn directly with jsPDF, not a screenshot of the
-// DOM) sized to print on one sheet of A4.
+// real two-page PDF (drawn directly with jsPDF, not a screenshot of the
+// DOM) sized to print on two sheets of A4 — page 1 covers turns, health,
+// and the core fight/shoot rules; page 2 (Core Rules p. 57-73) covers
+// Dodging, Modifiers, Splitting Dice, Cover, Bursts & Stealth.
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -34,23 +36,29 @@ function ok(label) { console.log('OK  ', label); }
   assert.strictEqual(panelVisible, true, 'expected #tab-quickref to become the active panel');
   ok('"Quick Reference" tab exists and switches in normally');
 
-  // ---- 2. A single on-screen sheet with two columns, covering the key
-  // sections drawn from the source rules documents. ----
+  // ---- 2. Two on-screen sheets (one per PDF page), two columns each,
+  // covering the key sections drawn from the source rules documents. ----
   const sheetCount = await page.$$eval('.qr-sheet', els => els.length);
-  assert.strictEqual(sheetCount, 1, `expected exactly 1 on-screen "sheet" (everything fits on one page), got ${sheetCount}`);
+  assert.strictEqual(sheetCount, 2, `expected exactly 2 on-screen "sheets" (one per PDF page), got ${sheetCount}`);
   const colCount = await page.$$eval('.qr-sheet .qr-col', els => els.length);
-  assert.strictEqual(colCount, 2, `expected 2 columns on the single sheet, got ${colCount}`);
+  assert.strictEqual(colCount, 4, `expected 2 columns per sheet across 2 sheets (4 total), got ${colCount}`);
 
   const bodyText = await page.$eval('#tab-quickref', el => el.textContent);
-  const expectedHeadings = [
+  const expectedHeadingsPage1 = [
     'Director', 'Key Terms', 'Action Sequence', 'Health & Recovery', 'Engagement & Dodge',
     'Blocking Hits', 'Shooting Sequence', 'Brawling Sequence', 'Fortune Cards', 'Competitive Rolls',
   ];
-  for (const heading of expectedHeadings) {
+  const expectedHeadingsPage2 = [
+    'Dodging', 'Disengage', 'Basic Modifiers', 'Defensive Fire', 'Splitting Dice',
+    'Cover Save', 'Shooting Engaged Characters', 'Bursts', 'Stealth', 'Spotting', 'Ambush',
+  ];
+  for (const heading of [...expectedHeadingsPage1, ...expectedHeadingsPage2]) {
     assert.ok(bodyText.includes(heading), `expected the Quick Reference tab to include a "${heading}" section`);
   }
   assert.ok(bodyText.includes('Success is a 4+ on any die'), 'expected the core success-rule callout on screen');
-  ok('The single on-screen sheet renders two columns and covers all the key sections from the source rules');
+  assert.ok(bodyText.includes('Page 1 of 2'), 'expected the first sheet to be labeled "Page 1 of 2"');
+  assert.ok(bodyText.includes('Page 2 of 2'), 'expected the second sheet to be labeled "Page 2 of 2"');
+  ok('Both on-screen sheets render two columns each and cover all the key sections from the source rules, including the p. 57-73 additions');
 
   // ---- 3. "Save as PDF" downloads a real PDF file named as expected. ----
   const [download] = await Promise.all([
@@ -61,11 +69,10 @@ function ok(label) { console.log('OK  ', label); }
   const pdfPath = await download.path();
   ok('"Save as PDF" downloads a file named pulp-alley-quick-reference.pdf');
 
-  // ---- 4. The PDF is exactly 1 page — the whole point of consolidating
-  // from the original 2-page design once it was clear everything fit —
-  // and carries every section's content, proven with pypdf rather than
-  // guessing from byte size, matching this project's general preference
-  // for verifying actual rendered/extracted content over indirect proxies. ----
+  // ---- 4. The PDF is exactly 2 pages, and each page carries the right
+  // section content — proven with pypdf rather than guessing from byte
+  // size, matching this project's general preference for verifying actual
+  // rendered/extracted content over indirect proxies. ----
   const py = `
 import pypdf, json, sys
 r = pypdf.PdfReader(${JSON.stringify(pdfPath)})
@@ -74,31 +81,44 @@ print(json.dumps({"count": len(r.pages), "pages": pages}))
 `;
   const out = execFileSync('python3', ['-c', py], { encoding: 'utf8' });
   const { count, pages } = JSON.parse(out);
-  assert.strictEqual(count, 1, `expected the saved PDF to have exactly 1 page (everything fits on one sheet of A4), got ${count}`);
-  ok('The saved PDF has exactly 1 page');
+  assert.strictEqual(count, 2, `expected the saved PDF to have exactly 2 pages (one per sheet of A4), got ${count}`);
+  ok('The saved PDF has exactly 2 pages');
 
   // Section headings are drawn in all-caps in the PDF (see heading() in
   // downloadQuickReferencePDF), so these checks are case-insensitive —
   // they're proving the section is present, not policing its letter case.
-  const text = pages[0].toLowerCase();
-  const expectedSections = [
+  const text1 = pages[0].toLowerCase();
+  const expectedSectionsPage1 = [
     'director', 'key terms', 'action sequence', 'health & recovery', 'engagement & dodge',
     'blocking hits', 'dice modifiers', 'shooting sequence', 'brawling sequence',
     'fortune cards', 'competitive rolls',
   ];
-  for (const section of expectedSections) {
-    assert.ok(text.includes(section), `expected the single-page PDF to contain the "${section}" section, but it was missing`);
+  for (const section of expectedSectionsPage1) {
+    assert.ok(text1.includes(section), `expected PDF page 1 to contain the "${section}" section, but it was missing`);
   }
-  assert.ok(text.includes('everything on one sheet'), 'expected the PDF header to read "Everything on one sheet"');
-  ok('The single page carries every section from both halves of the reference — Director through Competitive Rolls');
+  assert.ok(text1.includes('page 1 of 2'), 'expected PDF page 1\'s header to read "Page 1 of 2"');
+  ok('PDF page 1 carries every section from the turns/health/combat-basics half of the reference');
+
+  const text2 = pages[1].toLowerCase();
+  const expectedSectionsPage2 = [
+    'dodging', 'disengage', 'basic modifiers', 'defensive fire', 'splitting dice',
+    'cover save', 'shooting engaged characters', 'bursts', 'stealth', 'spotting', 'ambush',
+  ];
+  for (const section of expectedSectionsPage2) {
+    assert.ok(text2.includes(section), `expected PDF page 2 to contain the "${section}" section, but it was missing`);
+  }
+  assert.ok(text2.includes('page 2 of 2'), 'expected PDF page 2\'s header to read "Page 2 of 2"');
+  ok('PDF page 2 carries every section added from Core Rules p. 57-73 — Dodging through Ambush');
 
   // Guard against the exact encoding bug found during development: jsPDF's
   // built-in Helvetica font silently mangles characters outside WinAnsi
   // (arrows, the U+2212 minus sign, >=) into interleaved-null-byte garbage
   // instead of throwing, so a stray Unicode symbol in a future edit would
   // otherwise pass every other check here while rendering as gibberish.
-  assert.ok(!pages[0].includes('\x00'), 'expected no null-byte encoding artifacts in the PDF text (a sign a non-WinAnsi character snuck into the PDF-drawing code — use ASCII arrows/comparisons there, not →/≥/− )');
-  ok('No encoding-corruption artifacts (null bytes) in the extracted text — confirms only WinAnsi-safe characters were used in the PDF-drawing code');
+  for (let i = 0; i < pages.length; i++) {
+    assert.ok(!pages[i].includes('\x00'), `expected no null-byte encoding artifacts in PDF page ${i + 1} (a sign a non-WinAnsi character snuck into the PDF-drawing code — use ASCII arrows/comparisons there, not →/≥/− )`);
+  }
+  ok('No encoding-corruption artifacts (null bytes) on either page — confirms only WinAnsi-safe characters were used in the PDF-drawing code');
 
   assert.deepStrictEqual(errors, [], `expected no page errors, got ${JSON.stringify(errors)}`);
   console.log('\nAll verify39 checks passed.');

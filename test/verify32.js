@@ -67,7 +67,9 @@ function ok(label) { console.log('OK  ', label); }
   await page.click('.tab-btn[data-tab="gallery"]');
   await page.waitForTimeout(300);
   const galleryThemeOptions = await page.$$eval('#gallery-theme-filter option', els => els.map(e => e.value));
-  assert.deepStrictEqual(galleryThemeOptions, ['', 'Die Hard', 'Star Wars'], `expected My Cards' Theme filter to list [All, Die Hard, Star Wars], got ${JSON.stringify(galleryThemeOptions)}`);
+  // "__none__" (the "No Theme" option, see verify42.js) always sits right
+  // after "All Themes", ahead of the alphabetical Theme names.
+  assert.deepStrictEqual(galleryThemeOptions, ['', '__none__', 'Die Hard', 'Star Wars'], `expected My Cards' Theme filter to list [All, No Theme, Die Hard, Star Wars], got ${JSON.stringify(galleryThemeOptions)}`);
   ok('My Cards\' Theme filter dropdown lists every distinct Theme in use');
 
   async function visibleGalleryNames() {

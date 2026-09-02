@@ -200,7 +200,10 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   and the League Roster's "Add from My Cards" picker, so you can narrow
   either list down to just one Theme's cards. Leave it blank on any card
   that doesn't need one — Theme is entirely optional and has no effect on
-  how the card itself renders.
+  how the card itself renders. My Cards' Theme filter also offers a "No
+  Theme" option (right after "All Themes") that shows only the cards you
+  haven't assigned a Theme to yet — handy for catching stragglers before
+  you tidy everything into Themes.
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
   (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight

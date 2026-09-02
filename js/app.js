@@ -924,15 +924,20 @@ function distinctCollections(cards) {
 // Repopulates the Designer's Theme autocomplete plus both Theme filter
 // dropdowns from the current set of saved cards, preserving whatever each
 // filter dropdown currently has selected (so refreshing the list mid-filter
-// doesn't silently reset the user back to "All Themes").
+// doesn't silently reset the user back to "All Themes"). The My Cards
+// gallery's filter additionally gets a "No Theme" option (sentinel value
+// "__none__") so cards with a blank Theme can be found — the picker/backup
+// filters don't need it, since neither has been asked for it.
 function refreshThemeOptions(cards) {
   const names = distinctCollections(cards);
   collectionOptionsList.innerHTML = names.map(n => `<option value="${escapeAttr(n)}"></option>`).join('');
   [galleryThemeFilterSelect, colleagueThemeFilterSelect, backupThemeFilterSelect].forEach(sel => {
     if (!sel) return;
     const current = sel.value;
-    sel.innerHTML = '<option value="">All Themes</option>' + names.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
-    sel.value = names.includes(current) ? current : '';
+    const noThemeOption = sel === galleryThemeFilterSelect ? '<option value="__none__">No Theme</option>' : '';
+    sel.innerHTML = '<option value="">All Themes</option>' + noThemeOption + names.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
+    const currentStillValid = current === '__none__' ? sel === galleryThemeFilterSelect : names.includes(current);
+    sel.value = currentStillValid ? current : '';
   });
 }
 
@@ -967,7 +972,8 @@ async function refreshGallery() {
   const typeFilter = galleryTypeFilterSelect.value;
   const cards = allCards.filter(c => {
     const matchesSearch = !searchText || (c.formData?.name || '').toLowerCase().includes(searchText);
-    const matchesTheme = !themeFilter || (c.formData?.collection || '') === themeFilter;
+    const matchesTheme = !themeFilter
+      || (themeFilter === '__none__' ? !(c.formData?.collection || '').trim() : (c.formData?.collection || '') === themeFilter);
     const matchesType = !typeFilter || (c.formData?.cardType || '') === typeFilter;
     return matchesSearch && matchesTheme && matchesType;
   });

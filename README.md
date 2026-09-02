@@ -257,7 +257,16 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   similar mooks rather than one unique character, the same saved Gang card
   can be added more than once — the picker keeps offering it (showing a
   running "N already on this roster" count) and each copy costs its own 2
-  slots. Browse and add any of the 41 official Background
+  slots. Any other Card Type can opt into the same behaviour with the
+  Card Designer's "Non-Unique" checkbox — check it for a card that
+  represents a type rather than a single named individual (e.g. a generic
+  Rebel Commando or Scout Trooper Ally/Follower, as opposed to a named
+  hero or villain), and it's then added and re-offered by the picker the
+  same way a Gang is, still costing its own slots each time. Leave it
+  unchecked (the default) for the usual one-copy-only unique character.
+  The checkbox is hidden for Gang cards since they're already repeatable
+  without it, and — like Theme and Affiliation — it's purely a roster-
+  building convenience with no effect on how the card renders or prints. Browse and add any of the 41 official Background
   Perks (p. 22-26, plus later additions like Crewmates) — which permanently
   cost slots too — and watch the slot meter and rule warnings (too many
   Leaders/Sidekicks, over budget) update live. Save multiple named rosters

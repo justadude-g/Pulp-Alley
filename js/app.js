@@ -496,6 +496,7 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   applyDefaultStatsForType(e.target.value);
   updateResetStatsVisibility(e.target.value);
   updateNpcHintVisibility(e.target.value);
+  updateNonUniqueVisibility(e.target.value);
   updateHealthPreview();
   updatePreview();
 });
@@ -570,6 +571,19 @@ function updateNpcHintVisibility(cardType) {
   npcHintEl.style.display = (cardType === 'Villain' || cardType === 'Creature') ? 'block' : 'none';
 }
 
+// Non-Unique — marks a saved card as a repeatable "type" (e.g. Rebel
+// Commando, Scout Trooper) rather than a single named individual, so the
+// League Roster's colleague picker allows more than one copy — the same
+// exception Gang cards already get automatically. Hidden for Gang itself,
+// since a Gang can already be added more than once without this flag.
+const nonUniqueRowEl = document.getElementById('non-unique-row');
+const nonUniqueHintEl = document.getElementById('non-unique-hint');
+function updateNonUniqueVisibility(cardType) {
+  const show = cardType !== 'Gang';
+  nonUniqueRowEl.style.display = show ? 'flex' : 'none';
+  nonUniqueHintEl.style.display = show ? 'block' : 'none';
+}
+
 // Shared by both the Card Type auto-fill (above) and the Reset Stats
 // button below, so there's exactly one place that knows how to apply a
 // Card Type's default stat allocation.
@@ -587,6 +601,7 @@ resetStatsBtn.addEventListener('click', () => {
 });
 updateResetStatsVisibility(document.getElementById('f-cardType').value);
 updateNpcHintVisibility(document.getElementById('f-cardType').value);
+updateNonUniqueVisibility(document.getElementById('f-cardType').value);
 
 document.getElementById('f-healthStart').addEventListener('change', updateHealthPreview);
 document.getElementById('f-healthAsterisk').addEventListener('change', updateHealthPreview);
@@ -649,6 +664,11 @@ function collectFormData() {
     // within the "Star Wars" Theme) — same free-text/filter-only pattern as
     // collection above, never rendered on the card itself.
     affiliation: document.getElementById('f-affiliation').value.trim(),
+    // "nonUnique" flags a card as a repeatable type (e.g. Rebel Commando)
+    // rather than a single named individual, so the League Roster picker
+    // lets it be added more than once — the same exception Gang already
+    // gets automatically. Never rendered on the card itself.
+    nonUnique: document.getElementById('f-non-unique').checked,
     abilityFontSize: +document.getElementById('f-abilityFontSize').value,
     name: document.getElementById('f-name').value,
     level: +document.getElementById('f-level').value,
@@ -893,6 +913,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   applyDefaultStatsForType(document.getElementById('f-cardType').value);
   updateResetStatsVisibility(document.getElementById('f-cardType').value);
   updateNpcHintVisibility(document.getElementById('f-cardType').value);
+  updateNonUniqueVisibility(document.getElementById('f-cardType').value);
   // f-portrait (and f-portrait-frame) now live in the preview panel,
   // outside <form id="card-form"> (see index.html), so form.reset() above
   // doesn't touch them — reset explicitly instead. Image Frame defaults
@@ -1281,6 +1302,7 @@ async function loadCardIntoForm(record) {
   document.getElementById('f-theme').value = d.theme || 'ivory';
   document.getElementById('f-collection').value = d.collection || '';
   document.getElementById('f-affiliation').value = d.affiliation || '';
+  document.getElementById('f-non-unique').checked = !!d.nonUnique;
   // Setting .value programmatically (unlike typing) doesn't fire the
   // Theme field's 'input' listener above, so the Affiliation autocomplete
   // needs an explicit re-scope here to match whatever Theme this card has.
@@ -1306,6 +1328,7 @@ async function loadCardIntoForm(record) {
   toggleGangFields(isGang);
   updateResetStatsVisibility(d.cardType);
   updateNpcHintVisibility(d.cardType);
+  updateNonUniqueVisibility(d.cardType);
   if (isGang) {
     const models = d.health?.sequence?.length ? +d.health.sequence[0] : 5;
     gangModelsInput.value = models || 5;
@@ -2019,30 +2042,33 @@ async function renderColleaguePicker() {
   // single unique named character, so — unlike every other Card Type — a
   // league can field more than one copy of the same saved Gang card (e.g.
   // two "Rebel Commando" gangs), each still costing its own 2 roster slots.
-  // Everything else stays one-copy-only: once added, it drops out of this
-  // picker like before.
+  // A card can also opt into the same behaviour by checking "Non-Unique" in
+  // the Card Designer (e.g. a generic Rebel Commando or Scout Trooper Ally/
+  // Follower, as opposed to a named individual) — isRepeatable covers both
+  // cases. Everything else stays one-copy-only: once added, it drops out of
+  // this picker like before.
   const addedCounts = {};
   rosterState.members.forEach(m => { addedCounts[m.cardId] = (addedCounts[m.cardId] || 0) + 1; });
   const searchText = colleagueSearchInput.value.trim().toLowerCase();
   const themeFilter = colleagueThemeFilterSelect.value;
   const affiliationFilter = colleagueAffiliationFilterSelect.value;
+  const isRepeatable = (c) => c.formData?.cardType === 'Gang' || !!c.formData?.nonUnique;
   const available = cards.filter(c => {
-    const isGang = c.formData?.cardType === 'Gang';
-    if (!isGang && addedCounts[c.id]) return false;
+    if (!isRepeatable(c) && addedCounts[c.id]) return false;
     if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;
     if (themeFilter && (c.formData?.collection || '') !== themeFilter) return false;
     if (affiliationFilter && (c.formData?.affiliation || '') !== affiliationFilter) return false;
     return true;
   });
   if (!available.length) {
-    const allAdded = cards.length && cards.every(c => c.formData?.cardType !== 'Gang' && addedCounts[c.id]);
+    const allAdded = cards.length && cards.every(c => !isRepeatable(c) && addedCounts[c.id]);
     colleaguePickerList.innerHTML = allAdded
       ? '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>'
       : '<div class="library-empty">No cards match your search/Theme/Affiliation filter.</div>';
     return;
   }
   colleaguePickerList.innerHTML = available.map(c => {
-    const isGang = c.formData?.cardType === 'Gang';
+    const repeatable = isRepeatable(c);
     const count = addedCounts[c.id] || 0;
     const slots = slotCostForType(c.formData?.cardType);
     return `
@@ -2050,9 +2076,9 @@ async function renderColleaguePicker() {
       <img class="library-item-thumb" src="${c.pngDataURL}" alt="">
       <div class="library-item-body">
         <span class="library-item-name">${escapeHtml(c.formData?.name || 'Unnamed')}</span><span class="library-item-level">${escapeHtml(c.formData?.cardType || 'Custom')}</span>
-        <div class="library-item-text">${slots} roster slot${slots === 1 ? '' : 's'}${isGang && count ? ` · ${count} already on this roster` : ''}</div>
+        <div class="library-item-text">${slots} roster slot${slots === 1 ? '' : 's'}${repeatable && count ? ` · ${count} already on this roster` : ''}</div>
       </div>
-      <button type="button" class="library-add-btn" data-id="${escapeAttr(c.id)}" title="${isGang ? 'Add another copy of this Gang to the roster' : 'Add to roster'}">+</button>
+      <button type="button" class="library-add-btn" data-id="${escapeAttr(c.id)}" title="${repeatable ? 'Add another copy of this card to the roster' : 'Add to roster'}">+</button>
     </div>
   `;
   }).join('');

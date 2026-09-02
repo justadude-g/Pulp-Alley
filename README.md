@@ -223,6 +223,21 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   (it's disabled until a real Theme is selected): every card currently in
   that Theme is bulk-updated to the new name in one go. Renaming to an
   existing Theme's name merges the two.
+- **Affiliation — an optional sub-group within a Theme** — a second,
+  independent grouping field for when a Theme has natural sub-groups (e.g.
+  "Rebel", "Empire", "Mercenaries" within a "Star Wars" Theme, or
+  "Protagonist"/"Antagonist" within "Die Hard"), instead of baking the
+  sub-group into the Theme name itself (which would turn "Star Wars" into
+  several unrelated Theme entries and break filtering/renaming "every Star
+  Wars card" as one group). Works exactly like Theme — same free-text field
+  with autocomplete in the Card Designer, its own "Filter by Affiliation"
+  dropdown (with a "No Affiliation" option) in My Cards and the League
+  Roster's "Add from My Cards" picker, and its own "Rename Affiliation"
+  button that bulk-renames every card carrying it. The two filters combine
+  (e.g. Theme "Star Wars" + Affiliation "Rebel" together). Like Theme,
+  Affiliation is purely for organizing and filtering on this site — it's
+  optional, has no effect on how the card renders, and never appears on the
+  printed card.
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
   (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight

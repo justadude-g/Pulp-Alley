@@ -645,6 +645,10 @@ function collectFormData() {
     // completely separate concepts in code, even though both are labelled
     // "Theme" somewhere in the UI... only this one actually is.
     collection: document.getElementById('f-collection').value.trim(),
+    // "affiliation" is an optional sub-group within a Theme (e.g. "Rebel"
+    // within the "Star Wars" Theme) — same free-text/filter-only pattern as
+    // collection above, never rendered on the card itself.
+    affiliation: document.getElementById('f-affiliation').value.trim(),
     abilityFontSize: +document.getElementById('f-abilityFontSize').value,
     name: document.getElementById('f-name').value,
     level: +document.getElementById('f-level').value,
@@ -968,6 +972,43 @@ function refreshThemeOptions(cards) {
   });
 }
 
+// ---------------- Affiliations (optional sub-group within a Theme) ----------------
+// Same free-text, filter-only pattern as Themes above — e.g. "Rebel",
+// "Empire", "Mercenaries" as Affiliations within a "Star Wars" Theme — kept
+// as a second, independent field rather than folded into the Theme name so
+// the Theme filter alone still means "everything from this Theme, any
+// Affiliation" and Rename Theme still renames the whole Theme in one go.
+// Like Theme, this is purely for organizing/filtering here on the site —
+// it's never drawn on the rendered/printed card.
+const affiliationInput = document.getElementById('f-affiliation');
+const affiliationOptionsList = document.getElementById('affiliation-options');
+
+function distinctAffiliations(cards) {
+  const set = new Set();
+  cards.forEach(c => {
+    const name = (c.formData?.affiliation || '').trim();
+    if (name) set.add(name);
+  });
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+// Repopulates the Designer's Affiliation autocomplete plus both Affiliation
+// filter dropdowns (My Cards, League Roster's colleague picker), preserving
+// each dropdown's current selection. My Cards additionally gets a "No
+// Affiliation" option (sentinel "__none__"), same as the Theme filter does.
+function refreshAffiliationOptions(cards) {
+  const names = distinctAffiliations(cards);
+  affiliationOptionsList.innerHTML = names.map(n => `<option value="${escapeAttr(n)}"></option>`).join('');
+  [galleryAffiliationFilterSelect, colleagueAffiliationFilterSelect].forEach(sel => {
+    if (!sel) return;
+    const current = sel.value;
+    const noAffiliationOption = sel === galleryAffiliationFilterSelect ? '<option value="__none__">No Affiliation</option>' : '';
+    sel.innerHTML = '<option value="">All Affiliations</option>' + noAffiliationOption + names.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
+    const currentStillValid = current === '__none__' ? sel === galleryAffiliationFilterSelect : names.includes(current);
+    sel.value = currentStillValid ? current : '';
+  });
+}
+
 // ---------------- Gallery ----------------
 const galleryGrid = document.getElementById('gallery-grid');
 const galleryEmpty = document.getElementById('gallery-empty');
@@ -976,10 +1017,13 @@ const selectedCountEl = document.getElementById('selected-count');
 const selectAllBtn = document.getElementById('select-all-btn');
 const gallerySearchInput = document.getElementById('gallery-search');
 const galleryThemeFilterSelect = document.getElementById('gallery-theme-filter');
+const galleryAffiliationFilterSelect = document.getElementById('gallery-affiliation-filter');
 const galleryTypeFilterSelect = document.getElementById('gallery-type-filter');
 const gallerySortSelect = document.getElementById('gallery-sort');
 const btnRenameTheme = document.getElementById('btn-rename-theme');
 const themeRenameStatus = document.getElementById('theme-rename-status');
+const btnRenameAffiliation = document.getElementById('btn-rename-affiliation');
+const affiliationRenameStatus = document.getElementById('affiliation-rename-status');
 
 // Tracks the cards currently shown in the gallery (same order as
 // rendered, i.e. after search/Theme/Type filtering and sorting), so Select
@@ -989,6 +1033,7 @@ let latestGalleryCards = [];
 
 gallerySearchInput.addEventListener('input', refreshGallery);
 galleryThemeFilterSelect.addEventListener('change', () => { refreshGallery(); updateRenameThemeButtonState(); });
+galleryAffiliationFilterSelect.addEventListener('change', () => { refreshGallery(); updateRenameAffiliationButtonState(); });
 galleryTypeFilterSelect.addEventListener('change', refreshGallery);
 gallerySortSelect.addEventListener('change', refreshGallery);
 
@@ -1044,19 +1089,72 @@ btnRenameTheme.addEventListener('click', async () => {
 
 updateRenameThemeButtonState();
 
+// "Rename Affiliation" only makes sense once a specific Affiliation is
+// picked in the filter above — same reasoning as Rename Theme.
+function updateRenameAffiliationButtonState() {
+  const affiliation = galleryAffiliationFilterSelect.value;
+  const isRealAffiliation = !!affiliation && affiliation !== '__none__';
+  btnRenameAffiliation.disabled = !isRealAffiliation;
+  btnRenameAffiliation.title = isRealAffiliation
+    ? `Rename the "${affiliation}" Affiliation on every card that uses it`
+    : 'Pick an Affiliation above first';
+}
+
+// Renames an Affiliation in bulk, same mechanics as Rename Theme: every
+// saved card currently carrying the selected Affiliation gets
+// formData.affiliation updated and re-saved, updatedAt left alone.
+// Renaming to an existing Affiliation's name merges the two.
+btnRenameAffiliation.addEventListener('click', async () => {
+  const oldAffiliation = galleryAffiliationFilterSelect.value;
+  if (!oldAffiliation || oldAffiliation === '__none__') return;
+
+  const input = window.prompt(
+    `Rename the "${oldAffiliation}" Affiliation to:\n\n(Updates every card currently with this Affiliation. Nothing else about those cards changes.)`,
+    oldAffiliation
+  );
+  if (input === null) return; // cancelled
+  const newAffiliation = input.trim();
+  if (!newAffiliation) { alert("Affiliation name can't be blank."); return; }
+  if (newAffiliation === oldAffiliation) return; // no actual change
+
+  const allCards = await getAllCards();
+  const affected = allCards.filter(c => (c.formData?.affiliation || '') === oldAffiliation);
+  const mergingIntoExisting = allCards.some(c => !affected.includes(c) && (c.formData?.affiliation || '') === newAffiliation);
+  for (const record of affected) {
+    record.formData.affiliation = newAffiliation;
+    await saveCard(record);
+  }
+
+  await refreshGallery(); // rebuilds the Affiliation dropdown so newAffiliation is now a valid option
+  galleryAffiliationFilterSelect.value = newAffiliation;
+  await refreshGallery(); // re-filters the grid to the renamed Affiliation
+  updateRenameAffiliationButtonState();
+
+  const count = affected.length;
+  affiliationRenameStatus.textContent = `Renamed "${oldAffiliation}" to "${newAffiliation}" on ${count} card${count === 1 ? '' : 's'}` +
+    (mergingIntoExisting ? ` (merged into the existing "${newAffiliation}" Affiliation).` : '.');
+  setTimeout(() => { affiliationRenameStatus.textContent = ''; }, 5000);
+});
+
+updateRenameAffiliationButtonState();
+
 async function refreshGallery() {
   const allCards = await getAllCards();
   refreshThemeOptions(allCards);
+  refreshAffiliationOptions(allCards);
 
   const searchText = gallerySearchInput.value.trim().toLowerCase();
   const themeFilter = galleryThemeFilterSelect.value;
+  const affiliationFilter = galleryAffiliationFilterSelect.value;
   const typeFilter = galleryTypeFilterSelect.value;
   const cards = allCards.filter(c => {
     const matchesSearch = !searchText || (c.formData?.name || '').toLowerCase().includes(searchText);
     const matchesTheme = !themeFilter
       || (themeFilter === '__none__' ? !(c.formData?.collection || '').trim() : (c.formData?.collection || '') === themeFilter);
+    const matchesAffiliation = !affiliationFilter
+      || (affiliationFilter === '__none__' ? !(c.formData?.affiliation || '').trim() : (c.formData?.affiliation || '') === affiliationFilter);
     const matchesType = !typeFilter || (c.formData?.cardType || '') === typeFilter;
-    return matchesSearch && matchesTheme && matchesType;
+    return matchesSearch && matchesTheme && matchesAffiliation && matchesType;
   });
 
   // "Name" (the default) sorts A-Z, case-insensitively; "Latest" sorts by
@@ -1069,7 +1167,7 @@ async function refreshGallery() {
   }
 
   latestGalleryCards = cards;
-  const filtering = !!(searchText || themeFilter || typeFilter);
+  const filtering = !!(searchText || themeFilter || affiliationFilter || typeFilter);
   galleryEmpty.style.display = (!allCards.length && !filtering) ? 'block' : 'none';
   galleryNoMatch.style.display = (allCards.length && filtering && !cards.length) ? 'block' : 'none';
   galleryGrid.innerHTML = '';
@@ -1140,6 +1238,7 @@ async function loadCardIntoForm(record) {
   document.getElementById('f-accentColor').value = d.accentColor;
   document.getElementById('f-theme').value = d.theme || 'ivory';
   document.getElementById('f-collection').value = d.collection || '';
+  document.getElementById('f-affiliation').value = d.affiliation || '';
   document.getElementById('f-portrait-frame').checked = !!d.portraitFrame;
   document.getElementById('f-abilityFontSize').value = d.abilityFontSize || 33;
   document.getElementById('f-name').value = d.name;
@@ -1847,11 +1946,13 @@ const colleaguePickerModal = document.getElementById('colleague-picker-modal');
 const colleaguePickerList = document.getElementById('colleague-picker-list');
 const colleagueSearchInput = document.getElementById('colleague-search');
 const colleagueThemeFilterSelect = document.getElementById('colleague-theme-filter');
+const colleagueAffiliationFilterSelect = document.getElementById('colleague-affiliation-filter');
 
 document.getElementById('open-colleague-picker').addEventListener('click', async () => {
   colleaguePickerModal.classList.remove('hidden');
   colleagueSearchInput.value = '';
   colleagueThemeFilterSelect.value = '';
+  colleagueAffiliationFilterSelect.value = '';
   await renderColleaguePicker();
 });
 document.getElementById('close-colleague-picker').addEventListener('click', () => {
@@ -1862,10 +1963,12 @@ colleaguePickerModal.addEventListener('click', (e) => {
 });
 colleagueSearchInput.addEventListener('input', renderColleaguePicker);
 colleagueThemeFilterSelect.addEventListener('change', renderColleaguePicker);
+colleagueAffiliationFilterSelect.addEventListener('change', renderColleaguePicker);
 
 async function renderColleaguePicker() {
   const cards = await getAllCards();
   refreshThemeOptions(cards);
+  refreshAffiliationOptions(cards);
   // Gangs (p. 21) represent a generic group of similar mooks rather than a
   // single unique named character, so — unlike every other Card Type — a
   // league can field more than one copy of the same saved Gang card (e.g.
@@ -1876,18 +1979,20 @@ async function renderColleaguePicker() {
   rosterState.members.forEach(m => { addedCounts[m.cardId] = (addedCounts[m.cardId] || 0) + 1; });
   const searchText = colleagueSearchInput.value.trim().toLowerCase();
   const themeFilter = colleagueThemeFilterSelect.value;
+  const affiliationFilter = colleagueAffiliationFilterSelect.value;
   const available = cards.filter(c => {
     const isGang = c.formData?.cardType === 'Gang';
     if (!isGang && addedCounts[c.id]) return false;
     if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;
     if (themeFilter && (c.formData?.collection || '') !== themeFilter) return false;
+    if (affiliationFilter && (c.formData?.affiliation || '') !== affiliationFilter) return false;
     return true;
   });
   if (!available.length) {
     const allAdded = cards.length && cards.every(c => c.formData?.cardType !== 'Gang' && addedCounts[c.id]);
     colleaguePickerList.innerHTML = allAdded
       ? '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>'
-      : '<div class="library-empty">No cards match your search/Theme filter.</div>';
+      : '<div class="library-empty">No cards match your search/Theme/Affiliation filter.</div>';
     return;
   }
   colleaguePickerList.innerHTML = available.map(c => {

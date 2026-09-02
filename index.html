@@ -91,6 +91,14 @@
       <p class="hint">Optional. Group cards under a Theme so they're easy to filter later in My Cards and League Roster. Leave blank for no Theme.</p>
 
       <div class="field-row">
+        <label class="grow">Affiliation
+          <input type="text" id="f-affiliation" list="affiliation-options" placeholder="Type a new one or pick an existing Affiliation" maxlength="40">
+          <datalist id="affiliation-options"></datalist>
+        </label>
+      </div>
+      <p class="hint">Optional. A sub-group within a Theme (e.g. Rebel/Empire/Mercenary within a "Star Wars" Theme), for filtering only — like Theme, it's purely for organizing on this site and never appears on the printed card. Leave blank for no Affiliation.</p>
+
+      <div class="field-row">
         <label class="grow">Character Name
           <input type="text" id="f-name" placeholder="The Raven" maxlength="40">
         </label>
@@ -237,6 +245,11 @@
         </select>
         <button id="btn-rename-theme" class="btn-secondary" type="button" disabled title="Pick a Theme above first">✎ Rename Theme</button>
         <span id="theme-rename-status" class="hint" style="margin:0"></span>
+        <select id="gallery-affiliation-filter" class="theme-filter-select">
+          <option value="">All Affiliations</option>
+        </select>
+        <button id="btn-rename-affiliation" class="btn-secondary" type="button" disabled title="Pick an Affiliation above first">✎ Rename Affiliation</button>
+        <span id="affiliation-rename-status" class="hint" style="margin:0"></span>
         <span id="selected-count">0 selected</span>
         <button id="select-all-btn" class="btn-secondary">Select All</button>
         <button id="go-print" class="btn-primary">Go to Print Sheet →</button>
@@ -568,6 +581,9 @@
       <div class="field-row">
         <select id="colleague-theme-filter" class="theme-filter-select">
           <option value="">All Themes</option>
+        </select>
+        <select id="colleague-affiliation-filter" class="theme-filter-select">
+          <option value="">All Affiliations</option>
         </select>
         <input type="text" id="colleague-search" placeholder="🔍 Search by name…">
       </div>

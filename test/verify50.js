@@ -3,6 +3,11 @@
 // Theme), for filtering/organizing in My Cards and the League Roster's "Add
 // from My Cards" picker only — same free-text/autocomplete/Rename pattern
 // as Theme, but it never appears on the rendered/printed card itself.
+// Unlike Theme, Affiliation suggestions/options are scoped to whichever
+// Theme is currently in play (the Designer's own Theme field, or each
+// filter dropdown's paired Theme filter) — an Affiliation name can be
+// reused across unrelated Themes, so a "Star Wars" Theme should never
+// suggest/offer "Rebel"/"Empire" while a "Die Hard" Theme is selected.
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -63,15 +68,31 @@ function ok(label) { console.log('OK  ', label); }
   // Affiliation, to exercise the optional / "No Affiliation" path. ----
   await saveCard('McClane', 'Die Hard', '');
 
-  // ---- 3b. Saving a card with a brand-new Affiliation refreshes the
-  // Designer's own Affiliation autocomplete right away — same as Theme —
-  // without needing a trip through My Cards first. Checked while still on
-  // the Designer tab, straight after the save above (McClane introduced no
-  // new Affiliation, but Twin A's "Rebel"/"Empire" from steps 1-2 should
-  // already be there from their own saves). ----
-  const designerAffiliationOptions = await page.$$eval('#affiliation-options option', els => els.map(e => e.value).sort());
-  assert.deepStrictEqual(designerAffiliationOptions, ['Empire', 'Rebel'], `expected the Designer's own Affiliation autocomplete to already list "Rebel"/"Empire" right after saving, without visiting My Cards, got ${JSON.stringify(designerAffiliationOptions)}`);
-  ok('Saving a card refreshes the Designer\'s Affiliation autocomplete immediately, same as Theme');
+  // ---- 3b. Saving refreshes the Designer's own Affiliation autocomplete
+  // right away — same as Theme — without needing a trip through My Cards
+  // first. But unlike Theme, it's scoped to the Designer's current Theme
+  // field: right after saving McClane, the Theme field still reads "Die
+  // Hard", so the autocomplete should NOT leak "Rebel"/"Empire" in from
+  // the unrelated "Star Wars" cards saved in steps 1-2. ----
+  let designerAffiliationOptions = await page.$$eval('#affiliation-options option', els => els.map(e => e.value).sort());
+  assert.deepStrictEqual(designerAffiliationOptions, [], `expected the Affiliation autocomplete to be empty while Theme reads "Die Hard" (no Die Hard card has an Affiliation yet) — no leakage from Star Wars's "Rebel"/"Empire", got ${JSON.stringify(designerAffiliationOptions)}`);
+  ok('The Designer\'s Affiliation autocomplete is scoped to its own Theme field — "Die Hard" shows none of Star Wars\'s Affiliations');
+
+  // ---- 3c. Retyping the Theme field re-scopes the autocomplete live, with
+  // no save required: switching to "Star Wars" immediately surfaces
+  // "Empire"/"Rebel"; clearing Theme back to blank falls back to every
+  // Affiliation in use, since there's no Theme left to scope by. ----
+  await page.fill('#f-collection', 'Star Wars');
+  await page.waitForTimeout(150);
+  designerAffiliationOptions = await page.$$eval('#affiliation-options option', els => els.map(e => e.value).sort());
+  assert.deepStrictEqual(designerAffiliationOptions, ['Empire', 'Rebel'], `expected retyping Theme to "Star Wars" to immediately surface its Affiliations, got ${JSON.stringify(designerAffiliationOptions)}`);
+  ok('Retyping the Designer\'s Theme field live re-scopes the Affiliation autocomplete — no save needed');
+
+  await page.fill('#f-collection', '');
+  await page.waitForTimeout(150);
+  designerAffiliationOptions = await page.$$eval('#affiliation-options option', els => els.map(e => e.value).sort());
+  assert.deepStrictEqual(designerAffiliationOptions, ['Empire', 'Rebel'], `expected a blank Theme to fall back to every Affiliation in use (nothing to scope by yet), got ${JSON.stringify(designerAffiliationOptions)}`);
+  ok('A blank Theme field falls back to every Affiliation in use, since there\'s no Theme yet to scope by');
 
   await page.click('.tab-btn[data-tab="gallery"]');
   await page.waitForTimeout(300);
@@ -79,8 +100,27 @@ function ok(label) { console.log('OK  ', label); }
   // ---- 4. The Affiliation filter lists "All Affiliations", "No
   // Affiliation", and every distinct Affiliation in use, alphabetically. ----
   const affiliationOptions = await page.$$eval('#gallery-affiliation-filter option', els => els.map(e => e.textContent));
-  assert.deepStrictEqual(affiliationOptions, ['All Affiliations', 'No Affiliation', 'Empire', 'Rebel'], `expected the Affiliation filter to list All/No Affiliation plus Empire and Rebel (alphabetical), got ${JSON.stringify(affiliationOptions)}`);
-  ok('The Affiliation filter offers "All Affiliations", "No Affiliation", and every Affiliation in use');
+  assert.deepStrictEqual(affiliationOptions, ['All Affiliations', 'No Affiliation', 'Empire', 'Rebel'], `expected the Affiliation filter to list All/No Affiliation plus Empire and Rebel (alphabetical) under "All Themes" (no Theme scoping yet), got ${JSON.stringify(affiliationOptions)}`);
+  ok('Under "All Themes", the Affiliation filter falls back to every Affiliation in use');
+
+  // ---- 4b. Picking a Theme in the Theme filter scopes the Affiliation
+  // filter's own option list the same way it scopes the Designer's
+  // autocomplete: "Die Hard" offers nothing but "All Affiliations" (no
+  // Affiliation has ever been used on a Die Hard card), while "Star Wars"
+  // offers Empire/Rebel. ----
+  await page.selectOption('#gallery-theme-filter', 'Die Hard');
+  await page.waitForTimeout(150);
+  let scopedAffiliationOptions = await page.$$eval('#gallery-affiliation-filter option', els => els.map(e => e.textContent));
+  assert.deepStrictEqual(scopedAffiliationOptions, ['All Affiliations', 'No Affiliation'], `expected the Affiliation filter to offer no Affiliation names (just "All"/"No Affiliation") when the Theme filter is "Die Hard", got ${JSON.stringify(scopedAffiliationOptions)}`);
+
+  await page.selectOption('#gallery-theme-filter', 'Star Wars');
+  await page.waitForTimeout(150);
+  scopedAffiliationOptions = await page.$$eval('#gallery-affiliation-filter option', els => els.map(e => e.textContent));
+  assert.deepStrictEqual(scopedAffiliationOptions, ['All Affiliations', 'No Affiliation', 'Empire', 'Rebel'], `expected the Affiliation filter to offer Empire/Rebel when the Theme filter is "Star Wars", got ${JSON.stringify(scopedAffiliationOptions)}`);
+  ok('The My Cards Affiliation filter\'s own options are scoped to whichever Theme is picked in the Theme filter');
+
+  await page.selectOption('#gallery-theme-filter', '');
+  await page.waitForTimeout(150);
 
   // ---- 5. Filtering to "Rebel" alone shows just that card; combined with
   // the Theme filter ("Star Wars" + "Empire") narrows to the other twin. ----
@@ -159,6 +199,20 @@ function ok(label) { console.log('OK  ', label); }
   const pickerNames = await page.$$eval('.library-item-name', els => els.map(e => e.textContent));
   assert.deepStrictEqual(pickerNames, ['Twin A', 'Twin A'], `expected the picker's Affiliation filter to narrow to just the "Rebel Alliance" cards, got ${JSON.stringify(pickerNames)}`);
   ok('The "Add from My Cards" picker gets its own Affiliation filter, narrowing the list the same way Theme does');
+
+  // ---- 9b. The colleague picker's Affiliation filter is likewise scoped
+  // to its own Theme filter — "Die Hard" offers nothing but "All
+  // Affiliations" (McClane has none), "Star Wars" offers "Rebel Alliance". ----
+  await page.selectOption('#colleague-theme-filter', 'Die Hard');
+  await page.waitForTimeout(150);
+  let pickerScopedOptions = await page.$$eval('#colleague-affiliation-filter option', els => els.map(e => e.textContent));
+  assert.deepStrictEqual(pickerScopedOptions, ['All Affiliations'], `expected the colleague picker's Affiliation filter to offer nothing but "All Affiliations" when its Theme filter is "Die Hard", got ${JSON.stringify(pickerScopedOptions)}`);
+
+  await page.selectOption('#colleague-theme-filter', 'Star Wars');
+  await page.waitForTimeout(150);
+  pickerScopedOptions = await page.$$eval('#colleague-affiliation-filter option', els => els.map(e => e.textContent));
+  assert.deepStrictEqual(pickerScopedOptions, ['All Affiliations', 'Rebel Alliance'], `expected the colleague picker's Affiliation filter to offer "Rebel Alliance" when its Theme filter is "Star Wars", got ${JSON.stringify(pickerScopedOptions)}`);
+  ok('The colleague picker\'s Affiliation filter is likewise scoped to its own Theme filter');
 
   // ---- 10. A fresh page load (a new session against the same IndexedDB —
   // e.g. tomorrow, or a browser restart) populates the Designer's

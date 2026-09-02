@@ -96,7 +96,7 @@
           <datalist id="affiliation-options"></datalist>
         </label>
       </div>
-      <p class="hint">Optional. A sub-group within a Theme (e.g. Rebel/Empire/Mercenary within a "Star Wars" Theme), for filtering only — like Theme, it's purely for organizing on this site and never appears on the printed card. Leave blank for no Affiliation.</p>
+      <p class="hint">Optional. A sub-group within a Theme (e.g. Rebel/Empire/Mercenary within a "Star Wars" Theme), for filtering only — like Theme, it's purely for organizing on this site and never appears on the printed card. Leave blank for no Affiliation. Suggestions above are scoped to the Theme field: only Affiliations already used with that Theme are offered (or every Affiliation in use, if Theme is blank).</p>
 
       <div class="field-row">
         <label class="grow">Character Name
@@ -245,7 +245,7 @@
         </select>
         <button id="btn-rename-theme" class="btn-secondary" type="button" disabled title="Pick a Theme above first">✎ Rename Theme</button>
         <span id="theme-rename-status" class="hint" style="margin:0"></span>
-        <select id="gallery-affiliation-filter" class="theme-filter-select">
+        <select id="gallery-affiliation-filter" class="theme-filter-select" title="Scoped to the Theme filter above — pick a Theme first to narrow this to its Affiliations">
           <option value="">All Affiliations</option>
         </select>
         <button id="btn-rename-affiliation" class="btn-secondary" type="button" disabled title="Pick an Affiliation above first">✎ Rename Affiliation</button>
@@ -701,7 +701,7 @@
         <select id="colleague-theme-filter" class="theme-filter-select">
           <option value="">All Themes</option>
         </select>
-        <select id="colleague-affiliation-filter" class="theme-filter-select">
+        <select id="colleague-affiliation-filter" class="theme-filter-select" title="Scoped to the Theme filter to its left — pick a Theme first to narrow this to its Affiliations">
           <option value="">All Affiliations</option>
         </select>
         <input type="text" id="colleague-search" placeholder="🔍 Search by name…">

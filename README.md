@@ -229,12 +229,22 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   "Protagonist"/"Antagonist" within "Die Hard"), instead of baking the
   sub-group into the Theme name itself (which would turn "Star Wars" into
   several unrelated Theme entries and break filtering/renaming "every Star
-  Wars card" as one group). Works exactly like Theme — same free-text field
-  with autocomplete in the Card Designer, its own "Filter by Affiliation"
+  Wars card" as one group). Works like Theme — same free-text field with
+  autocomplete in the Card Designer, its own "Filter by Affiliation"
   dropdown (with a "No Affiliation" option) in My Cards and the League
   Roster's "Add from My Cards" picker, and its own "Rename Affiliation"
   button that bulk-renames every card carrying it. The two filters combine
-  (e.g. Theme "Star Wars" + Affiliation "Rebel" together). Like Theme,
+  (e.g. Theme "Star Wars" + Affiliation "Rebel" together). Unlike Theme,
+  Affiliation suggestions/options are always scoped to a Theme, since the
+  same Affiliation name can be reused across unrelated Themes (e.g.
+  "Protagonist"/"Antagonist" under both "Die Hard" and some other movie):
+  the Designer's autocomplete only offers Affiliations already used with
+  whatever Theme is currently typed there, and each filter dropdown only
+  offers Affiliations already used within whatever Theme its own paired
+  Theme filter is set to — so picking "Die Hard" never suggests/offers
+  "Rebel", "Empire", or "Mercenaries". No Theme selected yet (a blank
+  Designer Theme field, or "All Themes" in a filter) falls back to every
+  Affiliation in use, since there's no Theme yet to scope by. Like Theme,
   Affiliation is purely for organizing and filtering on this site — it's
   optional, has no effect on how the card renders, and never appears on the
   printed card.

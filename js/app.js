@@ -903,6 +903,11 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   renderAbilityRows();
   updateHealthPreview();
   updatePreview();
+  // form.reset() above clears the Theme field back to blank but, like any
+  // programmatic change, doesn't fire its 'input' listener — re-scope the
+  // Affiliation autocomplete explicitly so a brand-new card goes back to
+  // suggesting every Affiliation in use (no Theme yet to narrow it down).
+  getAllCards().then(refreshAffiliationOptions);
   saveStatus.textContent = 'Started a new card.';
   setTimeout(() => { saveStatus.textContent = ''; }, 2000);
 });
@@ -980,6 +985,18 @@ function refreshThemeOptions(cards) {
 // Affiliation" and Rename Theme still renames the whole Theme in one go.
 // Like Theme, this is purely for organizing/filtering here on the site —
 // it's never drawn on the rendered/printed card.
+//
+// Unlike Theme, Affiliation suggestions are scoped to a Theme: an
+// Affiliation name can be reused across unrelated Themes (e.g.
+// "Protagonist"/"Antagonist" under both "Die Hard" and some other movie),
+// so offering every Affiliation ever used everywhere would suggest
+// "Rebel"/"Empire"/"Mercenaries" while typing a "Die Hard" card. Instead,
+// each surface below only offers Affiliations with an existing connection
+// to whatever Theme is currently in play there: the Designer's own Theme
+// field for its autocomplete, and each filter dropdown's paired Theme
+// filter for My Cards / the colleague picker. No Theme selected yet (a
+// blank Designer Theme field, or "All Themes") falls back to every
+// Affiliation in use, since there's no Theme yet to scope by.
 const affiliationInput = document.getElementById('f-affiliation');
 const affiliationOptionsList = document.getElementById('affiliation-options');
 
@@ -992,22 +1009,47 @@ function distinctAffiliations(cards) {
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
+// Affiliations already used together with a given Theme value. themeFilter
+// follows the same convention as the Theme filter dropdowns: '' (or
+// falsy) means no Theme to scope by (every card), '__none__' means cards
+// with no Theme at all, and anything else is an exact Theme match.
+function affiliationsForTheme(cards, themeFilter) {
+  const scoped = !themeFilter
+    ? cards
+    : themeFilter === '__none__'
+      ? cards.filter(c => !(c.formData?.collection || '').trim())
+      : cards.filter(c => (c.formData?.collection || '') === themeFilter);
+  return distinctAffiliations(scoped);
+}
+
 // Repopulates the Designer's Affiliation autocomplete plus both Affiliation
-// filter dropdowns (My Cards, League Roster's colleague picker), preserving
-// each dropdown's current selection. My Cards additionally gets a "No
-// Affiliation" option (sentinel "__none__"), same as the Theme filter does.
+// filter dropdowns (My Cards, League Roster's colleague picker), each
+// scoped to its own Theme context (see above), preserving each dropdown's
+// current selection where it's still valid under the new scope. My Cards
+// additionally gets a "No Affiliation" option (sentinel "__none__"), same
+// as the Theme filter does.
 function refreshAffiliationOptions(cards) {
-  const names = distinctAffiliations(cards);
-  affiliationOptionsList.innerHTML = names.map(n => `<option value="${escapeAttr(n)}"></option>`).join('');
+  const designerNames = affiliationsForTheme(cards, collectionInput.value.trim());
+  affiliationOptionsList.innerHTML = designerNames.map(n => `<option value="${escapeAttr(n)}"></option>`).join('');
+
   [galleryAffiliationFilterSelect, colleagueAffiliationFilterSelect].forEach(sel => {
     if (!sel) return;
+    const isGalleryFilter = sel === galleryAffiliationFilterSelect;
+    const pairedThemeFilter = (isGalleryFilter ? galleryThemeFilterSelect : colleagueThemeFilterSelect).value;
+    const names = affiliationsForTheme(cards, pairedThemeFilter);
     const current = sel.value;
-    const noAffiliationOption = sel === galleryAffiliationFilterSelect ? '<option value="__none__">No Affiliation</option>' : '';
+    const noAffiliationOption = isGalleryFilter ? '<option value="__none__">No Affiliation</option>' : '';
     sel.innerHTML = '<option value="">All Affiliations</option>' + noAffiliationOption + names.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
-    const currentStillValid = current === '__none__' ? sel === galleryAffiliationFilterSelect : names.includes(current);
+    const currentStillValid = current === '__none__' ? isGalleryFilter : names.includes(current);
     sel.value = currentStillValid ? current : '';
   });
 }
+
+// Retyping/reselecting the Designer's own Theme field immediately re-scopes
+// its Affiliation autocomplete to match — e.g. clearing "Star Wars" back to
+// blank, or changing it to "Die Hard", updates the suggestions right away
+// rather than waiting for the next save.
+collectionInput.addEventListener('input', () => { getAllCards().then(refreshAffiliationOptions); });
 
 // ---------------- Gallery ----------------
 const galleryGrid = document.getElementById('gallery-grid');
@@ -1239,6 +1281,10 @@ async function loadCardIntoForm(record) {
   document.getElementById('f-theme').value = d.theme || 'ivory';
   document.getElementById('f-collection').value = d.collection || '';
   document.getElementById('f-affiliation').value = d.affiliation || '';
+  // Setting .value programmatically (unlike typing) doesn't fire the
+  // Theme field's 'input' listener above, so the Affiliation autocomplete
+  // needs an explicit re-scope here to match whatever Theme this card has.
+  refreshAffiliationOptions(await getAllCards());
   document.getElementById('f-portrait-frame').checked = !!d.portraitFrame;
   document.getElementById('f-abilityFontSize').value = d.abilityFontSize || 33;
   document.getElementById('f-name').value = d.name;

@@ -1,8 +1,6 @@
 // verify44.js — Saving a card now crops its stored portrait down to
 // exactly what's framed at the current zoom/pan (instead of keeping the
-// full uploaded photo), to shrink the backup. Also verifies the new
-// "Compact Portraits" header button, which retroactively re-crops
-// already-saved cards' portraits the same way.
+// full uploaded photo), to shrink the backup.
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -19,7 +17,6 @@ function ok(label) { console.log('OK  ', label); }
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
   const page = await browser.newPage();
   page.on('pageerror', err => { console.error('PAGE ERROR:', err); process.exitCode = 1; });
-  page.on('dialog', async d => { await d.accept(); }); // auto-accept the Compact Portraits confirm()
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(400);
 
@@ -97,74 +94,6 @@ function ok(label) { console.log('OK  ', label); }
   });
   assert.deepStrictEqual(secondSaveInfo, { w: 412, h: 430 }, `expected a second save to leave the crop exactly box-sized, got ${JSON.stringify(secondSaveInfo)}`);
   ok('Saving again after the crop is idempotent — still exactly box-sized, no further shrinkage/distortion');
-
-  // ---- 5. Compact Portraits: create a card the old way (portrait stored
-  // uncropped, simulating a card saved before this feature existed) by
-  // writing directly to IndexedDB, then run Compact Portraits and confirm
-  // it gets cropped down too. ----
-  const beforeCompact = await page.evaluate(async () => {
-    // Reuse the already-loaded state.portraitImg's original (pre-crop) size
-    // isn't available anymore (it was cropped on save) — instead, build a
-    // synthetic "legacy" record with an oversized placeholder portrait
-    // drawn directly, bypassing the Designer's own crop-on-save path.
-    const c = document.createElement('canvas');
-    c.width = 900; c.height = 700; // deliberately NOT box-sized
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#3366cc';
-    ctx.fillRect(0, 0, 900, 700);
-    ctx.fillStyle = '#ffcc00';
-    ctx.fillRect(100, 100, 300, 300);
-    const legacyDataURL = c.toDataURL('image/png');
-    const record = {
-      id: 'legacy-test-card',
-      formData: { name: 'Legacy Card', cardType: 'Custom', level: 1, stats: {}, abilities: [] },
-      portraitDataURL: legacyDataURL,
-      portraitView: { scale: 1, offsetX: 0, offsetY: 0 },
-      pngDataURL: legacyDataURL,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    await saveCard(record);
-    return { len: legacyDataURL.length };
-  });
-  assert.ok(beforeCompact.len > 0, 'expected the legacy test card to be saved with a non-empty portrait');
-  ok('Seeded a "legacy" card with an uncropped (900x700) portrait, simulating one saved before this feature');
-
-  await page.click('#btn-compact-portraits');
-  await page.waitForTimeout(400);
-
-  const afterCompact = await page.evaluate(async () => {
-    const cards = await getAllCards();
-    const c = cards.find(x => x.id === 'legacy-test-card');
-    const img = await new Promise((resolve, reject) => {
-      const im = new Image();
-      im.onload = () => resolve(im);
-      im.onerror = reject;
-      im.src = c.portraitDataURL;
-    });
-    return { w: img.width, h: img.height, view: c.portraitView };
-  });
-  assert.deepStrictEqual({ w: afterCompact.w, h: afterCompact.h }, { w: 412, h: 430 }, `expected Compact Portraits to crop the legacy card down to 412x430, got ${JSON.stringify(afterCompact)}`);
-  assert.deepStrictEqual(afterCompact.view, { scale: 1, offsetX: 0, offsetY: 0 }, `expected Compact Portraits to reset the legacy card's portraitView, got ${JSON.stringify(afterCompact.view)}`);
-  ok('"Compact Portraits" retroactively crops an existing uncropped card\'s portrait down to the box size');
-
-  // ---- 6. Running Compact Portraits again is a no-op for cards already
-  // compacted (idempotent, doesn't throw, doesn't re-shrink/distort). ----
-  await page.click('#btn-compact-portraits');
-  await page.waitForTimeout(400);
-  const afterSecondCompact = await page.evaluate(async () => {
-    const cards = await getAllCards();
-    const c = cards.find(x => x.id === 'legacy-test-card');
-    const img = await new Promise((resolve, reject) => {
-      const im = new Image();
-      im.onload = () => resolve(im);
-      im.onerror = reject;
-      im.src = c.portraitDataURL;
-    });
-    return { w: img.width, h: img.height };
-  });
-  assert.deepStrictEqual(afterSecondCompact, { w: 412, h: 430 }, `expected re-running Compact Portraits to be a no-op on an already-compact card, got ${JSON.stringify(afterSecondCompact)}`);
-  ok('Re-running "Compact Portraits" is a safe no-op on cards already compacted');
 
   console.log('\nAll verify44 checks passed.');
   await browser.close();

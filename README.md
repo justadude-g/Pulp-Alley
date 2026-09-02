@@ -23,10 +23,7 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   instead of keeping the full uploaded photo around. This keeps your
   backup file small as you build up more cards, at the cost of the crop
   being permanent: re-zooming or re-panning further than what was saved
-  needs the photo re-uploaded. A "🗜 Compact Portraits" button in the top
-  bar (next to Export/Import Backup) does the same cleanup retroactively
-  for cards saved before this existed — it's safe to run more than once,
-  and reports roughly how much space it freed.
+  needs the photo re-uploaded.
 - **Duplicate** — "⧉ Duplicate" next to "New Card" makes a variation of
   the character you're currently editing: every field (Stats, Abilities,
   Quote, Theme, Card Background, the portrait art and its pan/zoom framing)

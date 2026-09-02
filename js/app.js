@@ -1976,50 +1976,6 @@ document.getElementById('btn-import-backup').addEventListener('click', () => {
   importBackupFile.click();
 });
 
-// One-time cleanup for cards saved before portraits were auto-cropped on
-// save (see btn-save-card above): re-crops every saved card's stored
-// portrait down to exactly what's currently framed. Idempotent — a
-// portrait already exactly PORTRAIT box-sized is left alone, so running
-// this more than once, or on a mix of old and already-compacted cards,
-// is safe. Skips cards with no portrait entirely.
-document.getElementById('btn-compact-portraits').addEventListener('click', async () => {
-  const proceed = confirm(
-    "Compact every saved card's portrait?\n\n" +
-    "This re-crops each card's stored portrait image down to exactly what's " +
-    "currently framed, to shrink your backup. It can't be undone — a compacted " +
-    "card loses the ability to re-zoom or re-pan its portrait beyond that framing " +
-    "(re-upload the photo to reframe it later). Cards with no portrait, or already " +
-    "compacted, are left untouched."
-  );
-  if (!proceed) return;
-
-  const box = getPortraitBox();
-  const allCards = await getAllCards();
-  let compacted = 0, alreadyCompact = 0, noPortrait = 0;
-  let bytesBefore = 0, bytesAfter = 0;
-  for (const record of allCards) {
-    if (!record.portraitDataURL) { noPortrait++; continue; }
-    const img = await loadImage(record.portraitDataURL);
-    if (img.width === box.w && img.height === box.h) { alreadyCompact++; continue; }
-    const cropped = renderPortraitCrop(img, record.portraitView);
-    bytesBefore += record.portraitDataURL.length;
-    bytesAfter += cropped.length;
-    record.portraitDataURL = cropped;
-    record.portraitView = { scale: 1, offsetX: 0, offsetY: 0 };
-    await saveCard(record);
-    compacted++;
-  }
-
-  // Data URLs are base64: ~4 chars per 3 source bytes.
-  const savedKB = Math.round(((bytesBefore - bytesAfter) * 0.75) / 1024);
-  const lines = [`Compacted ${compacted} card${compacted === 1 ? '' : 's'}.`];
-  if (alreadyCompact || noPortrait) {
-    lines.push(`${alreadyCompact} already compact, ${noPortrait} with no portrait — left alone.`);
-  }
-  if (compacted) lines.push(`Freed roughly ${savedKB.toLocaleString()} KB from your backup.`);
-  alert(lines.join('\n'));
-});
-
 importBackupFile.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;

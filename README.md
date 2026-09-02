@@ -201,7 +201,13 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
 - **League Roster** — build a league following the Core Rules' roster math
   (p. 8): 10 base slots, Leader = 0 slots (1 per league), Sidekick = 3 slots
   (normally 1), Ally = 2, Follower = 1, Gang = 2. Add colleagues straight
-  from your saved cards, browse and add any of the 41 official Background
+  from your saved cards — every Card Type except Gang is one-copy-only in
+  the picker (add it once and it drops off the list, same as a unique named
+  character), but since a Gang (p. 21) represents a generic group of
+  similar mooks rather than one unique character, the same saved Gang card
+  can be added more than once — the picker keeps offering it (showing a
+  running "N already on this roster" count) and each copy costs its own 2
+  slots. Browse and add any of the 41 official Background
   Perks (p. 22-26, plus later additions like Crewmates) — which permanently
   cost slots too — and watch the slot meter and rule warnings (too many
   Leaders/Sidekicks, over budget) update live. Save multiple named rosters

@@ -1715,32 +1715,45 @@ colleagueThemeFilterSelect.addEventListener('change', renderColleaguePicker);
 async function renderColleaguePicker() {
   const cards = await getAllCards();
   refreshThemeOptions(cards);
-  const addedIds = new Set(rosterState.members.map(m => m.cardId));
+  // Gangs (p. 21) represent a generic group of similar mooks rather than a
+  // single unique named character, so — unlike every other Card Type — a
+  // league can field more than one copy of the same saved Gang card (e.g.
+  // two "Rebel Commando" gangs), each still costing its own 2 roster slots.
+  // Everything else stays one-copy-only: once added, it drops out of this
+  // picker like before.
+  const addedCounts = {};
+  rosterState.members.forEach(m => { addedCounts[m.cardId] = (addedCounts[m.cardId] || 0) + 1; });
   const searchText = colleagueSearchInput.value.trim().toLowerCase();
   const themeFilter = colleagueThemeFilterSelect.value;
   const available = cards.filter(c => {
-    if (addedIds.has(c.id)) return false;
+    const isGang = c.formData?.cardType === 'Gang';
+    if (!isGang && addedCounts[c.id]) return false;
     if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;
     if (themeFilter && (c.formData?.collection || '') !== themeFilter) return false;
     return true;
   });
   if (!available.length) {
-    const allAdded = cards.length && cards.every(c => addedIds.has(c.id));
+    const allAdded = cards.length && cards.every(c => c.formData?.cardType !== 'Gang' && addedCounts[c.id]);
     colleaguePickerList.innerHTML = allAdded
       ? '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>'
       : '<div class="library-empty">No cards match your search/Theme filter.</div>';
     return;
   }
-  colleaguePickerList.innerHTML = available.map(c => `
+  colleaguePickerList.innerHTML = available.map(c => {
+    const isGang = c.formData?.cardType === 'Gang';
+    const count = addedCounts[c.id] || 0;
+    const slots = slotCostForType(c.formData?.cardType);
+    return `
     <div class="library-item">
       <img class="library-item-thumb" src="${c.pngDataURL}" alt="">
       <div class="library-item-body">
         <span class="library-item-name">${escapeHtml(c.formData?.name || 'Unnamed')}</span><span class="library-item-level">${escapeHtml(c.formData?.cardType || 'Custom')}</span>
-        <div class="library-item-text">${slotCostForType(c.formData?.cardType)} roster slot${slotCostForType(c.formData?.cardType) === 1 ? '' : 's'}</div>
+        <div class="library-item-text">${slots} roster slot${slots === 1 ? '' : 's'}${isGang && count ? ` · ${count} already on this roster` : ''}</div>
       </div>
-      <button type="button" class="library-add-btn" data-id="${escapeAttr(c.id)}" title="Add to roster">+</button>
+      <button type="button" class="library-add-btn" data-id="${escapeAttr(c.id)}" title="${isGang ? 'Add another copy of this Gang to the roster' : 'Add to roster'}">+</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   colleaguePickerList.querySelectorAll('.library-add-btn').forEach(btn => {
     btn.addEventListener('click', () => {

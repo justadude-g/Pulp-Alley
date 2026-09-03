@@ -266,7 +266,12 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   unchecked (the default) for the usual one-copy-only unique character.
   The checkbox is hidden for Gang cards since they're already repeatable
   without it, and — like Theme and Affiliation — it's purely a roster-
-  building convenience with no effect on how the card renders or prints. Browse and add any of the 41 official Background
+  building convenience with no effect on how the card renders or prints.
+  Colleagues are kept sorted automatically, highest Level first (Leader 4,
+  Sidekick 3, Ally 2, Follower 1, per p. 8-9) — add them in any order and
+  the list re-sorts itself, so you don't have to manually shuffle a Leader
+  back to the top after adding an Ally first. Colleagues that share a
+  Level keep whatever order you added them in. Browse and add any of the 41 official Background
   Perks (p. 22-26, plus later additions like Crewmates) — which permanently
   cost slots too — and watch the slot meter and rule warnings (too many
   Leaders/Sidekicks, over budget) update live. Save multiple named rosters

@@ -1541,8 +1541,31 @@ function computeRosterSlots() {
   return { memberSlots, perkSlots, associateSlots, used, remaining: BASE_ROSTER_SLOTS - used };
 }
 
+// A member's Level for sorting — the card's own Level field (0-4) as
+// captured when it was added to the roster. Rosters saved before this
+// feature existed won't have a stored `level`, so fall back to that Card
+// Type's rulebook-default Level (p. 8-9: Leader 4, Sidekick 3, Ally 2,
+// Follower 1, Gang 2) and 0 for Villain/Creature/Custom, which have no
+// rulebook default.
+function memberSortLevel(m) {
+  if (typeof m.level === 'number' && !Number.isNaN(m.level)) return m.level;
+  return TYPE_PRESETS[m.cardType]?.level ?? 0;
+}
+
+// Keeps the roster ordered highest-Level-first (Core Rules p. 8-9: Leader
+// is always Level 4, down to Follower at Level 1), purely a display/print
+// convenience — it has no effect on slot cost or rules warnings. A plain
+// Array.sort is stable (guaranteed by spec since ES2019), so members that
+// share a Level keep whatever relative order they were added in rather
+// than jumping around on every render.
+function sortRosterMembersByLevel() {
+  rosterState.members.sort((a, b) => memberSortLevel(b) - memberSortLevel(a));
+}
+
 function renderRosterWorkspace() {
   rosterNameInput.value = rosterState.name || '';
+
+  sortRosterMembersByLevel();
 
   // Members
   rosterMembersEl.innerHTML = '';
@@ -2093,6 +2116,12 @@ async function renderColleaguePicker() {
         cardType: card.formData?.cardType || 'Custom',
         pngDataURL: card.pngDataURL,
         slots: slotCostForType(card.formData?.cardType),
+        // Captured so the roster can auto-sort members by Level (see
+        // sortRosterMembersByLevel) — this is the card's own Level field,
+        // not just a Card Type default, since Villain/Creature/Custom
+        // cards (and any hand-edited Leader/Sidekick/Ally/Follower) can
+        // carry a Level their Card Type doesn't imply.
+        level: Number(card.formData?.level) || 0,
       });
       renderRosterWorkspace();
       renderColleaguePicker();

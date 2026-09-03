@@ -100,7 +100,7 @@ function ok(label) { console.log('OK  ', label); }
   }
   async function plainBackgroundNearTop() {
     // Same y as the corner sample (vertical gradient). The portrait
-    // (x:28-440) and Stats (x:440-756) boxes now span the row at y=140
+    // (x:28-440) and Stats (x:440-750) boxes now span the row at y=140
     // all the way from x=28 to the card's right edge with no gap, so the
     // only open background left at that y is the sliver left of the
     // portrait's own left edge (x:0-28, since it's now inset to match the

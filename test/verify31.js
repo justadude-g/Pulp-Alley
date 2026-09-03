@@ -102,13 +102,13 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(150);
   const nearRightEdgePixel = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
-    // 6px in from the card's right edge (756), well clear of the outer
+    // 6px in from the card's right edge (750), well clear of the outer
     // border stroke, at the Brawl row's y.
-    return [...ctx.getImageData(750, 150, 1, 1).data.slice(0, 3)];
+    return [...ctx.getImageData(744, 150, 1, 1).data.slice(0, 3)];
   });
   const plainBg = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
-    return [...ctx.getImageData(750, 30, 1, 1).data.slice(0, 3)]; // name-bar-free plain background, same x
+    return [...ctx.getImageData(744, 30, 1, 1).data.slice(0, 3)]; // name-bar-free plain background, same x
   });
   const diffFromPlain = nearRightEdgePixel.reduce((s, v, i) => s + Math.abs(v - plainBg[i]), 0);
   assert(diffFromPlain > 15, `expected the Stats tint background to reach all the way to the card's right edge (should differ from plain background), got tint=${nearRightEdgePixel} vs plain=${plainBg}`);

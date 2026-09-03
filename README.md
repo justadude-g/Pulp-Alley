@@ -129,10 +129,9 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   locked read-only once picked, so the rules stay exactly as printed —
   only the name is yours to customize. A freeform/homebrew ability (typed
   by hand, never picked from the catalog) keeps a fully editable text box.
-- Cards render at true **Gamegenic Standard sleeve size** — 64mm × 89mm at
-  300dpi (756×1051px) — so exported PNGs are print-ready and a printed
-  card drops straight into a Standard sleeve (Magic/Pokémon-size). The Card
-  Type tag (top right) and the Health track pills (bottom) are sized for
+- Cards render at true **Standard Playing Card size** — 2.5″ × 3.5″ at
+  300dpi (750×1050px) — so exported PNGs are print-ready. The Card Type
+  tag (top right) and the Health track pills (bottom) are sized for
   legibility at that print size, not just on screen.
 - **Classical (no skull) background by default** — the Card Background
   dropdown defaults to the aged-parchment Classical look (no skull
@@ -390,7 +389,7 @@ from `file://`.
 
 - When printing the A4 sheet, set your print dialog to **100% / Actual
   size**. Do **not** use "Fit to page" — that will scale the cards away from
-  their true 64mm×89mm (Gamegenic Standard sleeve) size.
+  their true 2.5″×3.5″ size.
 - The crop marks sit just outside each card edge so you can trim with a
   straight edge or guillotine cutter.
 - For the crispest results, use "Download PDF" and print that file rather

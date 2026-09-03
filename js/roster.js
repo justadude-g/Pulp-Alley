@@ -1,8 +1,7 @@
-// roster.js — builds the A4 print sheet (3x3 grid of Gamegenic Standard
-// sleeve-size cards, 64mm x 89mm). CARD_W/CARD_H are the same constants
-// defined in cardRenderer.js (loaded before this file in index.html) —
-// reused here rather than redeclared, since plain <script> files share one
-// global scope.
+// roster.js — builds the A4 print sheet (3x3 grid of standard playing-card-size cards)
+// CARD_W/CARD_H are the same standard-playing-card constants defined in
+// cardRenderer.js (loaded before this file in index.html) — reused here
+// rather than redeclared, since plain <script> files share one global scope.
 
 const A4_W = 2480; // 210mm @ 300dpi
 const A4_H = 3508; // 297mm @ 300dpi

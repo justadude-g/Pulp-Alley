@@ -563,7 +563,6 @@ function renderCard(canvas, data) {
   if (abilities.length) {
     const buildBlocks = (fs) => {
       ctx.font = `400 ${fs}px Inter, sans-serif`;
-      lineHeight = Math.round(fs * 1.28);
       let totalLines = 0;
       const out = abilities.map(a => {
         const nameStr = a.name ? a.name + (a.text ? ': ' : '') : '';
@@ -574,10 +573,50 @@ function renderCard(canvas, data) {
       });
       return { out, totalLines };
     };
-    var res = buildBlocks(sharedFontSize);
-    while ((res.totalLines * (sharedFontSize * 1.28) + (abilities.length - 1) * 10) > (abilBottom - abilTop) && sharedFontSize > 16) {
+    const available = abilBottom - abilTop;
+    const fitsAt = (fs) => {
+      const r = buildBlocks(fs);
+      const height = r.totalLines * (fs * 1.28) + (abilities.length - 1) * 10;
+      return { out: r.out, fits: height <= available };
+    };
+
+    var res = fitsAt(sharedFontSize);
+    // Coarse pass: whole-pixel steps down until it fits, or the
+    // print-legibility floor (16px).
+    while (!res.fits && sharedFontSize > 16) {
       sharedFontSize -= 1;
-      res = buildBlocks(sharedFontSize);
+      res = fitsAt(sharedFontSize);
+    }
+    // Fine pass: line-wrapping only reflows text at specific pixel-width
+    // thresholds, so the whole-pixel search above can overshoot — dropping
+    // one more pixel can drop an entire wrapped line, leaving up to a full
+    // line's worth of the Abilities box empty even though a slightly
+    // bigger, still-fitting size existed in between (e.g. abilities that
+    // wrap to 11 lines at 26px and overflow, but only need 10 at 25.4px —
+    // whole-pixel stepping jumps straight past that to 25px/9 lines,
+    // wasting the space the extra 0.4px would have recovered). Binary-
+    // search the 1px gap between the size that just fit and the next size
+    // up (confirmed too big by the loop above) to land right at the real
+    // boundary. Capped at the size that fit the search above, so this only
+    // recovers wasted space inside an auto-shrink — it never grows a card
+    // past the Ability Text Size actually picked (when that size already
+    // fits with no shrink needed, sharedFontSize + 1 is already past the
+    // pick and the loop below runs zero iterations).
+    if (res.fits && sharedFontSize + 1 <= (data.abilityFontSize || 33)) {
+      let lo = sharedFontSize, hi = sharedFontSize + 1;
+      for (let i = 0; i < 10; i++) {
+        const mid = (lo + hi) / 2;
+        if (fitsAt(mid).fits) lo = mid; else hi = mid;
+      }
+      // Floor (never round) to 0.1px so the final size is guaranteed to
+      // still fit — rounding up could push it just past the boundary the
+      // search converged on.
+      const refined = Math.floor(lo * 10) / 10;
+      const refinedRes = fitsAt(refined);
+      if (refinedRes.fits) {
+        sharedFontSize = refined;
+        res = refinedRes;
+      }
     }
     lineHeight = Math.round(sharedFontSize * 1.28);
   }

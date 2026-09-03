@@ -71,6 +71,15 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Large) resizes Stats right along with the Abilities text, and if long
   ability text triggers the auto-shrink-to-fit, Stats shrinks in lockstep
   with it too — there's never a mismatch between how big the two read.
+  The auto-shrink lands as close to the picked size as the text allows: a
+  whole-pixel search finds a size that fits, then a fine pass checks
+  fractional sizes in the gap right above it, since line-wrapping only
+  reflows text at specific pixel widths — dropping a single pixel can drop
+  an entire wrapped line, so without this a card could land noticeably
+  smaller than it needed to, with visible empty space above the health bar
+  even though the abilities didn't need to shrink nearly that far. This
+  only ever recovers space inside a shrink that's already happening — it
+  never grows a card past the Ability Text Size actually picked.
 - **Reset Stats to Card Type** — a "↺ Reset to Card Type" button above
   Stats re-applies the current Card Type's p. 9 dice budget on demand — for
   snapping a hand-edited stat back to spec without having to reselect Card

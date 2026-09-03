@@ -62,24 +62,26 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Classical (parchment) variant, every Card Type defaults to plain black
   instead — a bright accent clashes with the aged-parchment look — until
   you pick your own color.
-- **Stats and Abilities share one font size** — the Stats label ("Brawl",
-  "Finesse", etc.) and dice-pool value (e.g. "3d10") render in Inter, the
-  same family used for Abilities text, instead of the Rajdhani display face
-  used for headline elements (Level, Card Type tag, Health pills) — and,
-  beyond just matching family, all three literally share one font-size
-  value. Changing the Ability Text Size dropdown (Small/Medium/Large/Extra
-  Large) resizes Stats right along with the Abilities text, and if long
-  ability text triggers the auto-shrink-to-fit, Stats shrinks in lockstep
-  with it too — there's never a mismatch between how big the two read.
-  The auto-shrink lands as close to the picked size as the text allows: a
+- **Stats and Abilities share one typeface, and one Ability Text Size
+  dropdown, but size independently** — the Stats label ("Brawl", "Finesse",
+  etc.) and dice-pool value (e.g. "3d10") render in Inter, the same family
+  used for Abilities text, instead of the Rajdhani display face used for
+  headline elements (Level, Card Type tag, Health pills). Changing the
+  Ability Text Size dropdown (Small/Medium/Large/Extra Large) resizes both
+  Stats and Abilities together, but only Abilities auto-shrinks below the
+  picked size when its text is too long to fit — Stats has its own
+  generous fixed row height that comfortably holds any of the four
+  presets, so it always renders at exactly the size you picked, plain and
+  predictable, regardless of how long the abilities run. Abilities' own
+  auto-shrink lands as close to the picked size as its text allows: a
   whole-pixel search finds a size that fits, then a fine pass checks
   fractional sizes in the gap right above it, since line-wrapping only
   reflows text at specific pixel widths — dropping a single pixel can drop
-  an entire wrapped line, so without this a card could land noticeably
-  smaller than it needed to, with visible empty space above the health bar
-  even though the abilities didn't need to shrink nearly that far. This
-  only ever recovers space inside a shrink that's already happening — it
-  never grows a card past the Ability Text Size actually picked.
+  an entire wrapped line, so without this a card's Abilities text could
+  land noticeably smaller than it needed to, with visible empty space
+  above the health bar even though it didn't need to shrink nearly that
+  far. This only ever recovers space inside a shrink that's already
+  happening — it never grows the Abilities text past the picked size.
 - **Reset Stats to Card Type** — a "↺ Reset to Card Type" button above
   Stats re-applies the current Card Type's p. 9 dice budget on demand — for
   snapping a hand-edited stat back to spec without having to reselect Card

@@ -49,27 +49,27 @@ function hue(r, g, b) {
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(400);
 
-  // ---- 1. Stats dice-pool value renders in Inter, not Rajdhani, at the
-  // exact same size variable that drives the Stats label and the
-  // Abilities text (sharedFontSize) — a later change made Stats and
-  // Abilities share one literal font-size variable, not just visually
-  // similar sizes. Font-fingerprinting this from rendered pixels is
-  // unreliable (a single scanline through mixed-height digit glyphs
-  // doesn't give a clean, reproducible ink width), so this checks the
-  // actual source declaration directly.
+  // ---- 1. Stats dice-pool value renders in Inter, not Rajdhani, at
+  // statsFontSize — the picked Ability Text Size, rendered as a plain
+  // fixed size (see verify53.js: Stats no longer auto-shrinks along with
+  // the Abilities text, only the Abilities block itself does). Font-
+  // fingerprinting this from rendered pixels is unreliable (a single
+  // scanline through mixed-height digit glyphs doesn't give a clean,
+  // reproducible ink width), so this checks the actual source declaration
+  // directly.
   const rendererSrc = fs.readFileSync(path.join(ROOT, 'js', 'cardRenderer.js'), 'utf8');
   const dieStrFontMatch = rendererSrc.match(/const dieStr[\s\S]{0,200}/);
   assert(dieStrFontMatch, 'expected to find the dice-pool ("dieStr") rendering code in cardRenderer.js');
-  assert(/ctx\.font = `700 \$\{sharedFontSize\}px Inter, sans-serif`/.test(dieStrFontMatch[0]),
-    'expected the Stats dice-pool value to use an Inter font declaration driven by sharedFontSize (same variable as Abilities text), not Rajdhani or a fixed size');
+  assert(/ctx\.font = `700 \$\{statsFontSize\}px Inter, sans-serif`/.test(dieStrFontMatch[0]),
+    'expected the Stats dice-pool value to use an Inter font declaration driven by statsFontSize, not Rajdhani or a fixed literal size');
   assert(!/Rajdhani/.test(dieStrFontMatch[0]), 'expected the Stats dice-pool font declaration to no longer reference Rajdhani');
-  ok('Stats dice-pool value shares the exact sharedFontSize variable with the Abilities text, in Inter not Rajdhani');
+  ok('Stats dice-pool value uses the fixed statsFontSize variable, in Inter not Rajdhani');
 
-  // The stat label ("Brawl", "Finesse", etc.) uses the same sharedFontSize
-  // variable too, not a separate fixed size.
-  const statLabelFontDecl = rendererSrc.match(/ctx\.font = `600 \$\{sharedFontSize\}px Inter, sans-serif`/);
-  assert(statLabelFontDecl, 'expected the Stats label to use an Inter font declaration driven by sharedFontSize, matching the dice value and Abilities text');
-  ok('Stats label ("Brawl", "Finesse", etc.) shares the same sharedFontSize variable too');
+  // The stat label ("Brawl", "Finesse", etc.) uses the same statsFontSize
+  // variable too, not a separate declaration.
+  const statLabelFontDecl = rendererSrc.match(/ctx\.font = `600 \$\{statsFontSize\}px Inter, sans-serif`/);
+  assert(statLabelFontDecl, 'expected the Stats label to use an Inter font declaration driven by statsFontSize, matching the dice value');
+  ok('Stats label ("Brawl", "Finesse", etc.) shares the same statsFontSize variable too');
 
   // Sanity-check it still actually renders something legible in that row
   // (not blank / not throwing) — a lightweight smoke check alongside the

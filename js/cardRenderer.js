@@ -543,8 +543,7 @@ function renderCard(canvas, data) {
     ctx.stroke();
   }
 
-  // ---- Abilities geometry + shared font size (computed before Stats so
-  // Stats can render at the exact same final size — see below) ----
+  // ---- Abilities geometry + auto-fit font size ----
   const abilTop = PORTRAIT.y + PORTRAIT.h + 22;
   const abilLeft = 28;
   const abilRight = CARD_W - 28;
@@ -553,12 +552,14 @@ function renderCard(canvas, data) {
   const abilBottom = CARD_H - healthBarH - (data.quote ? 72 : 14);
 
   const abilities = (data.abilities || []).filter(a => a.name || a.text);
-  // Stats (labels + dice values) and Abilities text all read as one
-  // consistent typeface at one consistent size — sharedFontSize starts at
-  // the selected Ability Text Size and, if the abilities are long enough
-  // to need it, auto-shrinks to fit; Stats always renders at whatever
-  // sharedFontSize ends up being, never a different fixed size.
-  let sharedFontSize = data.abilityFontSize || 33;
+  // Stats (labels + dice values) always render at exactly the picked
+  // Ability Text Size — Stats has its own fixed row height (STATS.h / 6 ≈
+  // 71.7px) that comfortably fits any of the four presets (29-42px), so it
+  // never needs to shrink and stays a plain, predictable size no matter
+  // how long the Abilities text is. Only the Abilities block below
+  // auto-fits its own separate space.
+  const statsFontSize = data.abilityFontSize || 33;
+  let abilFontSize = statsFontSize;
   let lineHeight;
   if (abilities.length) {
     const buildBlocks = (fs) => {
@@ -580,12 +581,12 @@ function renderCard(canvas, data) {
       return { out: r.out, fits: height <= available };
     };
 
-    var res = fitsAt(sharedFontSize);
+    var res = fitsAt(abilFontSize);
     // Coarse pass: whole-pixel steps down until it fits, or the
     // print-legibility floor (16px).
-    while (!res.fits && sharedFontSize > 16) {
-      sharedFontSize -= 1;
-      res = fitsAt(sharedFontSize);
+    while (!res.fits && abilFontSize > 16) {
+      abilFontSize -= 1;
+      res = fitsAt(abilFontSize);
     }
     // Fine pass: line-wrapping only reflows text at specific pixel-width
     // thresholds, so the whole-pixel search above can overshoot — dropping
@@ -598,12 +599,12 @@ function renderCard(canvas, data) {
     // search the 1px gap between the size that just fit and the next size
     // up (confirmed too big by the loop above) to land right at the real
     // boundary. Capped at the size that fit the search above, so this only
-    // recovers wasted space inside an auto-shrink — it never grows a card
-    // past the Ability Text Size actually picked (when that size already
-    // fits with no shrink needed, sharedFontSize + 1 is already past the
-    // pick and the loop below runs zero iterations).
-    if (res.fits && sharedFontSize + 1 <= (data.abilityFontSize || 33)) {
-      let lo = sharedFontSize, hi = sharedFontSize + 1;
+    // recovers wasted space inside an auto-shrink — it never grows the
+    // Abilities text past the Ability Text Size actually picked (when that
+    // size already fits with no shrink needed, abilFontSize + 1 is already
+    // past the pick and the loop below runs zero iterations).
+    if (res.fits && abilFontSize + 1 <= statsFontSize) {
+      let lo = abilFontSize, hi = abilFontSize + 1;
       for (let i = 0; i < 10; i++) {
         const mid = (lo + hi) / 2;
         if (fitsAt(mid).fits) lo = mid; else hi = mid;
@@ -614,11 +615,11 @@ function renderCard(canvas, data) {
       const refined = Math.floor(lo * 10) / 10;
       const refinedRes = fitsAt(refined);
       if (refinedRes.fits) {
-        sharedFontSize = refined;
+        abilFontSize = refined;
         res = refinedRes;
       }
     }
-    lineHeight = Math.round(sharedFontSize * 1.28);
+    lineHeight = Math.round(abilFontSize * 1.28);
   }
 
   // ---- Stats table ----
@@ -643,21 +644,20 @@ function renderCard(canvas, data) {
         ctx.globalAlpha = 1;
       }
       ctx.fillStyle = T.textPrimary;
-      ctx.font = `600 ${sharedFontSize}px Inter, sans-serif`;
+      ctx.font = `600 ${statsFontSize}px Inter, sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(label, STATS.x + 20, ry + rowH / 2 + 1);
 
-      // Dice pool value uses the same Inter family and the same size as
-      // the stat label and the Abilities text (sharedFontSize) — bold
-      // weight keeps it the visual focal point of the row without making
-      // it a different size from everything else on the card. A skill set
-      // to 0d0 means the character has no rating in it at all (as opposed
-      // to a normal, if weak, 1d6) — printed as "–d–" instead of the
-      // literal "0d0", which reads as a data-entry mistake rather than a
-      // deliberate "no skill here" mark.
+      // Dice pool value uses the same Inter family and the same fixed
+      // statsFontSize as the stat label — bold weight keeps it the visual
+      // focal point of the row without making it a different size from the
+      // label. A skill set to 0d0 means the character has no rating in it
+      // at all (as opposed to a normal, if weak, 1d6) — printed as "–d–"
+      // instead of the literal "0d0", which reads as a data-entry mistake
+      // rather than a deliberate "no skill here" mark.
       const dieStr = !val ? '—' : (val.n === 0 && val.d === 0) ? '–d–' : `${val.n}d${val.d}`;
-      ctx.font = `700 ${sharedFontSize}px Inter, sans-serif`;
+      ctx.font = `700 ${statsFontSize}px Inter, sans-serif`;
       ctx.textAlign = 'right';
       ctx.fillStyle = accent;
       ctx.fillText(dieStr, STATS.x + STATS.w - 20, ry + rowH / 2 + 1);
@@ -676,7 +676,7 @@ function renderCard(canvas, data) {
   ctx.textBaseline = 'alphabetic';
 
   if (abilities.length) {
-    const fontSize = sharedFontSize;
+    const fontSize = abilFontSize;
     let y = abilTop + fontSize;
     for (const block of res.out) {
       ctx.font = `400 ${fontSize}px Inter, sans-serif`;

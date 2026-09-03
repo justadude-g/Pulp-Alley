@@ -1,9 +1,10 @@
 // verify31.js — Stats/Abilities/Portrait rebalance:
-// 1. Stats (label + dice value) render at the exact same font size as the
-//    Abilities text, and track it live — changing the Ability Text Size
-//    dropdown, or the auto-shrink that kicks in for long ability text,
-//    changes Stats' size right along with it (not just a coincidental
-//    match at the default size).
+// 1. Stats (label + dice value) render at the picked Ability Text Size and
+//    track the dropdown live. They do NOT shrink along with the Abilities
+//    text's own auto-fit, though — Stats has its own generous fixed row
+//    height and stays a plain, predictable size no matter how long the
+//    Abilities text runs; only the Abilities block auto-fits its own
+//    separate space (see verify53.js for that fine-grained auto-fit).
 // 2. The Stats row backgrounds (tint/tint2) now reach the card's right
 //    edge, instead of stopping short of it with a plain-background margin.
 // 3. Stats starts further right than before (x:440, was x:340) — tighter
@@ -74,11 +75,14 @@ function ok(label) { console.log('OK  ', label); }
   assert(widthXL > widthSmall * 1.2, `expected the Stats "Brawl" label to render noticeably wider at Extra Large (42px) than Small (29px) ability text size, got Small=${widthSmall} XL=${widthXL}`);
   ok(`Stats label size tracks the Ability Text Size dropdown live (Small width=${widthSmall}, Extra Large width=${widthXL})`);
 
-  // ---- 1b. Long abilities force an auto-shrink; Stats shrinks in lockstep. ----
+  // ---- 1b. Long abilities force the Abilities text to auto-shrink, but
+  // Stats stays put at the picked size (Extra Large) — Stats' row height
+  // is generous enough that it never needs to shrink, and per design it no
+  // longer tracks the Abilities auto-fit the way it used to. ----
   await page.selectOption('#f-abilityFontSize', '42');
   await page.waitForTimeout(100);
-  const widthBeforeShrink = await statLabelInkWidth();
-  const longText = 'This ability has a very long description that should wrap across multiple lines and force the auto-fit sizer to shrink the font so everything still fits neatly above the health bar without overlapping any other element on the card, including the stats table which must now shrink in lockstep with the abilities text since they share one font-size variable.';
+  const widthBeforeLongText = await statLabelInkWidth();
+  const longText = 'This ability has a very long description that should wrap across multiple lines and force the auto-fit sizer to shrink the font so everything still fits neatly above the health bar without overlapping any other element on the card. Stats itself must stay exactly the same size regardless, since it has its own generous fixed row height and no longer shrinks along with the Abilities text.';
   await textInputs[0].fill(longText);
   await page.click('#add-ability');
   const nameInputs2 = await page.$$('.ability-item input[data-field="name"]');
@@ -91,9 +95,9 @@ function ok(label) { console.log('OK  ', label); }
   await nameInputs3[2].fill('Iron Will');
   await textInputs3[2].fill(longText);
   await page.waitForTimeout(250);
-  const widthAfterShrink = await statLabelInkWidth();
-  assert(widthAfterShrink < widthBeforeShrink * 0.9, `expected the Stats label to shrink along with the auto-fitted Abilities text once it no longer fits at Extra Large, got before=${widthBeforeShrink} after=${widthAfterShrink}`);
-  ok(`Stats label shrinks in lockstep with the Abilities auto-fit (before=${widthBeforeShrink}, after=${widthAfterShrink})`);
+  const widthAfterLongText = await statLabelInkWidth();
+  assert(Math.abs(widthAfterLongText - widthBeforeLongText) <= 2, `expected the Stats label to stay the same width (Extra Large, fixed) even once the Abilities text is long enough to need its own auto-shrink, got before=${widthBeforeLongText} after=${widthAfterLongText}`);
+  ok(`Stats label stays fixed at the picked size regardless of the Abilities auto-fit (before=${widthBeforeLongText}, after=${widthAfterLongText})`);
 
   // ---- 2. Stats row background reaches the card's right edge. ----
   await page.click('#btn-new-card');

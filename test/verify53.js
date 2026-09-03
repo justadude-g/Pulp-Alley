@@ -100,21 +100,13 @@ function ok(label) { console.log('OK  ', label); }
   assert.strictEqual(extent.bands, 10, `expected the fine pass to land on a font size that wraps to 10 lines (up from the 9 lines a whole-pixel-only search finds), got ${extent.bands} ink bands`);
   ok(`The fine pass recovers a whole extra wrapped line on the reported card (ink reaches row ${extent.lastInkRow} of ${extent.available}, ${extent.bands} lines, vs the old 308/374 and 9 lines)`);
 
-  // ---- 2. The fine pass never grows a card past the Ability Text Size the
-  // user actually picked — it only recovers wasted space inside an
-  // auto-shrink. A short single ability at "Small" should render
-  // meaningfully smaller than the same ability at "Extra Large", same
-  // contract as before this change (see verify31.js test 1a). ----
-  await page.click('#btn-new-card');
-  await page.selectOption('#f-cardType', 'Leader');
-  await page.selectOption('#f-theme', 'ivory');
-  await page.click('#add-ability');
-  nameInputs = await page.$$('.ability-item input[data-field="name"]');
-  textInputs = await page.$$('.ability-item textarea[data-field="text"]');
-  await nameInputs[0].fill('Marksman');
-  await textInputs[0].fill('Re-roll one failed Shoot die per activation.');
-  await page.waitForTimeout(200);
-
+  // ---- 1b. Stats stays at the picked Ability Text Size (Medium, 33px) on
+  // this exact card, even though the Abilities text itself shrank down to
+  // roughly 25.4-25.9px to fit — Stats has its own generous fixed row
+  // height and never needs to shrink, so it must not track the Abilities
+  // auto-fit downward. Compared against a fresh card with no abilities at
+  // all (so Stats renders at the plain, un-auto-fitted 33px), which should
+  // measure the same "Brawl" ink width if Stats is correctly staying put. ----
   async function statLabelInkWidth() {
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
@@ -132,7 +124,31 @@ function ok(label) { console.log('OK  ', label); }
       return (left === null) ? 0 : (right - left);
     });
   }
+  const widthOnShrunkCard = await statLabelInkWidth();
+  await page.click('#btn-new-card');
+  await page.selectOption('#f-cardType', 'Leader');
+  await page.selectOption('#f-theme', 'ivory');
+  await page.waitForTimeout(150);
+  const widthWithNoAbilities = await statLabelInkWidth();
+  assert(Math.abs(widthOnShrunkCard - widthWithNoAbilities) <= 2, `expected the Stats "Brawl" label to render at the same width whether or not the Abilities text needed to auto-shrink (Stats stays fixed at the picked size), got with-shrunk-abilities=${widthOnShrunkCard} vs no-abilities=${widthWithNoAbilities}`);
+  ok(`Stats stays fixed at the picked Ability Text Size on the reported card, unaffected by the Abilities auto-fit (${widthOnShrunkCard} vs ${widthWithNoAbilities} with no abilities at all)`);
 
+  // ---- 2. The fine pass never grows a card past the Ability Text Size the
+  // user actually picked — it only recovers wasted space inside an
+  // auto-shrink. A short single ability at "Small" should render
+  // meaningfully smaller than the same ability at "Extra Large", same
+  // contract as before this change (see verify31.js test 1a). ----
+  await page.click('#btn-new-card');
+  await page.selectOption('#f-cardType', 'Leader');
+  await page.selectOption('#f-theme', 'ivory');
+  await page.click('#add-ability');
+  nameInputs = await page.$$('.ability-item input[data-field="name"]');
+  textInputs = await page.$$('.ability-item textarea[data-field="text"]');
+  await nameInputs[0].fill('Marksman');
+  await textInputs[0].fill('Re-roll one failed Shoot die per activation.');
+  await page.waitForTimeout(200);
+
+  // Reuses the statLabelInkWidth() helper defined above (test 1b).
   await page.selectOption('#f-abilityFontSize', '29'); // Small
   await page.waitForTimeout(150);
   const widthSmall = await statLabelInkWidth();

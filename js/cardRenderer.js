@@ -49,7 +49,7 @@ const TYPE_PRESETS = {
     // low opacity, and reads more distinctly from Villain's red.
     accent: '#f6930a', level: 4, healthStart: 'd10', healthAsterisk: false,
     maxAbilities: 3, maxAbilityLevel: 4,
-    skillDiceHint: 'Leader (p.9): pick 4 skills to start at 3d10, the other 2 at 2d8.',
+    skillDiceHint: 'Leader: pick 4 skills to start at 3d10, the other 2 at 2d8.',
     defaultStats: {
       brawl: { n: 3, d: 10 }, shoot: { n: 3, d: 10 }, might: { n: 3, d: 10 }, finesse: { n: 3, d: 10 },
       dodge: { n: 2, d: 8 }, cunning: { n: 2, d: 8 },
@@ -58,7 +58,7 @@ const TYPE_PRESETS = {
   Sidekick: {
     accent: '#16a34a', level: 3, healthStart: 'd8', healthAsterisk: false,
     maxAbilities: 2, maxAbilityLevel: 3,
-    skillDiceHint: 'Sidekick (p.9): pick 3 skills to start at 3d8, the other 3 at 2d6.',
+    skillDiceHint: 'Sidekick: pick 3 skills to start at 3d8, the other 3 at 2d6.',
     defaultStats: {
       brawl: { n: 3, d: 8 }, shoot: { n: 3, d: 8 }, might: { n: 3, d: 8 },
       dodge: { n: 2, d: 6 }, cunning: { n: 2, d: 6 }, finesse: { n: 2, d: 6 },
@@ -67,7 +67,7 @@ const TYPE_PRESETS = {
   Ally: {
     accent: '#2563eb', level: 2, healthStart: 'd6', healthAsterisk: false,
     maxAbilities: 1, maxAbilityLevel: 2,
-    skillDiceHint: 'Ally (p.9): all skills start at d6 — pick 2 skills at 2 dice, the other 4 at 1 die.',
+    skillDiceHint: 'Ally: all skills start at d6 — pick 2 skills at 2 dice, the other 4 at 1 die.',
     defaultStats: {
       brawl: { n: 2, d: 6 }, shoot: { n: 2, d: 6 },
       might: { n: 1, d: 6 }, finesse: { n: 1, d: 6 }, dodge: { n: 1, d: 6 }, cunning: { n: 1, d: 6 },
@@ -76,7 +76,7 @@ const TYPE_PRESETS = {
   Follower: {
     accent: '#000000', level: 1, healthStart: 'd6', healthAsterisk: true,
     maxAbilities: 1, maxAbilityLevel: 1,
-    skillDiceHint: 'Follower (p.9): all skills start at 1d6.',
+    skillDiceHint: 'Follower: all skills start at 1d6.',
     defaultStats: {
       brawl: { n: 1, d: 6 }, shoot: { n: 1, d: 6 }, might: { n: 1, d: 6 },
       finesse: { n: 1, d: 6 }, dodge: { n: 1, d: 6 }, cunning: { n: 1, d: 6 },

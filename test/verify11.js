@@ -23,13 +23,13 @@ function ok(label) { console.log('OK  ', label); }
   await page.selectOption('#f-cardType', 'Leader');
   await page.waitForTimeout(100);
   let hint = await page.textContent('#skill-dice-hint');
-  assert(hint.includes('Leader (p.9)'), `expected Leader hint, got: ${hint}`);
+  assert(hint.includes('Leader:'), `expected Leader hint, got: ${hint}`);
   ok('Leader skill-dice-hint populated');
 
   await page.selectOption('#f-cardType', 'Follower');
   await page.waitForTimeout(100);
   hint = await page.textContent('#skill-dice-hint');
-  assert(hint.includes('Follower (p.9)'), `expected Follower hint, got: ${hint}`);
+  assert(hint.includes('Follower:'), `expected Follower hint, got: ${hint}`);
   ok('Follower skill-dice-hint populated');
 
   await page.selectOption('#f-cardType', 'Villain');

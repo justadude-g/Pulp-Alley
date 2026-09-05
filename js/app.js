@@ -584,11 +584,9 @@ function updateNpcHintVisibility(cardType) {
 // exception Gang cards already get automatically. Hidden for Gang itself,
 // since a Gang can already be added more than once without this flag.
 const nonUniqueRowEl = document.getElementById('non-unique-row');
-const nonUniqueHintEl = document.getElementById('non-unique-hint');
 function updateNonUniqueVisibility(cardType) {
   const show = cardType !== 'Gang';
   nonUniqueRowEl.style.display = show ? 'flex' : 'none';
-  nonUniqueHintEl.style.display = show ? 'block' : 'none';
 }
 
 // Associates (p. 27-28) are non-character support cast — no Level, Stats,

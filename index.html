@@ -78,13 +78,11 @@
           <input type="checkbox" id="f-non-unique"> Non-Unique (can add more than one to a Roster)
         </label>
       </div>
-      <p class="hint" id="non-unique-hint">Optional. Most Allies and Followers are unique named characters, so a League Roster only lets you add one copy. Check this for a generic type instead (e.g. a Rebel Commando or Scout Trooper) so it can be added multiple times, the same way Gangs already can. Not shown for Gang cards, since they can already repeat.</p>
-
       <div class="field-row">
         <label class="grow">Card Background
           <select id="f-theme">
-            <option value="classicalNoSkull" selected>Classical — aged Pulp Alley parchment (no skull, default)</option>
-            <option value="classical">Classical — aged Pulp Alley parchment (with skull)</option>
+            <option value="classicalNoSkull" selected>Classical</option>
+            <option value="classical">Classical (with skull)</option>
             <option value="ivory">Ivory — warm, light on ink</option>
             <option value="light">Light — pure white, lightest on ink</option>
           </select>
@@ -105,7 +103,7 @@
           <datalist id="affiliation-options"></datalist>
         </label>
       </div>
-      <p class="hint">Optional. A sub-group within a Theme (e.g. Rebel/Empire/Mercenary within a "Star Wars" Theme), for filtering only — like Theme, it's purely for organizing on this site and never appears on the printed card. Leave blank for no Affiliation. Suggestions above are scoped to the Theme field: only Affiliations already used with that Theme are offered (or every Affiliation in use, if Theme is blank).</p>
+      <p class="hint">Optional. A sub-group within a Theme (e.g. Rebel/Empire/Mercenary within a "Star Wars" Theme) — like Theme, it's for filtering and organizing on this site only, and never appears on the printed card. Suggestions above are scoped to the Theme field: only Affiliations already used with that Theme are offered, or every Affiliation in use if Theme is blank.</p>
 
       <div class="field-row">
         <label class="grow">Character Name
@@ -143,8 +141,6 @@
           <button type="button" id="reset-stats" class="btn-ghost stat-reset-btn">↺ Reset to Card Type</button>
         </div>
         <p class="hint" id="skill-dice-hint"></p>
-        <div class="stat-group-label">Combat</div>
-        <div class="stat-group-label">Challenge</div>
         <div class="stat-row" data-stat="brawl"><span>Brawl</span><input type="number" min="0" value="2"><span class="d">d</span><select><option>0</option><option>6</option><option selected>8</option><option>10</option><option>12</option></select></div>
         <div class="stat-row" data-stat="might"><span>Might</span><input type="number" min="0" value="2"><span class="d">d</span><select><option>0</option><option>6</option><option selected>8</option><option>10</option><option>12</option></select></div>
         <div class="stat-row" data-stat="shoot"><span>Shoot</span><input type="number" min="0" value="4"><span class="d">d</span><select><option>0</option><option>6</option><option>8</option><option selected>10</option><option>12</option></select></div>

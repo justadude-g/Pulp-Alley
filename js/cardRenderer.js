@@ -678,7 +678,13 @@ function renderCard(canvas, data) {
   }
 
   // ---- Abilities geometry + auto-fit font size ----
-  const abilTop = PORTRAIT.y + PORTRAIT.h + 22;
+  // Gang cards get a couple of extra pixels between the Stats table and the
+  // Abilities column to fit a printed reminder of the Gang skill-dice rule
+  // (see the note drawn right after the Stats table below) — a player
+  // reading the card at the table has no other way to remember that
+  // Brawl/Shoot/Might scale with the gang's current model count.
+  const isGang = data.cardType === 'Gang';
+  const abilTop = PORTRAIT.y + PORTRAIT.h + 22 + (isGang ? 40 : 0);
   const abilLeft = 28;
   const abilRight = CARD_W - 28;
   const abilMaxWidth = abilRight - abilLeft;
@@ -800,6 +806,28 @@ function renderCard(canvas, data) {
     ctx.strokeStyle = T.borderSubtle;
     ctx.lineWidth = 1;
     ctx.strokeRect(STATS.x + 0.5, STATS.y + 0.5, STATS.w - 1, STATS.h - 1);
+  }
+
+  // Gang skill-dice reminder — printed directly under the Stats table (in
+  // the extra gap opened up by `isGang` above) so it's always on the card
+  // itself, not just a designer-only hint. Brawl/Shoot/Might are the three
+  // skills that scale with the gang's current model count (Core Rules
+  // p.22); Dodge/Cunning/Finesse stay fixed at 1d6 regardless, so calling
+  // out only the three that change is what a player actually needs mid-
+  // game.
+  if (isGang) {
+    ctx.font = 'italic 400 15px Inter, sans-serif';
+    ctx.fillStyle = T.textMuted;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const noteLines = wrapLines(ctx, 'Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).', STATS.w - 12);
+    let ny = STATS.y + STATS.h + 6;
+    for (const line of noteLines) {
+      ctx.fillText(line, STATS.x + STATS.w / 2, ny);
+      ny += 17;
+    }
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
   }
 
   if (T.skullWatermark) {

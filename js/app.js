@@ -678,7 +678,18 @@ const associateHintEl = document.getElementById('associate-hint');
 function updateAssociateFieldVisibility(cardType) {
   const isAssociate = cardType === 'Associate';
   levelFieldWrapEl.style.display = isAssociate ? 'none' : '';
-  statsFieldsetEl.style.display = isAssociate ? 'none' : 'block';
+  // Stats-fieldset is '' (not 'block') when shown — it's a CSS Grid
+  // (.stat-grid { display: grid }) that lays the six stats out two-per-row
+  // with the Reset Stats button right-aligned beneath them. Hardcoding
+  // 'block' here used to clobber that with an inline override, forcing a
+  // single stacked column (6 rows tall instead of 3) every time this ran
+  // — which is every Card Type switch, not just Associate's. On a shorter
+  // window the extra height could push the Reset Stats button below the
+  // fold right when switching back from an Asset/Associate type, reading
+  // as the button having "disappeared" until you scrolled. Health/Flavor
+  // are plain fieldsets (block by default anyway) so 'block' is harmless
+  // there, but Stats specifically needs its own CSS display restored.
+  statsFieldsetEl.style.display = isAssociate ? 'none' : '';
   healthFieldsetEl.style.display = isAssociate ? 'none' : 'block';
   flavorFieldsetEl.style.display = isAssociate ? 'none' : 'block';
   associateHintEl.style.display = isAssociate ? 'block' : 'none';

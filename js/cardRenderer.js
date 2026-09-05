@@ -301,6 +301,48 @@ function wrapLines(ctx, text, maxWidth) {
   return lines;
 }
 
+// Tokenize text into words, flagging specific "keyword" words (Gadget /
+// Mishap) so a Gadget-flagged Asset card description can render those
+// labels in bold — per explicit user feedback, "Gadget" and "Mishap" are
+// the main keywords a player scans for on a Gear/Gadget card, so they
+// should stand out from the rest of the effect text. Punctuation attached
+// to the word (e.g. "Gadget.", "Mishap:") is kept as part of the bold run
+// rather than split off, since visually there's no difference and it's
+// simpler to lay out.
+function tokenizeRichText(text) {
+  return text.split(/\s+/).filter(Boolean).map(word => {
+    const core = word.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, '');
+    return { text: word, bold: core === 'Gadget' || core === 'Mishap' };
+  });
+}
+
+// Like wrapLines, but for an array of { text, bold } word tokens (see
+// tokenizeRichText above) — measures each word in its own font (bold vs
+// normal) so a line mixing both weights still wraps at the right point.
+// Returns an array of lines, each itself an array of word tokens.
+function wrapRichLine(ctx, tokens, maxWidth, normalFont, boldFont) {
+  ctx.font = normalFont;
+  const spaceWidth = ctx.measureText(' ').width;
+  const lines = [];
+  let cur = [];
+  let curWidth = 0;
+  for (const tok of tokens) {
+    ctx.font = tok.bold ? boldFont : normalFont;
+    const w = ctx.measureText(tok.text).width;
+    const addWidth = cur.length ? spaceWidth + w : w;
+    if (curWidth + addWidth > maxWidth && cur.length) {
+      lines.push(cur);
+      cur = [tok];
+      curWidth = w;
+    } else {
+      cur.push(tok);
+      curWidth += addWidth;
+    }
+  }
+  if (cur.length) lines.push(cur);
+  return lines;
+}
+
 // Faint stylized skull watermark, echoing the official card template's
 // background motif. Drawn as one flat silhouette with the eyes/nose
 // punched out via destination-out compositing.
@@ -1301,12 +1343,16 @@ function renderAssetCard(canvas, data) {
 
   if (description) {
     const paragraphs = description.split(/\n+/).map(p => p.trim()).filter(Boolean);
+    // Tokenized once (independent of font size) so the "Gadget"/"Mishap"
+    // keyword flags don't need recomputing on every shrink-fit attempt.
+    const paragraphTokens = paragraphs.map(p => tokenizeRichText(p));
     const buildLines = (fs) => {
-      ctx.font = `400 ${fs}px Inter, sans-serif`;
+      const normalFont = `400 ${fs}px Inter, sans-serif`;
+      const boldFont = `700 ${fs}px Inter, sans-serif`;
       const out = [];
-      paragraphs.forEach((p, i) => {
-        out.push(...wrapLines(ctx, p, descMaxWidth));
-        if (i < paragraphs.length - 1) out.push('');
+      paragraphTokens.forEach((tokens, i) => {
+        out.push(...wrapRichLine(ctx, tokens, descMaxWidth, normalFont, boldFont));
+        if (i < paragraphTokens.length - 1) out.push('');
       });
       return out;
     };
@@ -1345,12 +1391,24 @@ function renderAssetCard(canvas, data) {
     }
     const lineHeight = Math.round(fontSize * 1.32);
     const gapHeight = Math.round(fontSize * 0.7);
-    ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+    const normalFont = `400 ${fontSize}px Inter, sans-serif`;
+    const boldFont = `700 ${fontSize}px Inter, sans-serif`;
+    ctx.font = normalFont;
+    const spaceWidth = ctx.measureText(' ').width;
     ctx.fillStyle = T.textSecondary;
     let y = descTop + fontSize;
     for (const line of res.lines) {
       if (line === '') { y += gapHeight; continue; }
-      ctx.fillText(line, descLeft, y);
+      // Each line is an array of { text, bold } word tokens (see
+      // tokenizeRichText/wrapRichLine) — draw word-by-word so "Gadget"/
+      // "Mishap" render in the bold weight while the rest of the effect
+      // text stays regular weight.
+      let x = descLeft;
+      for (const tok of line) {
+        ctx.font = tok.bold ? boldFont : normalFont;
+        ctx.fillText(tok.text, x, y);
+        x += ctx.measureText(tok.text).width + spaceWidth;
+      }
       y += lineHeight;
     }
   } else {

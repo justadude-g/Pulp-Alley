@@ -344,10 +344,13 @@ const ASSOC_CARD_H = 750;
 // card empty above the portrait, wasting vertical room the Abilities text
 // could otherwise use.
 const ASSOCIATE_HEADER_H = 90;
-// Per the user's spec ("centre right with some margin away from the edge
-// of the card"): vertically centered on the card (165 + 420/2 = 375 =
-// ASSOC_CARD_H/2), right edge inset 40px from the card's own right edge.
-const ASSOCIATE_PORTRAIT = { x: 640, y: 165, w: 370, h: 420 };
+// Top-aligned with the Abilities block (ASSOCIATE_HEADER_H + 24, same as
+// abilTop below) per explicit user feedback — it previously sat lower,
+// vertically centered on the card, which left a visible gap between the
+// header's dotted underline and the top of the portrait that the first
+// line of Abilities text didn't have. Right edge inset 40px from the
+// card's own right edge.
+const ASSOCIATE_PORTRAIT = { x: 640, y: ASSOCIATE_HEADER_H + 24, w: 370, h: 420 };
 // The "ASSOCIATE:" label, the Associate's name, and the Abilities body text
 // all share this one size by default, per explicit user feedback — the
 // original mix (label fixed at 24px, name auto-shrinking from 40px, and

@@ -42,14 +42,15 @@ function ok(label) { console.log('OK  ', label); }
     leader: getPortraitBox('Leader'),
     noArg: getPortraitBox(),
   }));
-  assert.deepStrictEqual(boxes.associate, { x: 640, y: 165, w: 370, h: 420 }, `expected getPortraitBox('Associate') to return ASSOCIATE_PORTRAIT, got ${JSON.stringify(boxes.associate)}`);
+  assert.deepStrictEqual(boxes.associate, { x: 640, y: 114, w: 370, h: 420 }, `expected getPortraitBox('Associate') to return ASSOCIATE_PORTRAIT, got ${JSON.stringify(boxes.associate)}`);
   assert.deepStrictEqual(boxes.leader, { x: 28, y: 132, w: 412, h: 430 }, `expected getPortraitBox('Leader') to return the standard character-card PORTRAIT, got ${JSON.stringify(boxes.leader)}`);
   assert.deepStrictEqual(boxes.noArg, boxes.leader, `expected getPortraitBox() with no argument to default to the standard PORTRAIT (backward-compatible with existing callers/tests), got ${JSON.stringify(boxes.noArg)}`);
-  // Vertically centered on the card, per the user's "centre right with some
-  // margin away from the edge of the card" spec.
-  assert.strictEqual(boxes.associate.y + boxes.associate.h / 2, 375, 'expected the Associate portrait box to be vertically centered on the 750px-tall card');
+  // Top-aligned with the Abilities block (ASSOCIATE_HEADER_H + 24 = 114),
+  // per explicit user feedback that centering it lower left a gap the
+  // Abilities text's own top didn't have.
+  assert.strictEqual(boxes.associate.y, 114, 'expected the Associate portrait box to be top-aligned with the Abilities block, not vertically centered on the card');
   assert.strictEqual(boxes.associate.x + boxes.associate.w, 1010, 'expected a 40px margin between the Associate portrait\'s right edge and the card\'s right edge (1050)');
-  ok('getPortraitBox() is card-type-aware: Associate cards get a distinct, vertically-centered, right-margined box; every other Card Type is unaffected');
+  ok('getPortraitBox() is card-type-aware: Associate cards get a distinct, top-aligned, right-margined box; every other Card Type is unaffected');
 
   // ---- 2. The header ("ASSOCIATE:" + name) and Abilities text actually
   // render ink — a smoke check alongside the geometry proof above. ----

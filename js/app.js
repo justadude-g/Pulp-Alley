@@ -523,8 +523,8 @@ function toggleGangFields(isGang) {
 function setStatRow(key, n, d) {
   const row = document.querySelector(`.stat-row[data-stat="${key}"]`);
   if (!row) return;
-  row.querySelector('input[type="number"]').value = n;
-  row.querySelector('select').value = d;
+  row.querySelector('select.stat-n').value = n;
+  row.querySelector('select.stat-d').value = d;
 }
 
 // Auto-fills the six stat rows from the rulebook's gang formula (p. 21):
@@ -533,7 +533,11 @@ function setStatRow(key, n, d) {
 // afterward so a perk or homebrew rule can still override the numbers.
 function applyGangStatsFromModels() {
   const models = Math.max(1, +gangModelsInput.value || 5);
-  const combatDice = Math.ceil(models / 2);
+  // The number-of-dice dropdown only offers 0-5 (see index.html), so clamp
+  // here — otherwise an 11-12 model gang's computed 6 would silently fail
+  // to match any <option> and the select would just keep showing whatever
+  // it last had.
+  const combatDice = Math.min(5, Math.ceil(models / 2));
   setStatRow('brawl', combatDice, 6);
   setStatRow('shoot', combatDice, 6);
   setStatRow('might', combatDice, 6);
@@ -656,8 +660,8 @@ function collectStats() {
   const stats = {};
   document.querySelectorAll('.stat-row').forEach(row => {
     const key = row.dataset.stat;
-    const n = +row.querySelector('input[type="number"]').value || 0;
-    const d = +row.querySelector('select').value;
+    const n = +row.querySelector('select.stat-n').value || 0;
+    const d = +row.querySelector('select.stat-d').value;
     stats[key] = { n, d };
   });
   return stats;
@@ -1349,8 +1353,14 @@ async function loadCardIntoForm(record) {
     const key = row.dataset.stat;
     const s = d.stats?.[key];
     if (s) {
-      row.querySelector('input[type="number"]').value = s.n;
-      row.querySelector('select').value = s.d;
+      // The number-of-dice field used to be a free-typed number; it's now a
+      // 0-5 dropdown. Clamp anything saved before that change (or any Gang
+      // stat computed before the formula's own clamp existed) so an old
+      // card still shows a valid, selected option instead of silently
+      // landing on whatever the dropdown last had.
+      const clampedN = Math.max(0, Math.min(5, Math.round(Number(s.n)) || 0));
+      row.querySelector('select.stat-n').value = String(clampedN);
+      row.querySelector('select.stat-d').value = s.d;
     }
   });
   const isGang = d.cardType === 'Gang';

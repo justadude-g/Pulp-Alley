@@ -30,8 +30,8 @@ async function main() {
   // Default 5 models -> Brawl/Shoot/Might = 3d6, Dodge/Cunning/Finesse = 1d6
   async function statVal(key) {
     const row = page.locator(`.stat-row[data-stat="${key}"]`);
-    const n = await row.locator('input[type="number"]').inputValue();
-    const d = await row.locator('select').inputValue();
+    const n = await row.locator('select.stat-n').inputValue();
+    const d = await row.locator('select.stat-d').inputValue();
     return `${n}d${d}`;
   }
   console.log('at 5 models -> brawl:', await statVal('brawl'), 'shoot:', await statVal('shoot'), 'might:', await statVal('might'),
@@ -48,7 +48,7 @@ async function main() {
   console.log('health preview @7 models:', healthPreview2);
 
   // Manual override still works after auto-fill
-  await page.locator('.stat-row[data-stat="brawl"] input[type="number"]').fill('9');
+  await page.locator('.stat-row[data-stat="brawl"] select.stat-n').selectOption('5');
   await page.waitForTimeout(100);
   console.log('brawl after manual override:', await statVal('brawl'));
 

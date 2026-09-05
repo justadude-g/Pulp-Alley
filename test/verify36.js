@@ -31,8 +31,8 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(300);
   await page.fill('#f-zoom', '0.6');
   await page.dispatchEvent('#f-zoom', 'input');
-  await page.locator('.stat-row[data-stat="brawl"] input[type="number"]').fill('4');
-  await page.selectOption('.stat-row[data-stat="brawl"] select', '12');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-n', '4');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-d', '12');
   await page.click('#add-ability');
   const nameInputs = await page.$$('.ability-item input[data-field="name"]');
   await nameInputs[0].fill('Marksman');
@@ -67,8 +67,8 @@ function ok(label) { console.log('OK  ', label); }
 
   // Everything else — stats, ability, quote, Theme, portrait art — carried
   // over unchanged.
-  const brawlN = await page.locator('.stat-row[data-stat="brawl"] input[type="number"]').inputValue();
-  const brawlD = await page.locator('.stat-row[data-stat="brawl"] select').inputValue();
+  const brawlN = await page.locator('.stat-row[data-stat="brawl"] select.stat-n').inputValue();
+  const brawlD = await page.locator('.stat-row[data-stat="brawl"] select.stat-d').inputValue();
   assert.strictEqual(brawlN, '4', 'expected Brawl\'s number to carry over to the duplicate');
   assert.strictEqual(brawlD, '12', 'expected Brawl\'s die-type to carry over to the duplicate');
   const abilityName = await page.locator('.ability-item input[data-field="name"]').first().inputValue();

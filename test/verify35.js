@@ -27,12 +27,12 @@ function ok(label) { console.log('OK  ', label); }
   // was already the default-selected one. ----
   const stats = ['brawl', 'might', 'shoot', 'finesse', 'dodge', 'cunning'];
   for (const key of stats) {
-    const options = await page.$$eval(`.stat-row[data-stat="${key}"] select option`, els => els.map(e => e.value));
+    const options = await page.$$eval(`.stat-row[data-stat="${key}"] select.stat-d option`, els => els.map(e => e.value));
     assert.deepStrictEqual(options, ['0', '6', '8', '10', '12'], `expected ${key}'s dice-type options to be [0,6,8,10,12], got ${JSON.stringify(options)}`);
   }
   ok('Every stat\'s dice-type dropdown now offers 0, alongside 6/8/10/12');
-  const brawlDefault = await page.$eval('.stat-row[data-stat="brawl"] select', el => el.value);
-  const shootDefault = await page.$eval('.stat-row[data-stat="shoot"] select', el => el.value);
+  const brawlDefault = await page.$eval('.stat-row[data-stat="brawl"] select.stat-d', el => el.value);
+  const shootDefault = await page.$eval('.stat-row[data-stat="shoot"] select.stat-d', el => el.value);
   assert.strictEqual(brawlDefault, '8', `expected Brawl's default die-type to stay 8, got ${brawlDefault}`);
   assert.strictEqual(shootDefault, '10', `expected Shoot's default die-type to stay 10, got ${shootDefault}`);
   ok('Adding the 0 option didn\'t change any stat\'s existing default die-type selection');
@@ -41,8 +41,8 @@ function ok(label) { console.log('OK  ', label); }
   // collectFormData(), and round-trips through save/reload. ----
   await page.selectOption('#f-cardType', 'Leader');
   await page.fill('#f-name', 'No-Brawl Character');
-  await page.locator('.stat-row[data-stat="brawl"] input[type="number"]').fill('0');
-  await page.selectOption('.stat-row[data-stat="brawl"] select', '0');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-n', '0');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-d', '0');
   await page.waitForTimeout(150);
   const brawlStat = await page.evaluate(() => collectFormData().stats.brawl);
   assert.deepStrictEqual(brawlStat, { n: 0, d: 0 }, `expected Brawl to collect as {n:0, d:0}, got ${JSON.stringify(brawlStat)}`);
@@ -56,8 +56,8 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(300);
   await page.click('.gallery-card:has-text("No-Brawl Character") [data-act="edit"]');
   await page.waitForTimeout(200);
-  const reloadedN = await page.locator('.stat-row[data-stat="brawl"] input[type="number"]').inputValue();
-  const reloadedD = await page.locator('.stat-row[data-stat="brawl"] select').inputValue();
+  const reloadedN = await page.locator('.stat-row[data-stat="brawl"] select.stat-n').inputValue();
+  const reloadedD = await page.locator('.stat-row[data-stat="brawl"] select.stat-d').inputValue();
   assert.strictEqual(reloadedN, '0', `expected the saved 0d0 Brawl to reload with number 0, got ${reloadedN}`);
   assert.strictEqual(reloadedD, '0', `expected the saved 0d0 Brawl to reload with die-type 0, got ${reloadedD}`);
   ok('A saved 0d0 stat persists and reloads correctly');
@@ -128,8 +128,8 @@ function ok(label) { console.log('OK  ', label); }
 
   // ---- 4. A normal, non-zero stat still prints its ordinary "NdD" form
   // (sanity check that the 0d0 special-case didn't break everything else). ----
-  await page.locator('.stat-row[data-stat="brawl"] input[type="number"]').fill('3');
-  await page.selectOption('.stat-row[data-stat="brawl"] select', '10');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-n', '3');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-d', '10');
   await page.waitForTimeout(150);
   const normalDiff = await page.evaluate(() => {
     const liveCanvas = document.getElementById('card-canvas');

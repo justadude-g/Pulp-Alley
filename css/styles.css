@@ -202,7 +202,6 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 }
 .stat-row span:first-child { flex: 1; font-size: 13px; font-weight: 600; }
 .stat-row .d { color: var(--text-dim); font-size: 12px; }
-.stat-row input[type="number"] { width: 44px; padding: 5px 6px; text-align: center; }
 .stat-row select { width: 56px; padding: 5px 4px; }
 
 .ability-item {

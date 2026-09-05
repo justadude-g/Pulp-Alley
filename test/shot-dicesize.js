@@ -20,8 +20,8 @@ const ROOT = path.join(__dirname, '..');
   const stats = ['brawl', 'might', 'shoot', 'finesse', 'dodge', 'cunning'];
   for (const s of stats) {
     const row = page.locator(`.stat-row[data-stat="${s}"]`);
-    await row.locator('input[type="number"]').fill('4');
-    await row.locator('select').selectOption('12');
+    await row.locator('select.stat-n').selectOption('4');
+    await row.locator('select.stat-d').selectOption('12');
   }
   await page.waitForTimeout(300);
 

@@ -24,8 +24,8 @@ function ok(label) { console.log('OK  ', label); }
     const stats = {};
     for (const row of await page.$$('.stat-row')) {
       const key = await row.getAttribute('data-stat');
-      const n = await row.$eval('input[type="number"]', el => el.value);
-      const d = await row.$eval('select', el => el.value);
+      const n = await row.$eval('select.stat-n', el => el.value);
+      const d = await row.$eval('select.stat-d', el => el.value);
       stats[key] = { n: +n, d: +d };
     }
     return stats;
@@ -54,7 +54,7 @@ function ok(label) { console.log('OK  ', label); }
   await page.selectOption('#f-cardType', 'Leader');
   await page.waitForTimeout(100);
   // hand-edit a stat first so we can prove reset actually overwrites it
-  await page.fill('.stat-row[data-stat="brawl"] input[type="number"]', '9');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-n', '5');
   await page.click('#reset-stats');
   await page.waitForTimeout(150);
   let stats = await readStats();

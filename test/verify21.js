@@ -28,7 +28,7 @@ function ok(label) { console.log('OK  ', label); }
       const out = {};
       document.querySelectorAll('.stat-row').forEach(row => {
         const key = row.dataset.stat;
-        out[key] = { n: +row.querySelector('input').value, d: +row.querySelector('select').value };
+        out[key] = { n: +row.querySelector('select.stat-n').value, d: +row.querySelector('select.stat-d').value };
       });
       return out;
     });
@@ -60,11 +60,11 @@ function ok(label) { console.log('OK  ', label); }
 
   // ---- 3. Villain/Creature/Custom have no default: switching to Villain
   // after hand-editing a stat leaves the hand-edit alone (nothing to apply). ----
-  await page.fill('.stat-row[data-stat="brawl"] input[type="number"]', '9');
+  await page.selectOption('.stat-row[data-stat="brawl"] select.stat-n', '5');
   await page.selectOption('#f-cardType', 'Villain');
   await page.waitForTimeout(150);
   stats = await readStats();
-  assert.strictEqual(stats.brawl.n, 9, 'expected a hand-edited stat to survive switching to a type with no rulebook default (Villain)');
+  assert.strictEqual(stats.brawl.n, 5, 'expected a hand-edited stat to survive switching to a type with no rulebook default (Villain)');
   ok('Switching to Villain/Creature/Custom does not touch Stats (no rulebook default to apply)');
 
   // ---- 4. Gang still uses its own model-based auto-fill, not defaultStats ----
@@ -85,7 +85,7 @@ function ok(label) { console.log('OK  ', label); }
   // hand-edit, without needing to reselect Card Type. ----
   await page.selectOption('#f-cardType', 'Follower');
   await page.waitForTimeout(150);
-  await page.fill('.stat-row[data-stat="shoot"] input[type="number"]', '5');
+  await page.selectOption('.stat-row[data-stat="shoot"] select.stat-n', '5');
   await page.click('#reset-stats');
   await page.waitForTimeout(150);
   stats = await readStats();

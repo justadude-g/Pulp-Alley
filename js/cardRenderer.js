@@ -1139,7 +1139,15 @@ function renderAssetCard(canvas, data) {
   const preset = TYPE_PRESETS[data.cardType] || { accent: ASSET_ACCENT };
   const accent = data.accentColor || preset.accent;
   const T = THEMES[data.theme] || THEMES.ivory;
-  const tint = T.fixedTint || hexToRgba(accent, T.tintAlpha);
+  // Deliberately NOT T.fixedTint (the Classical theme's own peach/tan tint,
+  // used by character cards) — per explicit user feedback, Asset cards
+  // (Contacts/Gear/Backup/Minions/Cult/Gifts) should keep one consistent
+  // green identity, distinct from character cards at a glance, in any Card
+  // Background — so the Cost badge and Type tag pill below always derive
+  // their color from `accent` (green by default — see
+  // defaultAccentForCardType in app.js, which no longer forces these
+  // types to black under Classical the way it does for character cards).
+  const tint = hexToRgba(accent, 0.16);
 
   ctx.save();
   roundedRectPath(ctx, 0, 0, CARD_W, CARD_H, CARD_RADIUS);
@@ -1159,15 +1167,18 @@ function renderAssetCard(canvas, data) {
   ctx.fillStyle = accent;
   ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
 
+  // Badge fill/ring/text also ignore the Classical theme's own brown/cream
+  // badge colors (T.badgeFill/T.badgeRing/T.badgeText) for the same reason
+  // as `tint` above — always accent-green, not theme-brown.
   const badgeCx = 85, badgeCy = 59, badgeR = 46;
   ctx.beginPath();
   ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
-  ctx.fillStyle = T.badgeFill || accent;
+  ctx.fillStyle = accent;
   ctx.fill();
   ctx.lineWidth = 4;
-  ctx.strokeStyle = T.badgeRing || shade(accent, -0.3);
+  ctx.strokeStyle = shade(accent, -0.3);
   ctx.stroke();
-  ctx.fillStyle = T.badgeText || '#ffffff';
+  ctx.fillStyle = '#ffffff';
   ctx.font = '700 60px Rajdhani, Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

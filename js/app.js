@@ -522,7 +522,17 @@ form.addEventListener('change', updatePreview);
 // one keeps Accent Color in sync — it's still a normal, editable color
 // picker afterward, same as every other auto-filled field in this app.
 function defaultAccentForCardType(cardType, theme) {
-  if (theme === 'classical' || theme === 'classicalNoSkull') return '#000000';
+  // Resource "Asset" Card Types (Contacts/Gear/Backup/Minions/Cult/Gifts)
+  // keep their own green identity even under a Classical parchment
+  // background — unlike character Card Types, whose bright default colors
+  // clash with the aged-parchment look, Asset cards were explicitly asked
+  // to stay a consistent green (so they read as visually distinct from
+  // character cards, and from each other's old "Classical brown/peach"
+  // look, at a glance) in any Card Background. See renderAssetCard in
+  // cardRenderer.js, which also ignores the Classical theme's own
+  // badge/tint colors for the same reason.
+  const isClassical = theme === 'classical' || theme === 'classicalNoSkull';
+  if (isClassical && !isAssetCardType(cardType)) return '#000000';
   const preset = TYPE_PRESETS[cardType];
   return preset ? preset.accent : '#000000';
 }

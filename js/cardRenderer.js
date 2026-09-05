@@ -692,13 +692,16 @@ function renderCard(canvas, data) {
   // a flat 1d6 regardless). Sized and measured here (rather than down by
   // the Health bar itself) so the Abilities/Quote auto-fit above can
   // reserve exactly the space it needs, the same way Quote already does.
+  // "in the gang" dropped and the weight dropped from bold to regular per
+  // explicit user feedback — the full phrase wrapped to 2 bold lines that
+  // rendered poorly on a printed card; trimmed down it fits on one line.
   const gangNoteFontSize = 24;
   const gangNoteLineHeight = 29;
-  const gangNoteText = 'Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).';
+  const gangNoteText = 'Brawl/Shoot/Might: 1d6 per 2 models (round up).';
   let gangNoteLines = [];
   let gangNoteReserve = 0;
   if (isGang) {
-    ctx.font = `700 ${gangNoteFontSize}px Inter, sans-serif`;
+    ctx.font = `400 ${gangNoteFontSize}px Inter, sans-serif`;
     gangNoteLines = wrapLines(ctx, gangNoteText, abilMaxWidth);
     gangNoteReserve = gangNoteLines.length * gangNoteLineHeight + 10;
   }
@@ -885,11 +888,12 @@ function renderCard(canvas, data) {
   // Might are the three skills that scale with the gang's current model
   // count (Core Rules p.22); Dodge/Cunning/Finesse stay a flat 1d6
   // regardless, so calling out only the three that change is what a
-  // player actually needs mid-game. Bold and sized well above body text
-  // (24px vs. the 29-42px Abilities range) so it reads clearly at arm's
-  // length on a printed card.
+  // player actually needs mid-game. Regular weight (bold read poorly once
+  // printed, per feedback) but still sized well above body text (24px vs.
+  // the 29-42px Abilities range) so it reads clearly at arm's length on a
+  // printed card.
   if (isGang) {
-    ctx.font = `700 ${gangNoteFontSize}px Inter, sans-serif`;
+    ctx.font = `400 ${gangNoteFontSize}px Inter, sans-serif`;
     ctx.fillStyle = accent;
     ctx.textAlign = 'center';
     let gy = CARD_H - healthBarH - 18 - (gangNoteLines.length - 1) * gangNoteLineHeight;

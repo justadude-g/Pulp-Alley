@@ -13,9 +13,12 @@
 //    so the element's own CSS `display: grid` applies.
 // 2. Gang cards print an on-card reminder of the Gang skill-dice rule
 //    (Brawl/Shoot/Might = 1d6 per 2 models, rounded up) at the very
-//    bottom of the card, just above the Health bar, in a bold 24px font
-//    — big enough to read on a printed card, not tucked under the Stats
-//    table at a small size.
+//    bottom of the card, just above the Health bar, in a 24px font —
+//    big enough to read on a printed card, not tucked under the Stats
+//    table at a small size. The phrase omits "in the gang" and renders
+//    at regular (not bold) weight so it fits on a single line and reads
+//    cleanly once printed — an earlier bold, longer version wrapped
+//    awkwardly to two lines.
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -85,8 +88,8 @@ function ok(label) { console.log('OK  ', label); }
   ok('Gear -> Gang correctly keeps Reset hidden (by design) while the Stats grid itself still renders correctly');
 
   // ---- 2. Gang cards print the skill-dice reminder at the bottom of the
-  // rendered card, just above the Health bar — in a large, bold font, not
-  // tucked under the Stats table at 15px. ----
+  // rendered card, just above the Health bar — in a large, regular-weight
+  // font, not tucked under the Stats table at 15px. ----
   await page.fill('#f-name', 'Test Gang');
   await page.waitForTimeout(150);
   const gangNoteCheck = await page.evaluate(() => {
@@ -106,26 +109,47 @@ function ok(label) { console.log('OK  ', label); }
       }
       return rows;
     };
+    // Count distinct horizontal ink bands (lines of text) in the bottom
+    // region, at fine (1px) row resolution, to confirm the note now prints
+    // on exactly ONE line (it used to wrap to two when it was bold and
+    // included "in the gang").
+    const rowHasInk = (y) => {
+      for (let x = 40; x < 710; x += 4) {
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        if (Math.abs(d[0]-bg[0]) + Math.abs(d[1]-bg[1]) + Math.abs(d[2]-bg[2]) > 20) return true;
+      }
+      return false;
+    };
+    let bands = 0;
+    let inBand = false;
+    for (let y = 880; y < 972; y++) {
+      const ink = rowHasInk(y);
+      if (ink && !inBand) { bands++; inBand = true; }
+      if (!ink) inBand = false;
+    }
     return {
       bottomInk: inkRowsInRange(890, 972),
       underStatsInk: inkRowsInRange(565, 620),
+      bottomBands: bands,
     };
   });
   assert(gangNoteCheck.bottomInk > 5, `expected several rows of ink just above the Health bar (y 890-972) for the Gang note, got ${gangNoteCheck.bottomInk}`);
   assert.strictEqual(gangNoteCheck.underStatsInk, 0, `expected NO ink directly under the Stats table any more (note moved to the bottom), got ${gangNoteCheck.underStatsInk} rows`);
-  ok('Gang card prints the skill-dice reminder at the bottom of the card, just above the Health bar (no longer under the Stats table)');
+  assert.strictEqual(gangNoteCheck.bottomBands, 1, `expected the Gang note to render as exactly ONE line (no "in the gang", regular weight), got ${gangNoteCheck.bottomBands} ink band(s)`);
+  ok('Gang card prints the skill-dice reminder at the bottom of the card, just above the Health bar, as a single line (no longer under the Stats table, no longer wrapping to two lines)');
 
   const gangNoteFontCheck = await page.evaluate(() => {
     const c = document.getElementById('card-canvas');
     const ctx = c.getContext('2d');
-    ctx.font = '700 24px Inter, sans-serif';
-    const w24 = ctx.measureText('Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).').width;
-    ctx.font = '700 15px Inter, sans-serif';
-    const w15 = ctx.measureText('Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).').width;
-    return { w24, w15 };
+    ctx.font = '400 24px Inter, sans-serif';
+    const w24 = ctx.measureText('Brawl/Shoot/Might: 1d6 per 2 models (round up).').width;
+    ctx.font = '400 15px Inter, sans-serif';
+    const w15 = ctx.measureText('Brawl/Shoot/Might: 1d6 per 2 models (round up).').width;
+    return { w24, w15, maxWidth: 750 - 56 };
   });
   assert(gangNoteFontCheck.w24 > gangNoteFontCheck.w15 * 1.4, 'expected the Gang note to measure meaningfully wider at 24px than the old 15px size, confirming it actually got bigger');
-  ok('Gang note now renders at 24px (up from 15px) — readable on a printed card');
+  assert(gangNoteFontCheck.w24 < gangNoteFontCheck.maxWidth, `expected the shortened note text to fit within the card's available width (${gangNoteFontCheck.maxWidth}px) at 24px regular weight, got ${gangNoteFontCheck.w24}px`);
+  ok('Gang note now renders at 24px regular weight (up from 15px bold) and fits on one line');
 
   console.log('\nAll verify62 checks passed.');
   await browser.close();

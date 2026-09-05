@@ -70,6 +70,27 @@ const GEAR_ITEMS = [
   { name: 'Sonic Spanner', cost: 1, description: `Gadget. Instead of rolling for a challenge, you may automatically score X successes.\n\n${GADGET_MISHAP_NOTE}` },
   { name: 'Tesla Shield', cost: 2, description: `Gadget. When you take two or more hits, you may cancel X hits.\n\n${GADGET_MISHAP_NOTE}` },
   { name: 'Phase Vest', cost: 2, description: `Gadget. Instead of moving as normal, remove your character from the table and place a phase counter where the model was removed. On the next turn, when you have the option to activate a character, move the counter up to 16" in any direction and then return the character to the table X" away from their phase counter. Continue their activation as normal — unless a mishap occurs. If there is a mishap, roll for the peril as normal, then your activation ends automatically.\n\n${GADGET_MISHAP_NOTE}` },
+  // Added from "Additional Perks & Abilities.pdf" — plain Gear except Pif
+  // Gadget, whose own rules text says it does not check for its own
+  // failure (so it deliberately omits GADGET_MISHAP_NOTE). "Rocket Pack"
+  // from the same PDF was excluded — it's a functional duplicate of the
+  // existing "Flight Pack" (both cost 2, both grant Winged).
+  { name: 'Boarding Hook', cost: 1, description: 'For this scenario, this character may board a vehicle that is one level directly above or below them.' },
+  { name: 'Anti Tank', cost: 2, description: 'For this scenario, this character ignores Size when shooting at a vehicle.' },
+  { name: 'Tank Buster', cost: 2, description: 'For this scenario, this character may use their Brawl to make an unopposed attack on a vehicle. This attack ignores Size, but does not ignore Armor.' },
+  { name: 'Pif Gadget', cost: 3, description: "Gadget. After you draw a card to determine the X value for one of this character's other gadgets, you may choose to re-draw — if you do, you must keep the results of the second card. Note: a Pif Gadget does not check for failure itself, but may make your other gadgets more prone to failure if used carelessly." },
+  // Added from "New Gadgets.pdf" — 3 plain Gear (no mishap check printed)
+  // and 6 true Gadgets (Gadget/Gear/Item tag + mishap check), tagged per
+  // the same convention as the rest of this array.
+  { name: 'Turbo Encabulator', cost: 3, description: 'When an opponent plays a Fortune card effect, you may discard one card from your hand to cancel the effect before it is resolved.' },
+  { name: 'Lotus-O-Delta', cost: 1, description: `Gadget. (one use) You gain a +X bonus to Might, Finesse, or Cunning.\n\n${GADGET_MISHAP_NOTE}` },
+  { name: 'Sinusoidal Stator', cost: 1, description: `Gadget. (one use) You gain a +X bonus to Shoot or Dodge.\n\n${GADGET_MISHAP_NOTE}` },
+  { name: 'Nofer Trunnion', cost: 1, description: `Gadget. (one use) You gain a +X bonus to Brawl or Dodge.\n\n${GADGET_MISHAP_NOTE}` },
+  { name: 'Panendermic Boloid', cost: 2, description: '(one use) Instead of rolling a Recovery check for this character, the check is automatically passed.' },
+  { name: 'Cardinal Grammeter', cost: 2, description: `Gadget. (one use) Draw X+1 Fortune cards.\n\n${GADGET_MISHAP_NOTE}` },
+  { name: 'Barescent Skor', cost: 2, description: `Gadget. (once per fight) When you score 1 or more hits on an enemy, you may add an additional X hits.\n\n${GADGET_MISHAP_NOTE}` },
+  { name: 'Fabulated Amulite', cost: 3, description: `Gadget. Whenever you suffer 1 or more hits, you may reduce the number of hits by X.\n\n${GADGET_MISHAP_NOTE}` },
+  { name: 'Hydrocoptic Marzlevane', cost: 3, description: 'Whenever a character within 6" of this model encounters a peril, you may subtract 1 from the challenge.' },
 ];
 
 const BACKUP_ITEMS = [

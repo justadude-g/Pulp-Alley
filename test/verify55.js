@@ -59,9 +59,35 @@ function ok(label) { console.log('OK  ', label); }
   await page.click('#open-asset-library');
   await page.waitForTimeout(150);
   const gearNames = await page.locator('#asset-library-list .library-item-name').allTextContents();
-  assert.strictEqual(gearNames.length, 21, `expected Gear's library to list 21 items (14 Gear + 7 Gadgets folded in), got ${gearNames.length}`);
+  assert.strictEqual(gearNames.length, 34, `expected Gear's library to list 34 items (21 original + 4 from Additional Perks & Abilities.pdf + 9 from New Gadgets.pdf), got ${gearNames.length}`);
   assert(gearNames.includes('Boom-Bot'), 'expected the Gadgets sub-table (Boom-Bot, etc.) to be folded into the Gear library');
-  ok('Gear\'s Asset Library lists 21 items — the 14 base Gear assets plus the 7 Gadgets folded in');
+  assert(gearNames.includes('Pif Gadget'), 'expected the newly-added Pif Gadget to be in the Gear library');
+  assert(gearNames.includes('Turbo Encabulator'), 'expected the newly-added Turbo Encabulator to be in the Gear library');
+  assert(!gearNames.includes('Rocket Pack'), 'expected "Rocket Pack" to be excluded as a duplicate of the existing "Flight Pack"');
+  ok('Gear\'s Asset Library lists 34 items — the original 21 plus the 13 newly-added Gear/Gadget items');
+
+  // ---- 2b. Spot-check the newly-added items render correctly: Pif Gadget
+  // (Gadget-family, but deliberately WITHOUT the Mishap note, since its own
+  // rules text says it doesn't check for its own failure). ----
+  await page.locator('#asset-library-list .library-item', { hasText: 'Pif Gadget' }).locator('.library-add-btn').click();
+  await page.waitForTimeout(150);
+  const pifDesc = await page.inputValue('#f-assetDescription');
+  assert(pifDesc.startsWith('Gadget.'), 'expected Pif Gadget\'s description to be flagged as a Gadget');
+  assert(!/Mishap/.test(pifDesc), 'expected Pif Gadget to NOT include the standard Mishap note (it does not check for its own failure)');
+  ok('Pif Gadget is Gadget-flagged but deliberately omits the Mishap note');
+
+  await page.click('#open-asset-library');
+  await page.waitForTimeout(150);
+  await page.locator('#asset-library-list .library-item', { hasText: 'Turbo Encabulator' }).locator('.library-add-btn').click();
+  await page.waitForTimeout(150);
+  const turboDesc = await page.inputValue('#f-assetDescription');
+  const turboCost = await page.inputValue('#f-assetCost');
+  assert.strictEqual(turboCost, '3', 'expected Turbo Encabulator\'s Cost to be 3');
+  assert(!turboDesc.startsWith('Gadget.'), 'expected Turbo Encabulator to be plain Gear, not Gadget-flagged');
+  ok('Turbo Encabulator is plain Gear (not Gadget-flagged) with Cost 3');
+
+  await page.click('#open-asset-library');
+  await page.waitForTimeout(150);
 
   await page.locator('#asset-library-list .library-item', { hasText: 'Boom-Bot' }).locator('.library-add-btn').click();
   await page.waitForTimeout(150);

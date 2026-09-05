@@ -93,15 +93,36 @@ main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
   padding: 20px;
 }
 
+/* Three columns: Card Type–Character Name (left), the live card preview
+   (middle, unchanged position), and Stats/Health/Abilities/Flavor (right)
+   — split out of what used to be one long scrolling left column so each
+   half is shorter and there's less scrolling to find a given field. #card-
+   form wraps both form columns (so form.reset() and the form's delegated
+   input/change listeners in app.js still cover every field) but itself
+   generates no box, via `display:contents` below, so its two children can
+   sit in grid columns 1 and 3 with the preview panel's own column in
+   between them. */
 .designer-grid {
   display: grid;
-  grid-template-columns: minmax(340px, 460px) 1fr;
+  grid-template-columns: minmax(300px, 380px) minmax(400px, 460px) minmax(360px, 1fr);
   gap: 20px;
   align-items: start;
 }
+#card-form { display: contents; }
+/* grid-row: 1 on all three is required, not cosmetic — designer-col-right
+   (column 3) comes before #preview-panel (column 2) in DOM/auto-placement
+   order (the form's two children are necessarily contiguous, so the
+   preview panel can't sit between them in source order), and CSS Grid's
+   sparse auto-placement cursor doesn't backtrack to fill column 2 once
+   column 3 has been placed in row 1 — without this it silently drops
+   the preview panel to row 2, off to the side of the two form columns. */
+.designer-col-left { grid-column: 1; grid-row: 1; }
+#preview-panel { grid-column: 2; grid-row: 1; }
+.designer-col-right { grid-column: 3; grid-row: 1; }
 
-@media (max-width: 900px) {
+@media (max-width: 1300px) {
   .designer-grid { grid-template-columns: 1fr; }
+  .designer-col-left, #preview-panel, .designer-col-right { grid-column: auto; grid-row: auto; }
 }
 
 .form-panel { display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 120px); overflow-y: auto; }

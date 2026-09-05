@@ -44,7 +44,8 @@
 <section id="tab-designer" class="tab-panel active">
   <div class="designer-grid">
 
-    <form id="card-form" class="panel form-panel">
+    <form id="card-form">
+     <div class="panel form-panel designer-col-left">
       <div class="field-row">
         <label>Card Type
           <select id="f-cardType">
@@ -123,7 +124,9 @@
       <p class="hint">Leader/Sidekick/Ally/Follower/Gang auto-set Level (and Health, below) from the Core Rules p. 8-9 table when you pick Card Type — you can still change it after. Level 4 is the rulebook maximum.</p>
       <p class="hint" id="npc-hint" style="display:none">Non-Player Characters (advanced rules): NPCs are Passive (resting, patrolling, or wandering — limited movement, can't attack) until an enemy comes within 12" or a nearby character attacks or is attacked, then they become Alert (Brawler, Shooter, or Scout) for the rest of the scenario. NPCs don't normally perform actions, except via an ability that includes one (e.g. Occult), while driving a vehicle, or when a scenario allows it. The Ability Library's "NPC only" abilities (Crush, Evasive, Occult, Torment, Toxin, Vicious) are built for this role.</p>
       <p class="hint" id="associate-hint" style="display:none">Associates (p. 27-28) are non-character support cast — a helpful butler, bartender, mentor, and so on — with no Level, Stats, or Health. They render as a horizontal card and are added to a League Roster from My Cards, not typed in directly on the roster.</p>
+     </div>
 
+     <div class="panel form-panel designer-col-right">
       <fieldset id="gang-fieldset" style="display:none">
         <legend>Gang</legend>
         <div class="field-row">
@@ -192,7 +195,7 @@
           <input type="text" id="f-quote" placeholder="Mark my words. I will have my revenge!" maxlength="120">
         </label>
       </fieldset>
-
+     </div>
     </form>
 
     <div class="panel preview-panel" id="preview-panel">

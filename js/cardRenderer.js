@@ -391,12 +391,12 @@ const ASSOCIATE_PORTRAIT = { x: 640, y: ASSOCIATE_HEADER_H + 24, w: 370, h: 420 
 const ASSOCIATE_TEXT_SIZE = 33;
 
 // Asset cards (renderAssetCard below) reuse the standard portrait card size
-// (CARD_W x CARD_H) but need a much shorter illustration box than a
-// character card's Portrait — most of an Asset card is given over to a
-// Description text block instead of a Stats table + Abilities. Full-width,
-// no side margin, so the image reads as a banner across the card rather
-// than competing with a Stats-shaped column that doesn't exist here.
-const ASSET_PORTRAIT = { x: 0, y: NAME_BAR_H, w: CARD_W, h: 260 };
+// (CARD_W x CARD_H). The illustration box is square — like the character
+// card's own Portrait (PORTRAIT above), per explicit user feedback that it
+// should match rather than read as a wide banner — same width (412) and
+// the same y as PORTRAIT.y, just centered horizontally since Asset cards
+// have no Stats column to sit beside it.
+const ASSET_PORTRAIT = { x: (CARD_W - 412) / 2, y: PORTRAIT.y, w: 412, h: 412 };
 
 // Card-type-aware: Associate and Asset cards' portraits live at different
 // positions/sizes than every other (character) Card Type's.
@@ -511,14 +511,20 @@ function renderCard(canvas, data) {
   ctx.textBaseline = 'middle';
   ctx.fillText(String(data.level ?? ''), badgeCx, badgeCy + 3);
 
-  // Type tag (top-right pill)
+  // Type tag (top-right pill) — 27px (up from 23px) per explicit user
+  // feedback that the Card Type label was hard to read; pillW is measured
+  // from the actual (now-larger) label width rather than a fixed guess, so
+  // the Name text below always reserves exactly the room this pill needs
+  // — no fixed-width assumption to go stale as the font size changes.
+  let typeLabelW = 0;
   if (data.cardType) {
-    ctx.font = '700 23px Rajdhani, Inter, sans-serif';
+    ctx.font = '700 27px Rajdhani, Inter, sans-serif';
     const label = data.cardType.toUpperCase();
     const tw = ctx.measureText(label).width;
-    const padX = 16, pillH = 36;
+    const padX = 18, pillH = 40;
     const pillW = tw + padX * 2;
-    const px = CARD_W - 24 - pillW, py = 18;
+    const px = CARD_W - 24 - pillW, py = 16;
+    typeLabelW = pillW + 24;
     roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
     ctx.fillStyle = tint;
     ctx.fill();
@@ -534,7 +540,7 @@ function renderCard(canvas, data) {
   // Name text (auto-shrink to fit)
   {
     const nameX = 150;
-    const nameMaxW = CARD_W - nameX - 24 - (data.cardType ? 150 : 0);
+    const nameMaxW = CARD_W - nameX - 24 - typeLabelW;
     let fontSize = 42;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
@@ -1168,14 +1174,17 @@ function renderAssetCard(canvas, data) {
   const cost = data.assetCost;
   ctx.fillText(cost === undefined || cost === null || cost === '' ? '' : String(cost), badgeCx, badgeCy + 3);
 
+  // 27px (up from 23px) — matches the same bump made to renderCard's Type
+  // tag pill above, per explicit user feedback that the Card Type label
+  // was hard to read.
   let typeLabelW = 0;
   {
     const label = (data.cardType || 'Asset').toUpperCase();
-    ctx.font = '700 23px Rajdhani, Inter, sans-serif';
+    ctx.font = '700 27px Rajdhani, Inter, sans-serif';
     const tw = ctx.measureText(label).width;
-    const padX = 16, pillH = 36;
+    const padX = 18, pillH = 40;
     const pillW = tw + padX * 2;
-    const px = CARD_W - 24 - pillW, py = 18;
+    const px = CARD_W - 24 - pillW, py = 16;
     typeLabelW = pillW + 24;
     roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
     ctx.fillStyle = tint;
@@ -1298,7 +1307,12 @@ function renderAssetCard(canvas, data) {
       const height = textLines * (fs * 1.32) + gapLines * (fs * 0.7);
       return { lines, fits: height <= available };
     };
-    const picked = 30;
+    // Matches ASSOCIATE_TEXT_SIZE / the character card's default Ability
+    // Text Size (33px, "Medium") per explicit user feedback — there's
+    // plenty of room on an Asset card (no Stats table competing for
+    // space), so the description should start at the same readable size
+    // as everywhere else instead of a smaller Asset-specific default.
+    const picked = ASSOCIATE_TEXT_SIZE;
     let fontSize = picked;
     let res = fitsAt(fontSize);
     while (!res.fits && fontSize > 15) {

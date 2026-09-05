@@ -5,9 +5,17 @@
 // Special Burst Abilities" table (6 Level 2 movement-impairing bursts —
 // Drop/Extended/Heavy/Sustained/Sweeping/Tactical Burst) and the
 // "Non-Player Characters: Advanced Abilities" table (6 NPC-only abilities
-// — Crush, Evasive, Occult, Torment, Toxin, Vicious). League Perks are not
-// included here since they're a League Roster field, not a per-character
-// card field — see perksData.js.
+// — Crush, Evasive, Occult, Torment, Toxin, Vicious), and one ability from
+// Vice Alley (2014) that survives into 2e unchanged — Short Range (Level
+// 1, an individual character ability distinct from the "Short Range"
+// league Perk in perksData.js, which has its own separate 2e-revised
+// text). Vice Alley 2014 predates the 2019 2nd Edition Core Rules, so its
+// other same-named abilities (Fast Thinking, Short Blast, Blast) were
+// checked and skipped as superseded — Fast Thinking's effect is now
+// Insight, and Short Blast/Blast's "place a burst in contact with your
+// base" mechanic is now the simpler Short Burst/Long Burst abilities
+// above. League Perks are not included here since they're a League
+// Roster field, not a per-character card field — see perksData.js.
 //
 // Gangs (Card Type = "Gang") can only take the six Gang-only abilities
 // below (GANG_ABILITIES) plus a specific subset of Level 1/2 abilities —
@@ -53,6 +61,7 @@ const ABILITIES = [
   { name: 'Shadowy', level: 1, text: 'You gain a +1 bonus to all opposed spotting checks.' },
   { name: 'Sharp', level: 1, text: 'Once per turn, you may re-roll one Shoot or Finesse die.', gangEligible: true },
   { name: 'Short Burst', level: 1, text: 'Action: Place the Short Burst (see Burst rules).' },
+  { name: 'Short Range', level: 1, text: 'This character ignores the –1d penalty for running and shooting, but may not shoot over 12”.' },
   { name: 'Slam', level: 1, text: 'Once per turn, you may discard to gain a +1 bonus to Brawl or Might.', gangEligible: true },
   { name: 'Sly', level: 1, text: 'Add +1 die to Dodge and Finesse. Reduce Brawl to no-dice.', noDiceSkills: ['Brawl'] },
   { name: 'Speedy', level: 1, text: 'You may move up to 16” — instead of 12”.', gangEligible: true },

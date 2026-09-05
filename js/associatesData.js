@@ -30,3 +30,8 @@ function findAssociateAbilityByName(name) {
   if (!n) return null;
   return ASSOCIATE_ABILITIES.find(a => a.name.toLowerCase() === n) || null;
 }
+
+// Display order for the Ability Library when Card Type = Associate — a
+// single flat bucket (Associate Abilities aren't leveled like character
+// abilities), mirroring GANG_LEVEL_ORDER/LEVEL_ORDER in abilitiesData.js.
+const ASSOCIATE_LEVEL_ORDER = ['Associate'];

@@ -225,11 +225,19 @@ const GANG_LEVEL_ORDER = ['Gang', 1, 2];
 
 // Returns the ability pool a given Card Type is allowed to browse/autocomplete
 // from. Gangs get the 6 Gang-only abilities plus the gangEligible-flagged
-// subset of Level 1/2 abilities; everyone else gets the normal catalog
-// (which never contains Gang-only abilities).
+// subset of Level 1/2 abilities; Associates get the 15 official Associate
+// Abilities (associatesData.js, loaded after this file — safe to reference
+// here since this only runs at call time, well after every script has
+// loaded) tagged with a synthetic 'Associate' level so the Ability Library
+// grouping/heading logic in app.js can treat it like any other level
+// bucket; everyone else gets the normal catalog (which never contains
+// Gang-only or Associate abilities).
 function abilitiesForCardType(cardType) {
   if (cardType === 'Gang') {
     return [...GANG_ABILITIES, ...ABILITIES.filter(a => a.gangEligible)];
+  }
+  if (cardType === 'Associate') {
+    return ASSOCIATE_ABILITIES.map(a => ({ ...a, level: 'Associate' }));
   }
   return ABILITIES;
 }

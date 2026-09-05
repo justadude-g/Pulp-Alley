@@ -86,6 +86,15 @@ const TYPE_PRESETS = {
   Creature: { accent: '#9333ea' },
   Gang:     { accent: '#3f3f46', level: 2 },
   Custom:   { accent: '#84cc16' },
+  // Associates (Core Rules p. 27-28) are non-character support cast — no
+  // Level, Health, or Stats at all (see renderAssociateCard below, a
+  // separate landscape renderer rather than a branch in renderCard). The
+  // rulebook caps a character at 2 Associate Abilities per Associate; like
+  // every other maxAbilities cap in this app that's an informational
+  // warning only (see computeAbilityWarnings in app.js), not a hard block,
+  // since some official Associate cards (e.g. Aleister's "Circle"/"Mentor")
+  // use custom-named abilities outside the 15 official ones.
+  Associate: { accent: '#92400e', maxAbilities: 2 },
 };
 
 // Shared palette for both Classical variants (see THEMES.classical /
@@ -323,7 +332,23 @@ const PORTRAIT = { x: 28, y: 132, w: 412, h: 430 };
 const STATS = { x: 440, y: 132, w: CARD_W - 440, h: 430 };
 const NAME_BAR_H = 118;
 
-function getPortraitBox() { return { ...PORTRAIT }; }
+// Associate cards (renderAssociateCard below) are landscape — a completely
+// different canvas size from every other Card Type, which all stay
+// portrait (CARD_W x CARD_H above). "Standard Playing Card" @300dpi
+// rotated: 3.5in x 2.5in = 1050 x 750.
+const ASSOC_CARD_W = 1050;
+const ASSOC_CARD_H = 750;
+const ASSOCIATE_HEADER_H = 140;
+// Per the user's spec ("centre right with some margin away from the edge
+// of the card"): vertically centered on the card (165 + 420/2 = 375 =
+// ASSOC_CARD_H/2), right edge inset 40px from the card's own right edge.
+const ASSOCIATE_PORTRAIT = { x: 640, y: 165, w: 370, h: 420 };
+
+// Card-type-aware: Associate cards' portrait lives at a different position
+// in a different-sized canvas than every other Card Type.
+function getPortraitBox(cardType) {
+  return cardType === 'Associate' ? { ...ASSOCIATE_PORTRAIT } : { ...PORTRAIT };
+}
 function getThemeNames() { return Object.keys(THEMES); }
 
 // Renders exactly the portion of `img` that's visible inside the portrait
@@ -336,8 +361,9 @@ function getThemeNames() { return Object.keys(THEMES); }
 // Transparent areas (possible when `view.scale` is zoomed below 1) are
 // left transparent, not filled — matching how the live render lets the
 // card's own background gradient show through rather than baking one in.
-function renderPortraitCrop(img, view) {
-  const boxW = PORTRAIT.w, boxH = PORTRAIT.h;
+function renderPortraitCrop(img, view, box) {
+  box = box || PORTRAIT;
+  const boxW = box.w, boxH = box.h;
   const c = document.createElement('canvas');
   c.width = boxW;
   c.height = boxH;
@@ -775,4 +801,245 @@ function renderCard(canvas, data) {
   if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
   ctx.stroke();
   ctx.setLineDash([]);
+}
+
+// Associates (Core Rules p. 27-28) are non-character support cast — a
+// helpful butler, bartender, mentor, and so on — with no Level, Stats, or
+// Health. Rather than threading a special case through every section of
+// renderCard() above (Stats table, Health bar, Level badge, all
+// meaningless here), this is a separate, much simpler landscape renderer:
+// an "Associate:" label + the user's name across the top, a portrait
+// centre-right with a margin from the card's own edge, and the rest of the
+// card given over to the Associate's abilities — matching the layout of
+// the official sample cards (Aleister; Mortdecai / The Art Dealer) the app
+// was built against.
+//
+// data: {
+//   name, cardType: 'Associate', accentColor, theme: 'ivory'|'classical'|...,
+//   abilities: [{name, text}],
+//   abilityFontSize,
+//   portraitImg: HTMLImageElement|null,
+//   portraitView: {scale, offsetX, offsetY},
+//   portraitFrame,
+// }
+function renderAssociateCard(canvas, data) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = ASSOC_CARD_W;
+  canvas.height = ASSOC_CARD_H;
+  ctx.clearRect(0, 0, ASSOC_CARD_W, ASSOC_CARD_H);
+
+  const preset = TYPE_PRESETS.Associate;
+  const accent = data.accentColor || preset.accent;
+  const T = THEMES[data.theme] || THEMES.ivory;
+  const tint = T.fixedTint || hexToRgba(accent, T.tintAlpha);
+
+  ctx.save();
+  roundedRectPath(ctx, 0, 0, ASSOC_CARD_W, ASSOC_CARD_H, CARD_RADIUS);
+  ctx.clip();
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, ASSOC_CARD_H);
+  bg.addColorStop(0, T.bgTop);
+  bg.addColorStop(1, T.bgBottom);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, ASSOC_CARD_W, ASSOC_CARD_H);
+
+  if (T.skullWatermark) {
+    drawSkullWatermark(ctx, ASSOC_CARD_W / 2, ASSOC_CARD_H / 2, 260, T.skullWatermark);
+  }
+
+  // ---- Header: "ASSOCIATE:" label, name on a dotted underline ----
+  ctx.fillStyle = T.nameBarBg;
+  ctx.fillRect(0, 0, ASSOC_CARD_W, ASSOCIATE_HEADER_H);
+  ctx.fillStyle = accent;
+  ctx.fillRect(0, ASSOCIATE_HEADER_H - 4, ASSOC_CARD_W, 4);
+
+  const headerLeft = 40, headerRight = ASSOC_CARD_W - 40;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = '700 26px Rajdhani, Inter, sans-serif';
+  ctx.fillStyle = accent;
+  ctx.fillText('ASSOCIATE:', headerLeft, 48);
+
+  // Name — auto-shrunk the same way the character card's Name is, sat on a
+  // dotted underline echoing the official template's "fill in the blank" look.
+  {
+    const nameY = 104;
+    const maxW = headerRight - headerLeft;
+    let fontSize = 46;
+    let name = data.name || 'Unnamed Associate';
+    do {
+      ctx.font = `700 ${fontSize}px Rajdhani, Inter, sans-serif`;
+      if (ctx.measureText(name).width <= maxW || fontSize <= 24) break;
+      fontSize -= 2;
+    } while (true);
+    if (ctx.measureText(name).width > maxW) {
+      while (name.length > 1 && ctx.measureText(name + '...').width > maxW) {
+        name = name.slice(0, -1);
+      }
+      name = name.replace(/\s+$/, '') + '...';
+    }
+    ctx.fillStyle = T.textPrimary;
+    ctx.fillText(name, headerLeft, nameY);
+
+    ctx.save();
+    ctx.strokeStyle = T.borderSubtle;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([2, 5]);
+    ctx.beginPath();
+    ctx.moveTo(headerLeft, nameY + 16);
+    ctx.lineTo(headerRight, nameY + 16);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // ---- Portrait (centre-right, margin from the card's edge) ----
+  const showFrame = !!data.portraitFrame;
+  roundedRectPath(ctx, ASSOCIATE_PORTRAIT.x, ASSOCIATE_PORTRAIT.y, ASSOCIATE_PORTRAIT.w, ASSOCIATE_PORTRAIT.h, 6);
+  ctx.save();
+  ctx.clip();
+  if (data.portraitImg) {
+    ctx.fillStyle = showFrame ? tint : bg;
+  } else {
+    ctx.fillStyle = T.placeholderBg;
+  }
+  ctx.fillRect(ASSOCIATE_PORTRAIT.x, ASSOCIATE_PORTRAIT.y, ASSOCIATE_PORTRAIT.w, ASSOCIATE_PORTRAIT.h);
+
+  if (data.portraitImg) {
+    const img = data.portraitImg;
+    const view = data.portraitView || { scale: 1, offsetX: 0, offsetY: 0 };
+    const boxW = ASSOCIATE_PORTRAIT.w, boxH = ASSOCIATE_PORTRAIT.h;
+    const coverScale = Math.max(boxW / img.width, boxH / img.height) * (view.scale || 1);
+    const dw = img.width * coverScale;
+    const dh = img.height * coverScale;
+    const maxOffX = Math.max(0, (dw - boxW) / 2);
+    const maxOffY = Math.max(0, (dh - boxH) / 2);
+    const ox = Math.max(-maxOffX, Math.min(maxOffX, view.offsetX || 0));
+    const oy = Math.max(-maxOffY, Math.min(maxOffY, view.offsetY || 0));
+    const dx = ASSOCIATE_PORTRAIT.x + (boxW - dw) / 2 + ox;
+    const dy = ASSOCIATE_PORTRAIT.y + (boxH - dh) / 2 + oy;
+    ctx.drawImage(img, dx, dy, dw, dh);
+  } else {
+    for (let i = -ASSOCIATE_PORTRAIT.h; i < ASSOCIATE_PORTRAIT.w; i += 24) {
+      ctx.beginPath();
+      ctx.moveTo(ASSOCIATE_PORTRAIT.x + i, ASSOCIATE_PORTRAIT.y);
+      ctx.lineTo(ASSOCIATE_PORTRAIT.x + i + ASSOCIATE_PORTRAIT.h, ASSOCIATE_PORTRAIT.y + ASSOCIATE_PORTRAIT.h);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = T.placeholderPattern;
+      ctx.stroke();
+    }
+    ctx.fillStyle = T.placeholderText;
+    ctx.font = '600 20px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('UPLOAD', ASSOCIATE_PORTRAIT.x + ASSOCIATE_PORTRAIT.w / 2, ASSOCIATE_PORTRAIT.y + ASSOCIATE_PORTRAIT.h / 2 - 14);
+    ctx.fillText('IMAGE', ASSOCIATE_PORTRAIT.x + ASSOCIATE_PORTRAIT.w / 2, ASSOCIATE_PORTRAIT.y + ASSOCIATE_PORTRAIT.h / 2 + 14);
+  }
+  ctx.restore();
+  if (showFrame) {
+    roundedRectPath(ctx, ASSOCIATE_PORTRAIT.x, ASSOCIATE_PORTRAIT.y, ASSOCIATE_PORTRAIT.w, ASSOCIATE_PORTRAIT.h, 6);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = accent;
+    ctx.stroke();
+  }
+
+  // ---- Abilities (the rest of the card) — same coarse + fine auto-fit
+  // shrink as the character card's Abilities block (see renderCard above),
+  // just against this card's own left-column geometry. ----
+  const abilLeft = headerLeft;
+  const abilTop = ASSOCIATE_HEADER_H + 24;
+  const abilRight = ASSOCIATE_PORTRAIT.x - 30;
+  const abilBottom = ASSOC_CARD_H - 40;
+  const abilMaxWidth = abilRight - abilLeft;
+  const abilities = (data.abilities || []).filter(a => a.name || a.text);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  if (abilities.length) {
+    const picked = data.abilityFontSize || 33;
+    let fontSize = picked;
+    const buildBlocks = (fs) => {
+      ctx.font = `400 ${fs}px Inter, sans-serif`;
+      let totalLines = 0;
+      const out = abilities.map(a => {
+        const nameStr = a.name ? a.name + (a.text ? ': ' : '') : '';
+        const full = nameStr + (a.text || '');
+        const lines = wrapLines(ctx, full, abilMaxWidth);
+        totalLines += lines.length;
+        return { nameStr, text: a.text || '', lines };
+      });
+      return { out, totalLines };
+    };
+    const available = abilBottom - abilTop;
+    const fitsAt = (fs) => {
+      const r = buildBlocks(fs);
+      const height = r.totalLines * (fs * 1.28) + (abilities.length - 1) * 14;
+      return { out: r.out, fits: height <= available };
+    };
+    let res = fitsAt(fontSize);
+    while (!res.fits && fontSize > 16) {
+      fontSize -= 1;
+      res = fitsAt(fontSize);
+    }
+    if (res.fits && fontSize + 1 <= picked) {
+      let lo = fontSize, hi = fontSize + 1;
+      for (let i = 0; i < 10; i++) {
+        const mid = (lo + hi) / 2;
+        if (fitsAt(mid).fits) lo = mid; else hi = mid;
+      }
+      const refined = Math.floor(lo * 10) / 10;
+      const refinedRes = fitsAt(refined);
+      if (refinedRes.fits) { fontSize = refined; res = refinedRes; }
+    }
+    const lineHeight = Math.round(fontSize * 1.28);
+
+    let y = abilTop + fontSize;
+    for (const block of res.out) {
+      ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+      let firstLine = block.lines[0] || '';
+      if (block.nameStr && firstLine.startsWith(block.nameStr.trim().replace(/:$/, ''))) {
+        ctx.font = `700 ${fontSize}px Inter, sans-serif`;
+        ctx.fillStyle = accent;
+        ctx.fillText(block.nameStr, abilLeft, y);
+        const w = ctx.measureText(block.nameStr).width;
+        ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+        ctx.fillStyle = T.textSecondary;
+        ctx.fillText(firstLine.slice(block.nameStr.length), abilLeft + w, y);
+      } else {
+        ctx.fillStyle = T.textSecondary;
+        ctx.fillText(firstLine, abilLeft, y);
+      }
+      y += lineHeight;
+      for (let i = 1; i < block.lines.length; i++) {
+        ctx.fillStyle = T.textSecondary;
+        ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+        ctx.fillText(block.lines[i], abilLeft, y);
+        y += lineHeight;
+      }
+      y += 14;
+    }
+  } else {
+    ctx.fillStyle = T.placeholderText;
+    ctx.font = 'italic 400 20px Inter, sans-serif';
+    ctx.fillText('Add up to 2 Abilities…', abilLeft, abilTop + 26);
+  }
+
+  ctx.restore(); // end clip
+
+  // outer border stroke — doubles as a cut guide when printing a single card
+  roundedRectPath(ctx, 1, 1, ASSOC_CARD_W - 2, ASSOC_CARD_H - 2, CARD_RADIUS);
+  ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
+  ctx.strokeStyle = T.outerBorder;
+  if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// Dispatcher used everywhere a card gets rendered/re-rendered (live preview,
+// Save to My Cards, Download PNG) — Associate cards need the separate
+// landscape renderer above; every other Card Type keeps using renderCard.
+function renderAnyCard(canvas, data) {
+  return data.cardType === 'Associate' ? renderAssociateCard(canvas, data) : renderCard(canvas, data);
 }

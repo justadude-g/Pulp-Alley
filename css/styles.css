@@ -523,29 +523,22 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   background: var(--panel-2);
 }
 .associate-item-top { display: flex; align-items: center; gap: 8px; }
-.associate-name-input {
-  flex: 1;
-  min-width: 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 6px;
-  padding: 7px 9px;
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-}
 .associate-ability-row { display: flex; flex-direction: column; gap: 4px; }
-.associate-ability-select {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-family: 'Inter', sans-serif;
-  font-size: 12.5px;
-  width: 100%;
-}
 .associate-ability-text { font-size: 11.5px; color: var(--text-dim); line-height: 1.4; margin: 0; }
+.associate-ability-name { font-weight: 600; font-size: 12.5px; }
+
+/* Associate cards render landscape — a wide/short thumbnail box (with
+   object-fit: contain, not cover) instead of the portrait-shaped boxes
+   used for every other Card Type, so the image isn't harshly cropped. */
+.associate-item-thumb {
+  width: 64px;
+  height: 46px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--panel);
+}
+.associate-picker-thumb { width: 64px; height: 46px; object-fit: contain; }
 
 /* Ability Library modal */
 .modal-overlay {

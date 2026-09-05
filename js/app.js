@@ -159,7 +159,7 @@ function showSuggestions(inputEl, idx) {
         <span class="sugg-name">${escapeHtml(a.name)}</span>
         <span class="sugg-text">${escapeHtml(a.text)}</span>
       </div>
-      <span class="sugg-level">${a.level === 'Epic' ? 'Epic' : a.level === 'Gang' ? 'Gang' : 'Lvl ' + a.level}</span>
+      <span class="sugg-level">${a.level === 'Epic' ? 'Epic' : a.level === 'Gang' ? 'Gang' : a.level === 'Associate' ? 'Associate' : 'Lvl ' + a.level}</span>
     </div>
   `).join('');
   wrap.appendChild(box);
@@ -262,12 +262,14 @@ let libraryLevel = 'all';
 
 function libraryLevelButtonsHtml(order) {
   return '<button type="button" class="level-btn active" data-level="all">All</button>' +
-    order.map(l => `<button type="button" class="level-btn" data-level="${l}">${l === 'Epic' ? 'Epic' : l === 'Gang' ? 'Gang-only' : 'Level ' + l}</button>`).join('');
+    order.map(l => `<button type="button" class="level-btn" data-level="${l}">${l === 'Epic' ? 'Epic' : l === 'Gang' ? 'Gang-only' : l === 'Associate' ? 'Associate Abilities' : 'Level ' + l}</button>`).join('');
 }
 
 document.getElementById('open-ability-library').addEventListener('click', () => {
   const cardType = document.getElementById('f-cardType').value;
-  levelFilterBar.innerHTML = libraryLevelButtonsHtml(cardType === 'Gang' ? GANG_LEVEL_ORDER : LEVEL_ORDER);
+  levelFilterBar.innerHTML = libraryLevelButtonsHtml(
+    cardType === 'Gang' ? GANG_LEVEL_ORDER : cardType === 'Associate' ? ASSOCIATE_LEVEL_ORDER : LEVEL_ORDER
+  );
   libraryLevel = 'all';
   libraryModal.classList.remove('hidden');
   renderLibraryList();
@@ -299,8 +301,9 @@ librarySearch.addEventListener('input', renderLibraryList);
 function renderLibraryList() {
   const cardType = document.getElementById('f-cardType').value;
   const isGang = cardType === 'Gang';
+  const isAssociate = cardType === 'Associate';
   const pool = abilitiesForCardType(cardType);
-  const order = isGang ? GANG_LEVEL_ORDER : LEVEL_ORDER;
+  const order = isGang ? GANG_LEVEL_ORDER : isAssociate ? ASSOCIATE_LEVEL_ORDER : LEVEL_ORDER;
   const q = librarySearch.value.trim().toLowerCase();
   const levels = libraryLevel === 'all' ? order : [libraryLevel === 'Epic' ? 'Epic' : libraryLevel === 'Gang' ? 'Gang' : +libraryLevel];
   // Level Restriction (p. 9): an ability's level can't exceed the
@@ -318,7 +321,7 @@ function renderLibraryList() {
     }
     if (!items.length) continue;
     anyResults = true;
-    html += `<div class="library-level-heading">${lvl === 'Epic' ? 'Epic abilities' : lvl === 'Gang' ? 'Gang-only abilities' : 'Level ' + lvl + ' abilities'}</div>`;
+    html += `<div class="library-level-heading">${lvl === 'Epic' ? 'Epic abilities' : lvl === 'Gang' ? 'Gang-only abilities' : lvl === 'Associate' ? 'Associate Abilities (p. 28)' : 'Level ' + lvl + ' abilities'}</div>`;
     html += items.map(a => {
       const overCap = maxAbilityLevel !== undefined && abilityLevelRank(a.level) > maxAbilityLevel;
       return `
@@ -336,7 +339,9 @@ function renderLibraryList() {
   }
   libraryList.innerHTML = anyResults ? html : (isGang
     ? '<div class="library-empty">No matching abilities. Gangs can only take the 6 Gang-only abilities plus a specific subset of Level 1–2 abilities (p. 22).</div>'
-    : '<div class="library-empty">No abilities match your search.</div>');
+    : isAssociate
+      ? '<div class="library-empty">No matching Associate Abilities. You can still type a custom ability name and description on the card — some official Associate cards do.</div>'
+      : '<div class="library-empty">No abilities match your search.</div>');
 
   libraryList.querySelectorAll('.library-add-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -373,7 +378,8 @@ function computeAbilityWarnings(cardType, abilities) {
   const preset = TYPE_PRESETS[cardType];
 
   if (preset && preset.maxAbilities !== undefined && named.length > preset.maxAbilities) {
-    warnings.push(`${cardType}s normally have at most ${preset.maxAbilities} abilit${preset.maxAbilities === 1 ? 'y' : 'ies'} (p. 9) — this card has ${named.length}.`);
+    const pageRef = cardType === 'Associate' ? 'p. 27' : 'p. 9';
+    warnings.push(`${cardType}s normally have at most ${preset.maxAbilities} abilit${preset.maxAbilities === 1 ? 'y' : 'ies'} (${pageRef}) — this card has ${named.length}.`);
   }
 
   // Duplicates are keyed by baseName (falling back to the visible name) so
@@ -497,6 +503,7 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   updateResetStatsVisibility(e.target.value);
   updateNpcHintVisibility(e.target.value);
   updateNonUniqueVisibility(e.target.value);
+  updateAssociateFieldVisibility(e.target.value);
   updateHealthPreview();
   updatePreview();
 });
@@ -584,6 +591,24 @@ function updateNonUniqueVisibility(cardType) {
   nonUniqueHintEl.style.display = show ? 'block' : 'none';
 }
 
+// Associates (p. 27-28) are non-character support cast — no Level, Stats,
+// or Health at all, unlike every other Card Type. Hides those fieldsets
+// (and Flavor/Quote, which the official sample cards don't carry either)
+// entirely, rather than just leaving them showing meaningless defaults.
+const levelFieldWrapEl = document.getElementById('level-field-wrap');
+const statsFieldsetEl = document.getElementById('stats-fieldset');
+const healthFieldsetEl = document.getElementById('health-fieldset');
+const flavorFieldsetEl = document.getElementById('flavor-fieldset');
+const associateHintEl = document.getElementById('associate-hint');
+function updateAssociateFieldVisibility(cardType) {
+  const isAssociate = cardType === 'Associate';
+  levelFieldWrapEl.style.display = isAssociate ? 'none' : '';
+  statsFieldsetEl.style.display = isAssociate ? 'none' : 'block';
+  healthFieldsetEl.style.display = isAssociate ? 'none' : 'block';
+  flavorFieldsetEl.style.display = isAssociate ? 'none' : 'block';
+  associateHintEl.style.display = isAssociate ? 'block' : 'none';
+}
+
 // Shared by both the Card Type auto-fill (above) and the Reset Stats
 // button below, so there's exactly one place that knows how to apply a
 // Card Type's default stat allocation.
@@ -602,6 +627,7 @@ resetStatsBtn.addEventListener('click', () => {
 updateResetStatsVisibility(document.getElementById('f-cardType').value);
 updateNpcHintVisibility(document.getElementById('f-cardType').value);
 updateNonUniqueVisibility(document.getElementById('f-cardType').value);
+updateAssociateFieldVisibility(document.getElementById('f-cardType').value);
 
 document.getElementById('f-healthStart').addEventListener('change', updateHealthPreview);
 document.getElementById('f-healthAsterisk').addEventListener('change', updateHealthPreview);
@@ -684,7 +710,7 @@ function updatePreview() {
   const data = collectFormData();
   data.portraitImg = state.portraitImg;
   data.portraitView = state.portraitView;
-  renderCard(canvas, data);
+  renderAnyCard(canvas, data);
   updateSkillDiceHint();
   renderAbilityWarnings();
 }
@@ -800,7 +826,7 @@ let dragStart = null;
 canvas.addEventListener('pointerdown', (e) => {
   if (!state.portraitImg) return;
   const { cx, cy } = toCanvasCoords(e);
-  const box = getPortraitBox();
+  const box = getPortraitBox(document.getElementById('f-cardType').value);
   if (cx < box.x || cx > box.x + box.w || cy < box.y || cy > box.y + box.h) return;
   dragging = true;
   dragStart = { x: e.clientX, y: e.clientY, offsetX: state.portraitView.offsetX, offsetY: state.portraitView.offsetY };
@@ -809,7 +835,11 @@ canvas.addEventListener('pointerdown', (e) => {
 canvas.addEventListener('pointermove', (e) => {
   if (!dragging) return;
   const rect = canvas.getBoundingClientRect();
-  const scaleFactor = CARD_W / rect.width;
+  // Uses the canvas's own current pixel dimensions rather than the
+  // portrait-card CARD_W constant — Associate cards render onto a
+  // landscape canvas (ASSOC_CARD_W x ASSOC_CARD_H) at a different aspect
+  // ratio, so the fixed constant would give the wrong drag scale factor.
+  const scaleFactor = canvas.width / rect.width;
   const dx = (e.clientX - dragStart.x) * scaleFactor;
   const dy = (e.clientY - dragStart.y) * scaleFactor;
   state.portraitView.offsetX = dragStart.offsetX + dx;
@@ -822,8 +852,8 @@ canvas.addEventListener('pointermove', (e) => {
 function toCanvasCoords(e) {
   const rect = canvas.getBoundingClientRect();
   return {
-    cx: (e.clientX - rect.left) * (CARD_W / rect.width),
-    cy: (e.clientY - rect.top) * (CARD_H / rect.height),
+    cx: (e.clientX - rect.left) * (canvas.width / rect.width),
+    cy: (e.clientY - rect.top) * (canvas.height / rect.height),
   };
 }
 
@@ -842,7 +872,7 @@ document.getElementById('btn-save-card').addEventListener('click', async () => {
   }
   data.portraitImg = state.portraitImg;
   data.portraitView = state.portraitView;
-  renderCard(canvas, data);
+  renderAnyCard(canvas, data);
   const pngDataURL = canvas.toDataURL('image/png');
 
   // Store only the portrait pixels that are ever actually shown (exactly
@@ -855,7 +885,7 @@ document.getElementById('btn-save-card').addEventListener('click', async () => {
   let portraitDataURL = state.portraitOriginalDataURL;
   let portraitView = state.portraitView;
   if (state.portraitImg) {
-    portraitDataURL = renderPortraitCrop(state.portraitImg, state.portraitView);
+    portraitDataURL = renderPortraitCrop(state.portraitImg, state.portraitView, getPortraitBox(data.cardType));
     portraitView = { scale: 1, offsetX: 0, offsetY: 0 };
     state.portraitOriginalDataURL = portraitDataURL;
     state.portraitImg = await loadImage(portraitDataURL);
@@ -888,7 +918,7 @@ document.getElementById('btn-download-png').addEventListener('click', () => {
   const data = collectFormData();
   data.portraitImg = state.portraitImg;
   data.portraitView = state.portraitView;
-  renderCard(canvas, data);
+  renderAnyCard(canvas, data);
   const link = document.createElement('a');
   link.download = `${(data.name || 'pulp-alley-card').replace(/[^a-z0-9]+/gi, '-')}.png`;
   link.href = canvas.toDataURL('image/png');
@@ -914,6 +944,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   updateResetStatsVisibility(document.getElementById('f-cardType').value);
   updateNpcHintVisibility(document.getElementById('f-cardType').value);
   updateNonUniqueVisibility(document.getElementById('f-cardType').value);
+  updateAssociateFieldVisibility(document.getElementById('f-cardType').value);
   // f-portrait (and f-portrait-frame) now live in the preview panel,
   // outside <form id="card-form"> (see index.html), so form.reset() above
   // doesn't touch them — reset explicitly instead. Image Frame defaults
@@ -1329,6 +1360,7 @@ async function loadCardIntoForm(record) {
   updateResetStatsVisibility(d.cardType);
   updateNpcHintVisibility(d.cardType);
   updateNonUniqueVisibility(d.cardType);
+  updateAssociateFieldVisibility(d.cardType);
   if (isGang) {
     const models = d.health?.sequence?.length ? +d.health.sequence[0] : 5;
     gangModelsInput.value = models || 5;
@@ -1382,7 +1414,15 @@ async function refreshPrintSheet() {
   const cards = await getAllCards();
   const selectedIds = [...state.selected];
   const records = selectedIds.map(id => cards.find(c => c.id === id)).filter(Boolean);
-  const images = await Promise.all(records.map(r => loadImage(r.pngDataURL)));
+  // Associate cards are landscape (see cardRenderer.js's ASSOC_CARD_W/H) —
+  // this A4 sheet's 3x3 grid (js/roster.js) is built entirely around the
+  // portrait Standard Playing Card size, and stretching a landscape PNG
+  // into a portrait slot would badly distort it. Fitting landscape cards
+  // into (or alongside) this grid is an explicit, deferred follow-up — for
+  // now, skip them here rather than showing a squashed card.
+  const printableRecords = records.filter(r => r.formData?.cardType !== 'Associate');
+  const skippedAssociates = records.length - printableRecords.length;
+  const images = await Promise.all(printableRecords.map(r => loadImage(r.pngDataURL)));
 
   // Always render at least one (possibly empty) page, matching the
   // previous single-canvas behavior when nothing's selected yet.
@@ -1405,9 +1445,11 @@ async function refreshPrintSheet() {
     return canvas;
   });
 
-  printSheetHeading.textContent = pages.length > 1
+  printSheetHeading.textContent = (pages.length > 1
     ? `Print Sheet — A4 (${images.length} cards, ${pages.length} pages)`
-    : 'Print Sheet — A4';
+    : 'Print Sheet — A4') + (skippedAssociates
+      ? ` — ${skippedAssociates} Associate card${skippedAssociates === 1 ? '' : 's'} not shown (landscape print sheet support is a planned follow-up)`
+      : '');
 
   // A PNG can't hold multiple pages the way a PDF can, and firing off
   // several downloads at once from one click is exactly the pattern
@@ -1449,7 +1491,13 @@ const rosterState = {
   name: '',
   members: [],    // snapshots: {cardId, name, cardType, pngDataURL, slots}
   perks: [],      // {name, slots}
-  associates: [], // {name, abilities: [name1, name2]}
+  // Snapshots of a saved Associate card (see "Add from My Cards" picker
+  // below) — {cardId, name, pngDataURL, abilities: [{name, text}, ...]}.
+  // cardId is null for a pre-Associate-card roster's entries, migrated in
+  // place from the old {name, abilities: [name1, name2]} shape (string
+  // ability names looked up live) the first time that roster is loaded —
+  // see the rosterPicker 'change' handler below.
+  associates: [],
 };
 
 const rosterNameInput = document.getElementById('roster-name');
@@ -1492,9 +1540,34 @@ rosterPicker.addEventListener('change', async () => {
   rosterState.name = record.name || '';
   rosterState.members = record.members || [];
   rosterState.perks = record.perks || [];
-  rosterState.associates = record.associates || [];
+  rosterState.associates = migrateLegacyAssociates(record.associates || []);
   renderRosterWorkspace();
 });
+
+// Pre-Associate-card rosters stored each Associate as {name, abilities:
+// [name1, name2]} — up to 2 official Associate Ability names, looked up
+// live against ASSOCIATE_ABILITIES for display. Associates are now built
+// as their own Card Type and added from My Cards instead (see the
+// associate-picker code below), so the shape is now a snapshot: {cardId,
+// name, pngDataURL, abilities: [{name, text}, ...]}. Migrates the old
+// shape to the new one on load (cardId stays null — there's no saved
+// Associate card behind a manually-typed legacy entry) so older rosters
+// keep displaying correctly; Save Roster then persists the migrated shape.
+function migrateLegacyAssociates(associates) {
+  return associates.map(a => {
+    const isLegacy = a && Array.isArray(a.abilities) && a.abilities.some(x => typeof x === 'string');
+    if (!isLegacy) return a;
+    return {
+      cardId: null,
+      name: a.name || '',
+      pngDataURL: null,
+      abilities: a.abilities.filter(Boolean).map(n => {
+        const found = findAssociateAbilityByName(n);
+        return { name: n, text: found ? found.text : '' };
+      }),
+    };
+  });
+}
 
 function resetRosterState() {
   rosterState.editingId = null;
@@ -1657,60 +1730,38 @@ function renderRosterWorkspace() {
 }
 
 // ---- Associates (p. 27-28) ----
-document.getElementById('add-associate').addEventListener('click', () => {
-  rosterState.associates.push({ name: '', abilities: ['', ''] });
-  renderRosterWorkspace();
-});
-
-function associateAbilityOptionsHtml(selected) {
-  return ASSOCIATE_ABILITIES.map(a =>
-    `<option value="${escapeAttr(a.name)}"${a.name === selected ? ' selected' : ''}>${escapeHtml(a.name)}</option>`
-  ).join('');
-}
-
+// Associates are now their own Card Type (built and saved like any other
+// character card), added to a roster from My Cards via the picker below —
+// see open-associate-picker/renderAssociatePicker further down, mirroring
+// the Colleagues "+ Add from My Cards" pattern. Each roster entry is a
+// snapshot taken at add-time (name, thumbnail, abilities), the same way
+// Colleagues and Perks are already snapshotted rather than live-linked.
 function renderAssociates() {
   rosterAssociatesEl.innerHTML = '';
   rosterAssociatesEmpty.style.display = rosterState.associates.length ? 'none' : 'block';
   rosterState.associates.forEach((a, i) => {
     const item = document.createElement('div');
     item.className = 'associate-item';
-    const ability0 = findAssociateAbilityByName(a.abilities[0]);
-    const ability1 = findAssociateAbilityByName(a.abilities[1]);
+    const abilities = a.abilities || [];
     item.innerHTML = `
       <div class="associate-item-top">
-        <input type="text" class="associate-name-input" placeholder="e.g. The Butler" value="${escapeAttr(a.name)}" data-idx="${i}">
+        ${a.pngDataURL ? `<img class="associate-item-thumb" src="${a.pngDataURL}" alt="">` : ''}
+        <div class="roster-row-body">
+          <div class="roster-row-name">${escapeHtml(a.name || 'Unnamed Associate')}</div>
+        </div>
         <span class="roster-row-slots">1 slot</span>
         <button type="button" class="roster-row-remove associate-remove" data-idx="${i}" title="Remove">✕</button>
       </div>
-      <div class="associate-ability-row">
-        <select class="associate-ability-select" data-idx="${i}" data-slot="0">
-          <option value="">— Ability 1 —</option>
-          ${associateAbilityOptionsHtml(a.abilities[0])}
-        </select>
-        ${ability0 ? `<p class="associate-ability-text">${escapeHtml(ability0.text)}</p>` : ''}
-      </div>
-      <div class="associate-ability-row">
-        <select class="associate-ability-select" data-idx="${i}" data-slot="1">
-          <option value="">— Ability 2 —</option>
-          ${associateAbilityOptionsHtml(a.abilities[1])}
-        </select>
-        ${ability1 ? `<p class="associate-ability-text">${escapeHtml(ability1.text)}</p>` : ''}
-      </div>
+      ${abilities.length ? abilities.map(ab => `
+        <div class="associate-ability-row">
+          <div class="associate-ability-name">${escapeHtml(ab.name)}</div>
+          ${ab.text ? `<p class="associate-ability-text">${escapeHtml(ab.text)}</p>` : ''}
+        </div>
+      `).join('') : '<p class="hint" style="margin:0">No abilities on this card yet — edit it in the Card Designer.</p>'}
     `;
     rosterAssociatesEl.appendChild(item);
   });
 
-  rosterAssociatesEl.querySelectorAll('.associate-name-input').forEach(el => {
-    el.addEventListener('input', () => {
-      rosterState.associates[+el.dataset.idx].name = el.value;
-    });
-  });
-  rosterAssociatesEl.querySelectorAll('.associate-ability-select').forEach(el => {
-    el.addEventListener('change', () => {
-      rosterState.associates[+el.dataset.idx].abilities[+el.dataset.slot] = el.value;
-      renderRosterWorkspace();
-    });
-  });
   rosterAssociatesEl.querySelectorAll('.associate-remove').forEach(btn => {
     btn.addEventListener('click', () => {
       rosterState.associates.splice(+btn.dataset.idx, 1);
@@ -1719,22 +1770,28 @@ function renderAssociates() {
   });
 
   // Warnings (soft — informational, not blocking, matching every other
-  // rules check in the app): the p. 27 starting cap, and the p. 27 "you
-  // cannot take the same Associate Ability more than once per league"
-  // rule (checked both within one Associate's own 2 picks and across
-  // every Associate in the roster).
+  // rules check in the app): the p. 27 starting cap, a duplicate ability
+  // within one Associate's own picks (should already be caught by the
+  // Card Designer's own ability warnings, but cheap to flag here too), and
+  // the p. 27 "you cannot take the same Associate Ability more than once
+  // per league" rule checked across every Associate on the roster.
   const warnings = [];
   if (rosterState.associates.length > ASSOCIATE_LEAGUE_CAP) {
     warnings.push(`A league normally starts with at most ${ASSOCIATE_LEAGUE_CAP} Associates (p. 27) — this roster has ${rosterState.associates.length}. You can earn more as your Reputation grows.`);
   }
   const abilityUsage = new Map(); // ability name -> count across the whole roster
   rosterState.associates.forEach((assoc, i) => {
-    const chosen = assoc.abilities.filter(Boolean);
-    const label = assoc.name.trim() || `Associate ${i + 1}`;
-    if (chosen.length === 2 && chosen[0] === chosen[1]) {
-      warnings.push(`“${label}” has the same Associate Ability picked twice — Associates need 2 different abilities (p. 27).`);
-    }
-    chosen.forEach(name => abilityUsage.set(name, (abilityUsage.get(name) || 0) + 1));
+    const names = (assoc.abilities || []).map(ab => ab.name).filter(Boolean);
+    const label = (assoc.name || '').trim() || `Associate ${i + 1}`;
+    const seenOnThis = new Map();
+    names.forEach(n => seenOnThis.set(n.toLowerCase(), (seenOnThis.get(n.toLowerCase()) || 0) + 1));
+    seenOnThis.forEach((count, key) => {
+      if (count > 1) {
+        const original = names.find(n => n.toLowerCase() === key);
+        warnings.push(`“${label}” has “${original}” more than once — Associates need different abilities (p. 27).`);
+      }
+    });
+    names.forEach(n => abilityUsage.set(n, (abilityUsage.get(n) || 0) + 1));
   });
   abilityUsage.forEach((count, name) => {
     if (count > 1) {
@@ -1766,10 +1823,7 @@ function buildRosterPrintData() {
     })),
     associates: rosterState.associates.map((a, i) => ({
       name: (a.name || '').trim() || `Associate ${i + 1}`,
-      abilities: a.abilities.filter(Boolean).map(n => {
-        const found = findAssociateAbilityByName(n);
-        return { name: n, text: found ? found.text : '' };
-      }),
+      abilities: (a.abilities || []).filter(ab => ab && ab.name).map(ab => ({ name: ab.name, text: ab.text || '' })),
     })),
   };
 }
@@ -2076,7 +2130,12 @@ async function renderColleaguePicker() {
   const themeFilter = colleagueThemeFilterSelect.value;
   const affiliationFilter = colleagueAffiliationFilterSelect.value;
   const isRepeatable = (c) => c.formData?.cardType === 'Gang' || !!c.formData?.nonUnique;
-  const available = cards.filter(c => {
+  // Associate cards have their own dedicated "Add from My Cards" picker and
+  // roster column (see open-associate-picker below) — 1 slot each, capped
+  // at 2, tracked separately from Colleagues — so they're excluded here to
+  // avoid adding one the wrong way (as a 2-slot generic Colleague).
+  const nonAssociateCards = cards.filter(c => c.formData?.cardType !== 'Associate');
+  const available = nonAssociateCards.filter(c => {
     if (!isRepeatable(c) && addedCounts[c.id]) return false;
     if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;
     if (themeFilter && (c.formData?.collection || '') !== themeFilter) return false;
@@ -2084,7 +2143,7 @@ async function renderColleaguePicker() {
     return true;
   });
   if (!available.length) {
-    const allAdded = cards.length && cards.every(c => !isRepeatable(c) && addedCounts[c.id]);
+    const allAdded = nonAssociateCards.length && nonAssociateCards.every(c => !isRepeatable(c) && addedCounts[c.id]);
     colleaguePickerList.innerHTML = allAdded
       ? '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>'
       : '<div class="library-empty">No cards match your search/Theme/Affiliation filter.</div>';
@@ -2125,6 +2184,98 @@ async function renderColleaguePicker() {
       });
       renderRosterWorkspace();
       renderColleaguePicker();
+    });
+  });
+}
+
+// ---- Add-associate picker ----
+// Mirrors the Colleague picker above exactly, filtered to only the
+// Card Type === 'Associate' pool. Each roster entry stores a snapshot
+// (name, thumbnail, abilities) taken at add-time, the same as Colleagues.
+const associatePickerModal = document.getElementById('associate-picker-modal');
+const associatePickerList = document.getElementById('associate-picker-list');
+const associateSearchInput = document.getElementById('associate-search');
+const associateThemeFilterSelect = document.getElementById('associate-theme-filter');
+const associateAffiliationFilterSelect = document.getElementById('associate-affiliation-filter');
+
+document.getElementById('open-associate-picker').addEventListener('click', async () => {
+  associatePickerModal.classList.remove('hidden');
+  associateSearchInput.value = '';
+  associateThemeFilterSelect.value = '';
+  associateAffiliationFilterSelect.value = '';
+  await renderAssociatePicker();
+});
+document.getElementById('close-associate-picker').addEventListener('click', () => {
+  associatePickerModal.classList.add('hidden');
+});
+associatePickerModal.addEventListener('click', (e) => {
+  if (e.target === associatePickerModal) associatePickerModal.classList.add('hidden');
+});
+associateSearchInput.addEventListener('input', renderAssociatePicker);
+associateThemeFilterSelect.addEventListener('change', renderAssociatePicker);
+associateAffiliationFilterSelect.addEventListener('change', renderAssociatePicker);
+
+async function renderAssociatePicker() {
+  const allCards = await getAllCards();
+  refreshThemeOptions(allCards);
+  refreshAffiliationOptions(allCards);
+  const associateCards = allCards.filter(c => c.formData?.cardType === 'Associate');
+  // Non-Unique (same flag Colleagues use) lets the same saved Associate
+  // card be added more than once — e.g. a generic "A Cabbie" rather than a
+  // single named individual. Everything else is one-copy-only, like every
+  // other Card Type besides Gang.
+  const isRepeatable = (c) => !!c.formData?.nonUnique;
+  const addedCounts = {};
+  rosterState.associates.forEach(a => { if (a.cardId) addedCounts[a.cardId] = (addedCounts[a.cardId] || 0) + 1; });
+  const searchText = associateSearchInput.value.trim().toLowerCase();
+  const themeFilter = associateThemeFilterSelect.value;
+  const affiliationFilter = associateAffiliationFilterSelect.value;
+  const available = associateCards.filter(c => {
+    if (!isRepeatable(c) && addedCounts[c.id]) return false;
+    if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;
+    if (themeFilter && (c.formData?.collection || '') !== themeFilter) return false;
+    if (affiliationFilter && (c.formData?.affiliation || '') !== affiliationFilter) return false;
+    return true;
+  });
+  if (!available.length) {
+    const allAdded = associateCards.length && associateCards.every(c => !isRepeatable(c) && addedCounts[c.id]);
+    associatePickerList.innerHTML = allAdded
+      ? '<div class="library-empty">Every saved Associate card is already on this roster.</div>'
+      : associateCards.length
+        ? '<div class="library-empty">No Associate cards match your search/Theme/Affiliation filter.</div>'
+        : '<div class="library-empty">No Associate cards saved yet — build one in the Card Designer first (Card Type: Associate).</div>';
+    return;
+  }
+  associatePickerList.innerHTML = available.map(c => {
+    const repeatable = isRepeatable(c);
+    const count = addedCounts[c.id] || 0;
+    const abilCount = (c.formData?.abilities || []).filter(a => a.name || a.text).length;
+    return `
+    <div class="library-item">
+      <img class="library-item-thumb associate-picker-thumb" src="${c.pngDataURL}" alt="">
+      <div class="library-item-body">
+        <span class="library-item-name">${escapeHtml(c.formData?.name || 'Unnamed')}</span><span class="library-item-level">1 slot</span>
+        <div class="library-item-text">${abilCount} abilit${abilCount === 1 ? 'y' : 'ies'}${repeatable && count ? ` · ${count} already on this roster` : ''}</div>
+      </div>
+      <button type="button" class="library-add-btn" data-id="${escapeAttr(c.id)}" title="${repeatable ? 'Add another copy of this card to the roster' : 'Add to roster'}">+</button>
+    </div>
+  `;
+  }).join('');
+
+  associatePickerList.querySelectorAll('.library-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = available.find(c => c.id === btn.dataset.id);
+      if (!card) return;
+      rosterState.associates.push({
+        cardId: card.id,
+        name: card.formData?.name || 'Unnamed',
+        pngDataURL: card.pngDataURL,
+        abilities: (card.formData?.abilities || [])
+          .filter(a => a.name || a.text)
+          .map(a => ({ name: a.name, text: a.text })),
+      });
+      renderRosterWorkspace();
+      renderAssociatePicker();
     });
   });
 }

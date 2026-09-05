@@ -27,7 +27,22 @@ function ok(label) { console.log('OK  ', label); }
 
   // ---- Build a roster: one colleague, a perk with real errata text
   // (Dominion, so we can check its full incompatibility text prints, not
-  // just the name), and an Associate with a real ability. ----
+  // just the name), and an Associate with a real ability. Associates are
+  // their own Card Type (built in the Designer, added from My Cards) —
+  // see verify12.js for full coverage of that mechanic; this test only
+  // needs one on the roster to prove the print sheet includes its text. ----
+  await page.selectOption('#f-cardType', 'Associate');
+  await page.fill('#f-name', 'The Butler');
+  await page.click('#add-ability');
+  const associateNameInputs = await page.$$('.ability-item input[data-field="name"]');
+  const associateTextInputs = await page.$$('.ability-item textarea[data-field="text"]');
+  await associateNameInputs[0].fill('Got Your Back');
+  await associateTextInputs[0].fill('You gain +1 Backup point.');
+  await page.waitForTimeout(150);
+  await page.click('#btn-save-card');
+  await page.waitForTimeout(200);
+
+  await page.click('#btn-new-card');
   await page.fill('#f-name', 'Doc Thunderbolt');
   await page.selectOption('#f-cardType', 'Leader');
   await page.click('#btn-save-card');
@@ -51,11 +66,11 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(150);
   await page.click('#close-perk-library');
 
-  await page.click('#add-associate');
+  await page.click('#open-associate-picker');
   await page.waitForTimeout(150);
-  await page.fill('.associate-name-input[data-idx="0"]', 'The Butler');
-  const firstAssociateAbility = await page.$eval('.associate-ability-select[data-idx="0"][data-slot="0"] option:nth-child(2)', el => el.value);
-  await page.selectOption('.associate-ability-select[data-idx="0"][data-slot="0"]', firstAssociateAbility);
+  await page.click('#associate-picker-list .library-item:has-text("The Butler") .library-add-btn');
+  await page.waitForTimeout(150);
+  await page.click('#close-associate-picker');
   await page.waitForTimeout(150);
 
   // ---- 1. Render the print sheet DOM directly (skip window.print() itself,

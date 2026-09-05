@@ -24,11 +24,12 @@ function ok(label) { console.log('OK  ', label); }
 
   // ---- 1. Hint text is split into separate short paragraphs ----
   const hints = await page.$$eval('fieldset:has(#abilities-list) > p.hint', els => els.map(e => e.textContent.trim()));
-  assert.strictEqual(hints.length, 3, `expected 3 separate hint paragraphs, got ${hints.length}: ${JSON.stringify(hints)}`);
+  assert.strictEqual(hints.length, 4, `expected 4 separate hint paragraphs, got ${hints.length}: ${JSON.stringify(hints)}`);
   assert(hints[0].includes('autocomplete abilities'), `unexpected hint[0]: ${hints[0]}`);
   assert(hints[1].includes('Gang-only abilities'), `unexpected hint[1]: ${hints[1]}`);
-  assert(hints[2].includes('rename an ability'), `unexpected hint[2]: ${hints[2]}`);
-  ok('Abilities intro hint is split into 3 short paragraphs');
+  assert(hints[2].includes('Associate Abilities'), `unexpected hint[2]: ${hints[2]}`);
+  assert(hints[3].includes('rename an ability'), `unexpected hint[3]: ${hints[3]}`);
+  ok('Abilities intro hint is split into 4 short paragraphs');
 
   // ---- 2. Picking an official ability fills in its text, but leaves it
   // fully editable (no readonly attribute, no "locked" note). ----

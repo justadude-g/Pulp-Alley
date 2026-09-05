@@ -27,7 +27,21 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(400);
 
   // ---- Build the same kind of roster as verify22: a colleague, Dominion
-  // (real errata text), and an Associate with a real ability. ----
+  // (real errata text), and an Associate with a real ability. Associates
+  // are their own Card Type (built in the Designer, added from My Cards) —
+  // see verify12.js for full coverage of that mechanic. ----
+  await page.selectOption('#f-cardType', 'Associate');
+  await page.fill('#f-name', 'The Butler');
+  await page.click('#add-ability');
+  const associateNameInputs = await page.$$('.ability-item input[data-field="name"]');
+  const associateTextInputs = await page.$$('.ability-item textarea[data-field="text"]');
+  await associateNameInputs[0].fill('Got Your Back');
+  await associateTextInputs[0].fill('You gain +1 Backup point.');
+  await page.waitForTimeout(150);
+  await page.click('#btn-save-card');
+  await page.waitForTimeout(200);
+
+  await page.click('#btn-new-card');
   await page.fill('#f-name', 'Doc Thunderbolt');
   await page.selectOption('#f-cardType', 'Leader');
   await page.click('#btn-save-card');
@@ -51,11 +65,11 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(150);
   await page.click('#close-perk-library');
 
-  await page.click('#add-associate');
+  await page.click('#open-associate-picker');
   await page.waitForTimeout(150);
-  await page.fill('.associate-name-input[data-idx="0"]', 'The Butler');
-  const firstAssociateAbility = await page.$eval('.associate-ability-select[data-idx="0"][data-slot="0"] option:nth-child(2)', el => el.value);
-  await page.selectOption('.associate-ability-select[data-idx="0"][data-slot="0"]', firstAssociateAbility);
+  await page.click('#associate-picker-list .library-item:has-text("The Butler") .library-add-btn');
+  await page.waitForTimeout(150);
+  await page.click('#close-associate-picker');
   await page.waitForTimeout(150);
 
   // ---- 1. The plain-text builder includes full rules text, not just
@@ -67,7 +81,7 @@ function ok(label) { console.log('OK  ', label); }
   assert(plainText.includes('Dominion') && plainText.includes('Network of Supporters') && plainText.includes('Bastion of Science') && plainText.includes('Call to Arms'),
     'expected Dominion\'s full errata text in the plain-text export, not just its name');
   assert(plainText.includes('The Butler'), 'expected the Associate\'s name');
-  assert(plainText.length > plainText.indexOf('The Butler') + 100, 'expected the Associate\'s ability name AND rules text after its name, not just the bare name');
+  assert(plainText.includes('Got Your Back') && plainText.includes('Backup point'), 'expected the Associate\'s ability name AND rules text, not just the bare card name');
   ok('Plain-text roster export includes full perk and Associate rules text, not just names');
 
   // ---- 2. Clicking Copy Roster does not throw, flashes a confirmation on

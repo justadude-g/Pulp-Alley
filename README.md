@@ -290,12 +290,18 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   Arms — the Perk Library shows this on Dominion's own entry, and picking it
   alongside any of the three triggers a roster warning.
 - **Associates** (p. 27-28) — non-character support cast (a butler, a
-  bartender, a mentor, and so on) that cost 1 roster slot each. Give each
-  one a name and pick 2 of the 15 official Associate Abilities from the
-  dropdowns — the rules text shows underneath each pick. Warnings (again,
-  informational only) flag more than the normal 2-Associate starting cap,
-  the same ability picked twice on one Associate, or the same Associate
-  Ability reused across different Associates in the league.
+  bartender, a mentor, and so on) that cost 1 roster slot each. Build one as
+  its own Card Type in the Card Designer (see "Associate Card Type" below),
+  then add it to a roster with "+ Add from My Cards" — the same picker
+  pattern Colleagues already use, listing only your saved Associate cards
+  and snapshotting its name, portrait, and abilities onto the roster.
+  Warnings (informational only, same philosophy as everywhere else in the
+  app) flag more than the normal 2-Associate starting cap, and the same
+  Associate Ability reused across different Associates in the league. A
+  roster saved under the old inline mechanic (type a name, pick 2 abilities
+  from dropdowns directly on the roster) still loads correctly — it's
+  migrated to the new card-based shape automatically the first time you
+  open it, and Save Roster then persists the upgraded version.
 - **Print Roster / Copy Roster / Download PDF** — the on-screen roster
   columns only show names and slot costs, which isn't enough at the table.
   These three buttons (top of the League Roster tab) all generate the same
@@ -322,6 +328,23 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   specific Level 1-2 abilities Gangs are allowed to take (p. 22). The Health
   section also notes the Gangs & Horror errata: Gangs roll 1d6 for Horror
   checks, and may roll 1d6 to Recover from Horror cards/effects.
+- **Associate Card Type** (p. 27-28) — a horizontal card for non-character
+  support cast (a butler, a bartender, a mentor, and so on), a completely
+  different layout and canvas shape from every other (portrait) Card Type:
+  "Associate:" top-left with the character's name across the top on a
+  dotted underline, a portrait centre-right with a margin from the card's
+  edge, and the rest of the card given over to up to 2 Abilities. Picking
+  Associate as Card Type hides Stats, Health, Level, and Quote entirely —
+  none of them apply, per the rulebook — and the Ability Library/
+  autocomplete switch to the 15 official Associate Abilities (p. 28)
+  instead of the normal character catalog, though a custom/homebrew ability
+  name and description still works too, same as ever (some official
+  Associate cards use one-off abilities not in that list of 15). Associate
+  cards save, load, duplicate, and filter in My Cards exactly like any
+  other Card Type; see "Associates" (League Roster, below) for how a saved
+  Associate card gets added to a roster. Not yet supported: fitting a
+  landscape Associate card into the A4 Print Sheet's 3x3 grid (planned
+  follow-up — see Print Sheet below).
 - **Print Sheet (A4)** — pick any number of saved cards and lay them out on
   A4 page(s) at true size with crop marks, 9 per page (3x3 grid). More than
   9 selected spills onto as many pages as needed — each one labeled "Page N
@@ -329,7 +352,10 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   capped. Download as PDF (one file, all pages) or print directly from the
   browser either way; Download PNG stays available for a single page but is
   disabled once a sheet spans more than one, since a PNG can only hold one
-  page's worth of image (Download PDF is the multi-page path).
+  page's worth of image (Download PDF is the multi-page path). Associate
+  cards (landscape) are skipped here rather than stretched into a portrait
+  slot — the heading notes how many were left out. Fitting landscape cards
+  into (or alongside) this grid is a planned follow-up.
 - **Export / Import Backup** — every saved card and roster lives only in
   this browser's IndexedDB (see Data & privacy below), so "Export Backup" in
   the top bar bundles all of it — including portrait images and rendered
@@ -414,7 +440,7 @@ from `file://`.
 index.html          Single-page app (Card Designer / My Cards / League Roster / Print Sheet / Quick Reference)
 css/styles.css       App UI styling
 css/fonts.css         Self-hosted Inter + Rajdhani font faces
-js/cardRenderer.js    Canvas renderer for a single card (750x1050px)
+js/cardRenderer.js    Canvas renderer for a single card (750x1050px portrait; 1050x750px landscape for the Associate Card Type)
 js/roster.js          A4 sheet layout (3x3 grid + crop marks)
 js/db.js               IndexedDB wrapper for saved cards + rosters, backup export/import
 js/app.js               Form wiring, portrait drag/zoom, gallery, exports, roster logic

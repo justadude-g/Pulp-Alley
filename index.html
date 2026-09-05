@@ -56,6 +56,7 @@
             <option>Creature</option>
             <option>Gang</option>
             <option>Custom</option>
+            <option>Associate</option>
           </select>
         </label>
         <label>Accent Color
@@ -109,7 +110,7 @@
         <label class="grow">Character Name
           <input type="text" id="f-name" placeholder="The Raven" maxlength="40">
         </label>
-        <label class="narrow">Level
+        <label class="narrow" id="level-field-wrap">Level
           <select id="f-level">
             <option value="0">0</option>
             <option value="1">1</option>
@@ -121,6 +122,7 @@
       </div>
       <p class="hint">Leader/Sidekick/Ally/Follower/Gang auto-set Level (and Health, below) from the Core Rules p. 8-9 table when you pick Card Type — you can still change it after. Level 4 is the rulebook maximum.</p>
       <p class="hint" id="npc-hint" style="display:none">Non-Player Characters (advanced rules): NPCs are Passive (resting, patrolling, or wandering — limited movement, can't attack) until an enemy comes within 12" or a nearby character attacks or is attacked, then they become Alert (Brawler, Shooter, or Scout) for the rest of the scenario. NPCs don't normally perform actions, except via an ability that includes one (e.g. Occult), while driving a vehicle, or when a scenario allows it. The Ability Library's "NPC only" abilities (Crush, Evasive, Occult, Torment, Toxin, Vicious) are built for this role.</p>
+      <p class="hint" id="associate-hint" style="display:none">Associates (p. 27-28) are non-character support cast — a helpful butler, bartender, mentor, and so on — with no Level, Stats, or Health. They render as a horizontal card and are added to a League Roster from My Cards, not typed in directly on the roster.</p>
 
       <fieldset id="gang-fieldset" style="display:none">
         <legend>Gang</legend>
@@ -132,7 +134,7 @@
         <p class="hint">Brawl/Shoot/Might auto-fill in the Stats section below — 1d6 per 2 models (rounded up). Dodge/Cunning/Finesse are fixed at 1d6. You can still hand-edit any stat after auto-fill.</p>
       </fieldset>
 
-      <fieldset class="stat-grid">
+      <fieldset class="stat-grid" id="stats-fieldset">
         <legend>Stats</legend>
         <div class="stat-grid-actions">
           <button type="button" id="reset-stats" class="btn-ghost stat-reset-btn">↺ Reset to Card Type</button>
@@ -148,7 +150,7 @@
         <div class="stat-row" data-stat="cunning"><span>Cunning</span><input type="number" min="0" value="3"><span class="d">d</span><select><option>0</option><option>6</option><option>8</option><option selected>10</option><option>12</option></select></div>
       </fieldset>
 
-      <fieldset>
+      <fieldset id="health-fieldset">
         <legend>Health</legend>
         <div id="standard-health-fields">
           <div class="field-row">
@@ -174,6 +176,7 @@
         <legend>Abilities</legend>
         <p class="hint">Start typing a name to autocomplete abilities.</p>
         <p class="hint">Gang cards see a filtered list of the 6 Gang-only abilities plus the abilities gangs are allowed to take.</p>
+        <p class="hint">Associate cards see the 15 official Associate Abilities (p. 28) — you can still type your own custom ability name and description, as some official Associate cards do.</p>
         <p class="hint">You can rename an ability, or edit its description text — picking one from the library just fills in the official wording as a starting point, it doesn't lock it.</p>
         <div id="ability-warnings" class="roster-warnings"></div>
         <div id="abilities-list"></div>
@@ -183,7 +186,7 @@
         </div>
       </fieldset>
 
-      <fieldset>
+      <fieldset id="flavor-fieldset">
         <legend>Flavor (optional)</legend>
         <label>Quote
           <input type="text" id="f-quote" placeholder="Mark my words. I will have my revenge!" maxlength="120">
@@ -246,6 +249,7 @@
           <option>Creature</option>
           <option>Gang</option>
           <option>Custom</option>
+          <option>Associate</option>
         </select>
         <select id="gallery-theme-filter" class="theme-filter-select">
           <option value="">All Themes</option>
@@ -319,12 +323,12 @@
       <div class="roster-column">
         <div class="roster-column-header">
           <h3>Associates</h3>
-          <button type="button" id="add-associate" class="btn-secondary">+ Add Associate</button>
+          <button type="button" id="open-associate-picker" class="btn-secondary">+ Add from My Cards</button>
         </div>
-        <p class="hint">Non-character support cast (p. 27) — a helpful butler, bartender, mentor, and so on. Each costs 1 roster slot and picks 2 different Associate Abilities (p. 28). A league normally starts with at most 2.</p>
+        <p class="hint">Non-character support cast (p. 27) — a helpful butler, bartender, mentor, and so on. Build one as an Associate card in the Card Designer, then add it here. Each costs 1 roster slot. A league normally starts with at most 2.</p>
         <div id="associate-warnings" class="roster-warnings"></div>
         <div id="roster-associates" class="associates-list"></div>
-        <p id="roster-associates-empty" class="hint">No Associates yet.</p>
+        <p id="roster-associates-empty" class="hint">No Associates yet. Save some Associate cards in the Card Designer first, then add them here.</p>
       </div>
     </div>
   </div>
@@ -715,6 +719,28 @@
       </div>
     </div>
     <div id="colleague-picker-list" class="library-list"></div>
+  </div>
+</div>
+
+<!-- ===================== ADD ASSOCIATE MODAL ===================== -->
+<div id="associate-picker-modal" class="modal-overlay hidden">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>Add Associate from My Cards</h2>
+      <button type="button" id="close-associate-picker" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-toolbar">
+      <div class="field-row">
+        <select id="associate-theme-filter" class="theme-filter-select">
+          <option value="">All Themes</option>
+        </select>
+        <select id="associate-affiliation-filter" class="theme-filter-select" title="Scoped to the Theme filter to its left — pick a Theme first to narrow this to its Affiliations">
+          <option value="">All Affiliations</option>
+        </select>
+        <input type="text" id="associate-search" placeholder="🔍 Search by name…">
+      </div>
+    </div>
+    <div id="associate-picker-list" class="library-list"></div>
   </div>
 </div>
 

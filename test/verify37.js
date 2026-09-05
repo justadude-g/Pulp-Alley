@@ -22,15 +22,15 @@ function ok(label) { console.log('OK  ', label); }
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(400);
 
-  // ---- 0. The Card Type filter dropdown exists with the 8 fixed types
-  // (mirroring #f-cardType) plus "All Types". ----
+  // ---- 0. The Card Type filter dropdown exists with the 9 fixed types
+  // (mirroring #f-cardType, including Associate) plus "All Types". ----
   const typeOptions = await page.$$eval('#gallery-type-filter option', els => els.map(e => e.value));
   assert.deepStrictEqual(
     typeOptions,
-    ['', 'Leader', 'Sidekick', 'Ally', 'Follower', 'Villain', 'Creature', 'Gang', 'Custom'],
-    `expected the Card Type filter to offer All Types + the 8 fixed types, got ${JSON.stringify(typeOptions)}`
+    ['', 'Leader', 'Sidekick', 'Ally', 'Follower', 'Villain', 'Creature', 'Gang', 'Custom', 'Associate'],
+    `expected the Card Type filter to offer All Types + the 9 fixed types, got ${JSON.stringify(typeOptions)}`
   );
-  ok('Card Type filter dropdown offers "All Types" plus the 8 fixed card types');
+  ok('Card Type filter dropdown offers "All Types" plus the 9 fixed card types');
 
   // ---- 1. Save four cards spanning two Themes and multiple Card Types. ----
   async function saveCard(cardType, name, theme) {

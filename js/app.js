@@ -362,6 +362,65 @@ function renderLibraryList() {
   });
 }
 
+// ---------------- Asset Library modal (Contacts/Gear/Backup/Minions/Cult/
+// Gifts) ----------------
+// Simpler than the Ability Library above: no level-filter tabs (each
+// type's table is short — 10 to 21 items), and picking one fills Name/
+// Cost/Description directly and closes the modal, since an Asset card
+// holds exactly one item rather than a growing list.
+const assetLibraryModal = document.getElementById('asset-library-modal');
+const assetLibraryList = document.getElementById('asset-library-list');
+const assetLibrarySearch = document.getElementById('asset-library-search');
+const assetLibraryTitle = document.getElementById('asset-library-title');
+const openAssetLibraryBtn = document.getElementById('open-asset-library');
+
+openAssetLibraryBtn.addEventListener('click', () => {
+  const cardType = document.getElementById('f-cardType').value;
+  assetLibraryTitle.textContent = `${cardType} Library`;
+  assetLibrarySearch.value = '';
+  assetLibraryModal.classList.remove('hidden');
+  renderAssetLibraryList();
+  assetLibrarySearch.focus();
+});
+document.getElementById('close-asset-library').addEventListener('click', closeAssetLibrary);
+assetLibraryModal.addEventListener('click', (e) => {
+  if (e.target === assetLibraryModal) closeAssetLibrary();
+});
+function closeAssetLibrary() {
+  assetLibraryModal.classList.add('hidden');
+}
+assetLibrarySearch.addEventListener('input', renderAssetLibraryList);
+
+function renderAssetLibraryList() {
+  const cardType = document.getElementById('f-cardType').value;
+  const items = resourceItemsForType(cardType);
+  const q = assetLibrarySearch.value.trim().toLowerCase();
+  const filtered = q
+    ? items.filter(it => it.name.toLowerCase().includes(q) || it.description.toLowerCase().includes(q))
+    : items;
+  assetLibraryList.innerHTML = filtered.length ? filtered.map((it, i) => `
+    <div class="library-item">
+      <div class="library-item-body">
+        <span class="library-item-name">${escapeHtml(it.name)}</span><span class="library-item-level">Cost ${it.cost}</span>
+        <div class="library-item-text">${escapeHtml(it.description)}</div>
+      </div>
+      <button type="button" class="library-add-btn" data-i="${i}" title="Use this asset">+</button>
+    </div>
+  `).join('') : '<div class="library-empty">No matching assets.</div>';
+
+  assetLibraryList.querySelectorAll('.library-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = filtered[+btn.dataset.i];
+      if (!item) return;
+      document.getElementById('f-name').value = item.name;
+      document.getElementById('f-assetCost').value = item.cost;
+      document.getElementById('f-assetDescription').value = item.description;
+      updatePreview();
+      closeAssetLibrary();
+    });
+  });
+}
+
 // ---------------- Ability rules warnings ----------------
 // Core Rules p. 9 "Abilities Rules and Restrictions": No Duplicates, Level
 // Restriction, No-Dice, No-Action — plus the p. 8-9 ability-count table for
@@ -504,6 +563,7 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   updateNpcHintVisibility(e.target.value);
   updateNonUniqueVisibility(e.target.value);
   updateAssociateFieldVisibility(e.target.value);
+  updateAssetFieldVisibility(e.target.value);
   updateHealthPreview();
   updatePreview();
 });
@@ -589,7 +649,10 @@ function updateNpcHintVisibility(cardType) {
 // since a Gang can already be added more than once without this flag.
 const nonUniqueRowEl = document.getElementById('non-unique-row');
 function updateNonUniqueVisibility(cardType) {
-  const show = cardType !== 'Gang';
+  // Meaningless for Asset Card Types too — they're never added to a League
+  // Roster in the first place (see the Colleague picker's exclusion),
+  // so "can add more than one to a Roster" doesn't apply.
+  const show = cardType !== 'Gang' && !isAssetCardType(cardType);
   nonUniqueRowEl.style.display = show ? 'flex' : 'none';
 }
 
@@ -611,6 +674,37 @@ function updateAssociateFieldVisibility(cardType) {
   associateHintEl.style.display = isAssociate ? 'block' : 'none';
 }
 
+// Resource "Asset" Card Types (Contacts/Gear/Backup/Minions/Cult/Gifts —
+// see TYPE_PRESETS' isAsset flag in cardRenderer.js) are one-scenario
+// consumable resources, not characters — like Associate, no Level, Stats,
+// Health, or Abilities at all, and Flavor/Quote doesn't apply either.
+// Character Name doubles as the asset's own Name; a dedicated Asset
+// Details fieldset (Cost + Description, see index.html) replaces
+// everything hidden here. Always called right after
+// updateAssociateFieldVisibility (whose isAssociate-only logic would
+// otherwise re-show these for a non-Associate Asset Card Type) so the two
+// combine correctly regardless of call order in this file.
+const assetFieldsetEl = document.getElementById('asset-fieldset');
+const assetTypeHintEl = document.getElementById('asset-type-hint');
+const assetHintEl = document.getElementById('asset-hint');
+const abilitiesFieldsetEl = document.getElementById('abilities-fieldset');
+function isAssetCardType(cardType) { return !!TYPE_PRESETS[cardType]?.isAsset; }
+function updateAssetFieldVisibility(cardType) {
+  const isAsset = isAssetCardType(cardType);
+  if (isAsset) {
+    levelFieldWrapEl.style.display = 'none';
+    statsFieldsetEl.style.display = 'none';
+    healthFieldsetEl.style.display = 'none';
+    flavorFieldsetEl.style.display = 'none';
+    abilitiesFieldsetEl.style.display = 'none';
+  } else {
+    abilitiesFieldsetEl.style.display = 'flex';
+  }
+  assetFieldsetEl.style.display = isAsset ? 'flex' : 'none';
+  assetHintEl.style.display = isAsset ? 'block' : 'none';
+  assetTypeHintEl.textContent = isAsset ? (RESOURCE_TYPE_NOTES[cardType] || '') : '';
+}
+
 // Shared by both the Card Type auto-fill (above) and the Reset Stats
 // button below, so there's exactly one place that knows how to apply a
 // Card Type's default stat allocation.
@@ -630,6 +724,7 @@ updateResetStatsVisibility(document.getElementById('f-cardType').value);
 updateNpcHintVisibility(document.getElementById('f-cardType').value);
 updateNonUniqueVisibility(document.getElementById('f-cardType').value);
 updateAssociateFieldVisibility(document.getElementById('f-cardType').value);
+updateAssetFieldVisibility(document.getElementById('f-cardType').value);
 
 document.getElementById('f-healthStart').addEventListener('change', updateHealthPreview);
 document.getElementById('f-healthAsterisk').addEventListener('change', updateHealthPreview);
@@ -705,6 +800,11 @@ function collectFormData() {
     quote: document.getElementById('f-quote').value.trim(),
     health: collectHealth(),
     portraitFrame: document.getElementById('f-portrait-frame').checked,
+    // Asset Card Types (Contacts/Gear/Backup/Minions/Cult/Gifts) only —
+    // harmless to always collect since renderCard/renderAssociateCard
+    // simply ignore fields they don't use.
+    assetCost: +document.getElementById('f-assetCost').value || 0,
+    assetDescription: document.getElementById('f-assetDescription').value,
   };
 }
 
@@ -947,6 +1047,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   updateNpcHintVisibility(document.getElementById('f-cardType').value);
   updateNonUniqueVisibility(document.getElementById('f-cardType').value);
   updateAssociateFieldVisibility(document.getElementById('f-cardType').value);
+  updateAssetFieldVisibility(document.getElementById('f-cardType').value);
   // f-portrait (and f-portrait-frame) now live in the preview panel,
   // outside <form id="card-form"> (see index.html), so form.reset() above
   // doesn't touch them — reset explicitly instead. Image Frame defaults
@@ -1369,6 +1470,9 @@ async function loadCardIntoForm(record) {
   updateNpcHintVisibility(d.cardType);
   updateNonUniqueVisibility(d.cardType);
   updateAssociateFieldVisibility(d.cardType);
+  updateAssetFieldVisibility(d.cardType);
+  document.getElementById('f-assetCost').value = (d.assetCost ?? '') === '' ? 1 : d.assetCost;
+  document.getElementById('f-assetDescription').value = d.assetDescription || '';
   if (isGang) {
     const models = d.health?.sequence?.length ? +d.health.sequence[0] : 5;
     gangModelsInput.value = models || 5;
@@ -2141,8 +2245,11 @@ async function renderColleaguePicker() {
   // Associate cards have their own dedicated "Add from My Cards" picker and
   // roster column (see open-associate-picker below) — 1 slot each, capped
   // at 2, tracked separately from Colleagues — so they're excluded here to
-  // avoid adding one the wrong way (as a 2-slot generic Colleague).
-  const nonAssociateCards = cards.filter(c => c.formData?.cardType !== 'Associate');
+  // avoid adding one the wrong way (as a 2-slot generic Colleague). Asset
+  // cards (Contacts/Gear/Backup/Minions/Cult/Gifts) are one-scenario
+  // resources, not crew — they're picked during scenario set-up, not added
+  // to a persistent League Roster at all — so they're excluded here too.
+  const nonAssociateCards = cards.filter(c => c.formData?.cardType !== 'Associate' && !isAssetCardType(c.formData?.cardType));
   const available = nonAssociateCards.filter(c => {
     if (!isRepeatable(c) && addedCounts[c.id]) return false;
     if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;

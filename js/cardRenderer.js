@@ -8,6 +8,16 @@ const CARD_RADIUS = 34;
 
 const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 
+// Shared accent for every Resource/"Asset" Card Type (Contacts, Gear,
+// Backup, Minions, Cult, Gifts — see TYPE_PRESETS and renderAssetCard
+// below) — a muted olive-green, distinct from every character Card Type's
+// accent, echoing the reference "Asset" card template's header color. Per
+// explicit user preference all six share this one color/header treatment
+// rather than each getting its own — the header text (the Card Type
+// itself) is what tells them apart. Declared up top since TYPE_PRESETS
+// (below) references it at module-init time.
+const ASSET_ACCENT = '#4b6b3c';
+
 // Saturated-but-print-safe accents: dark enough to stay legible as text/line
 // color on a white background, still read fine on the dark theme too.
 // Each default accent corresponds to a Gamegenic Prime Sleeves color, so a
@@ -95,6 +105,23 @@ const TYPE_PRESETS = {
   // since some official Associate cards (e.g. Aleister's "Circle"/"Mentor")
   // use custom-named abilities outside the 15 official ones.
   Associate: { accent: '#92400e', maxAbilities: 2 },
+  // Resource/"Asset" Card Types (Resources & Assets chapter, Core Rules p.
+  // 93-100) — Contacts, Gear (Gadgets folded in, called out in their own
+  // description text rather than a separate Card Type), Backup, and the
+  // three Dominion-perk-gated tables (Minions, Cult, Gifts). These
+  // represent one-scenario consumable resources, not persistent crew — no
+  // Level, Stats, Health, or Abilities at all — so they get their own
+  // simpler layout (renderAssetCard below) instead of a branch through
+  // renderCard. isAsset marks all six for the renderAnyCard dispatcher and
+  // for app.js's field-visibility logic (Card Designer shows an "Asset
+  // Details" fieldset — Cost + Description — instead of Stats/Health/
+  // Abilities/Flavor for these).
+  Contacts: { accent: ASSET_ACCENT, isAsset: true },
+  Gear:     { accent: ASSET_ACCENT, isAsset: true },
+  Backup:   { accent: ASSET_ACCENT, isAsset: true },
+  Minions:  { accent: ASSET_ACCENT, isAsset: true },
+  Cult:     { accent: ASSET_ACCENT, isAsset: true },
+  Gifts:    { accent: ASSET_ACCENT, isAsset: true },
 };
 
 // Shared palette for both Classical variants (see THEMES.classical /
@@ -363,10 +390,20 @@ const ASSOCIATE_PORTRAIT = { x: 640, y: ASSOCIATE_HEADER_H + 24, w: 370, h: 420 
 // ability text) — they match in the common case, not by force.
 const ASSOCIATE_TEXT_SIZE = 33;
 
-// Card-type-aware: Associate cards' portrait lives at a different position
-// in a different-sized canvas than every other Card Type.
+// Asset cards (renderAssetCard below) reuse the standard portrait card size
+// (CARD_W x CARD_H) but need a much shorter illustration box than a
+// character card's Portrait — most of an Asset card is given over to a
+// Description text block instead of a Stats table + Abilities. Full-width,
+// no side margin, so the image reads as a banner across the card rather
+// than competing with a Stats-shaped column that doesn't exist here.
+const ASSET_PORTRAIT = { x: 0, y: NAME_BAR_H, w: CARD_W, h: 260 };
+
+// Card-type-aware: Associate and Asset cards' portraits live at different
+// positions/sizes than every other (character) Card Type's.
 function getPortraitBox(cardType) {
-  return cardType === 'Associate' ? { ...ASSOCIATE_PORTRAIT } : { ...PORTRAIT };
+  if (cardType === 'Associate') return { ...ASSOCIATE_PORTRAIT };
+  if (TYPE_PRESETS[cardType]?.isAsset) return { ...ASSET_PORTRAIT };
+  return { ...PORTRAIT };
 }
 function getThemeNames() { return Object.keys(THEMES); }
 
@@ -1068,9 +1105,253 @@ function renderAssociateCard(canvas, data) {
   ctx.setLineDash([]);
 }
 
+// Resource/"Asset" cards (Resources & Assets chapter, Core Rules p. 93-100)
+// — Contacts, Gear, Backup, Minions, Cult, and Gifts. These are
+// one-scenario consumables, not characters: no Level/Stats/Health/
+// Abilities, just a Cost, a Name, and a Description pulled from (or typed
+// to match) the rulebook's own tables. Reuses the same portrait/name-bar/
+// badge/type-tag visual language as renderCard's header (see PORTRAIT/
+// NAME_BAR_H above) so an Asset card still reads as "part of the same
+// deck" — the Cost badge plays the same visual role the Level badge does
+// on a character card (both are just "the point cost," which is exactly
+// what a character's Level already represents) — just with the whole
+// lower card given over to one auto-shrinking block of description text
+// instead of Stats/Abilities/Health.
+//
+// data: {
+//   name, cardType: one of Contacts/Gear/Backup/Minions/Cult/Gifts,
+//   accentColor, theme,
+//   assetCost, assetDescription,
+//   portraitImg: HTMLImageElement|null, portraitView, portraitFrame,
+// }
+function renderAssetCard(canvas, data) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = CARD_W;
+  canvas.height = CARD_H;
+  ctx.clearRect(0, 0, CARD_W, CARD_H);
+
+  const preset = TYPE_PRESETS[data.cardType] || { accent: ASSET_ACCENT };
+  const accent = data.accentColor || preset.accent;
+  const T = THEMES[data.theme] || THEMES.ivory;
+  const tint = T.fixedTint || hexToRgba(accent, T.tintAlpha);
+
+  ctx.save();
+  roundedRectPath(ctx, 0, 0, CARD_W, CARD_H, CARD_RADIUS);
+  ctx.clip();
+
+  const bg = ctx.createLinearGradient(0, 0, 0, CARD_H);
+  bg.addColorStop(0, T.bgTop);
+  bg.addColorStop(1, T.bgBottom);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, CARD_W, CARD_H);
+
+  // ---- Header / name bar — same layout language as renderCard's: a Cost
+  // badge on the left, the Card Type as a pill top-right, and the item's
+  // Name auto-shrinking to fit the space between them. ----
+  ctx.fillStyle = T.nameBarBg;
+  ctx.fillRect(0, 0, CARD_W, NAME_BAR_H);
+  ctx.fillStyle = accent;
+  ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
+
+  const badgeCx = 85, badgeCy = 59, badgeR = 46;
+  ctx.beginPath();
+  ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
+  ctx.fillStyle = T.badgeFill || accent;
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = T.badgeRing || shade(accent, -0.3);
+  ctx.stroke();
+  ctx.fillStyle = T.badgeText || '#ffffff';
+  ctx.font = '700 60px Rajdhani, Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const cost = data.assetCost;
+  ctx.fillText(cost === undefined || cost === null || cost === '' ? '' : String(cost), badgeCx, badgeCy + 3);
+
+  let typeLabelW = 0;
+  {
+    const label = (data.cardType || 'Asset').toUpperCase();
+    ctx.font = '700 23px Rajdhani, Inter, sans-serif';
+    const tw = ctx.measureText(label).width;
+    const padX = 16, pillH = 36;
+    const pillW = tw + padX * 2;
+    const px = CARD_W - 24 - pillW, py = 18;
+    typeLabelW = pillW + 24;
+    roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
+    ctx.fillStyle = tint;
+    ctx.fill();
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, px + pillW / 2, py + pillH / 2 + 1);
+  }
+
+  {
+    const nameX = 150;
+    const nameMaxW = CARD_W - nameX - 24 - typeLabelW;
+    let fontSize = 42;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    let name = data.name || 'Unnamed Asset';
+    do {
+      ctx.font = `700 ${fontSize}px Rajdhani, Inter, sans-serif`;
+      if (ctx.measureText(name).width <= nameMaxW || fontSize <= 22) break;
+      fontSize -= 2;
+    } while (true);
+    if (ctx.measureText(name).width > nameMaxW) {
+      while (name.length > 1 && ctx.measureText(name + '...').width > nameMaxW) {
+        name = name.slice(0, -1);
+      }
+      name = name.replace(/\s+$/, '') + '...';
+    }
+    ctx.fillStyle = T.textPrimary;
+    ctx.fillText(name, nameX, NAME_BAR_H / 2 + 2);
+  }
+
+  // ---- Portrait (optional illustration) — identical box/crop/placeholder
+  // logic to renderCard's, just at ASSET_PORTRAIT's own position/size. ----
+  const showFrame = !!data.portraitFrame;
+  roundedRectPath(ctx, ASSET_PORTRAIT.x, ASSET_PORTRAIT.y, ASSET_PORTRAIT.w, ASSET_PORTRAIT.h, 0);
+  ctx.save();
+  ctx.clip();
+  if (data.portraitImg) {
+    ctx.fillStyle = showFrame ? tint : bg;
+  } else {
+    ctx.fillStyle = T.placeholderBg;
+  }
+  ctx.fillRect(ASSET_PORTRAIT.x, ASSET_PORTRAIT.y, ASSET_PORTRAIT.w, ASSET_PORTRAIT.h);
+  if (data.portraitImg) {
+    const img = data.portraitImg;
+    const view = data.portraitView || { scale: 1, offsetX: 0, offsetY: 0 };
+    const boxW = ASSET_PORTRAIT.w, boxH = ASSET_PORTRAIT.h;
+    const coverScale = Math.max(boxW / img.width, boxH / img.height) * (view.scale || 1);
+    const dw = img.width * coverScale;
+    const dh = img.height * coverScale;
+    const maxOffX = Math.max(0, (dw - boxW) / 2);
+    const maxOffY = Math.max(0, (dh - boxH) / 2);
+    const ox = Math.max(-maxOffX, Math.min(maxOffX, view.offsetX || 0));
+    const oy = Math.max(-maxOffY, Math.min(maxOffY, view.offsetY || 0));
+    const dx = ASSET_PORTRAIT.x + (boxW - dw) / 2 + ox;
+    const dy = ASSET_PORTRAIT.y + (boxH - dh) / 2 + oy;
+    ctx.drawImage(img, dx, dy, dw, dh);
+  } else {
+    for (let i = -ASSET_PORTRAIT.h; i < ASSET_PORTRAIT.w; i += 24) {
+      ctx.beginPath();
+      ctx.moveTo(ASSET_PORTRAIT.x + i, ASSET_PORTRAIT.y);
+      ctx.lineTo(ASSET_PORTRAIT.x + i + ASSET_PORTRAIT.h, ASSET_PORTRAIT.y + ASSET_PORTRAIT.h);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = T.placeholderPattern;
+      ctx.stroke();
+    }
+    ctx.fillStyle = T.placeholderText;
+    ctx.font = '600 20px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('UPLOAD IMAGE', ASSET_PORTRAIT.x + ASSET_PORTRAIT.w / 2, ASSET_PORTRAIT.y + ASSET_PORTRAIT.h / 2 - 12);
+    ctx.font = '400 15px Inter, sans-serif';
+    ctx.fillText('(optional)', ASSET_PORTRAIT.x + ASSET_PORTRAIT.w / 2, ASSET_PORTRAIT.y + ASSET_PORTRAIT.h / 2 + 12);
+  }
+  ctx.restore();
+  if (showFrame) {
+    roundedRectPath(ctx, ASSET_PORTRAIT.x, ASSET_PORTRAIT.y, ASSET_PORTRAIT.w, ASSET_PORTRAIT.h, 0);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = accent;
+    ctx.stroke();
+  }
+
+  // ---- Description — one auto-shrinking block of text (same coarse + fine
+  // shrink approach as Abilities in renderCard/renderAssociateCard above),
+  // filling the rest of the card. A blank line in the typed text (pressing
+  // Enter twice in the Description textarea) becomes a paragraph gap. ----
+  const descLeft = 28, descRight = CARD_W - 28;
+  const descTop = ASSET_PORTRAIT.y + ASSET_PORTRAIT.h + 26;
+  const descBottom = CARD_H - 36;
+  const descMaxWidth = descRight - descLeft;
+  const description = (data.assetDescription || '').trim();
+
+  if (T.skullWatermark) {
+    drawSkullWatermark(ctx, CARD_W / 2, (descTop + descBottom) / 2, 260, T.skullWatermark);
+  }
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  if (description) {
+    const paragraphs = description.split(/\n+/).map(p => p.trim()).filter(Boolean);
+    const buildLines = (fs) => {
+      ctx.font = `400 ${fs}px Inter, sans-serif`;
+      const out = [];
+      paragraphs.forEach((p, i) => {
+        out.push(...wrapLines(ctx, p, descMaxWidth));
+        if (i < paragraphs.length - 1) out.push('');
+      });
+      return out;
+    };
+    const available = descBottom - descTop;
+    const fitsAt = (fs) => {
+      const lines = buildLines(fs);
+      const gapLines = lines.filter(l => l === '').length;
+      const textLines = lines.length - gapLines;
+      const height = textLines * (fs * 1.32) + gapLines * (fs * 0.7);
+      return { lines, fits: height <= available };
+    };
+    const picked = 30;
+    let fontSize = picked;
+    let res = fitsAt(fontSize);
+    while (!res.fits && fontSize > 15) {
+      fontSize -= 1;
+      res = fitsAt(fontSize);
+    }
+    // Fine pass: recover space the whole-pixel search above could have
+    // overshot (see the identical rationale on renderCard's Abilities
+    // auto-fit above) — never grows past `picked`.
+    if (res.fits && fontSize + 1 <= picked) {
+      let lo = fontSize, hi = fontSize + 1;
+      for (let i = 0; i < 10; i++) {
+        const mid = (lo + hi) / 2;
+        if (fitsAt(mid).fits) lo = mid; else hi = mid;
+      }
+      const refined = Math.floor(lo * 10) / 10;
+      const refinedRes = fitsAt(refined);
+      if (refinedRes.fits) { fontSize = refined; res = refinedRes; }
+    }
+    const lineHeight = Math.round(fontSize * 1.32);
+    const gapHeight = Math.round(fontSize * 0.7);
+    ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+    ctx.fillStyle = T.textSecondary;
+    let y = descTop + fontSize;
+    for (const line of res.lines) {
+      if (line === '') { y += gapHeight; continue; }
+      ctx.fillText(line, descLeft, y);
+      y += lineHeight;
+    }
+  } else {
+    ctx.fillStyle = T.placeholderText;
+    ctx.font = 'italic 400 20px Inter, sans-serif';
+    ctx.fillText('Add a description, or Browse the Asset Library…', descLeft, descTop + 26);
+  }
+
+  ctx.restore(); // end clip
+
+  // outer border stroke — doubles as a cut guide when printing a single card
+  roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
+  ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
+  ctx.strokeStyle = T.outerBorder;
+  if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
 // Dispatcher used everywhere a card gets rendered/re-rendered (live preview,
-// Save to My Cards, Download PNG) — Associate cards need the separate
-// landscape renderer above; every other Card Type keeps using renderCard.
+// Save to My Cards, Download PNG) — Associate cards need the landscape
+// renderer, Asset cards (Contacts/Gear/Backup/Minions/Cult/Gifts) need the
+// simpler no-Stats/no-Health renderer, and every other Card Type keeps
+// using renderCard.
 function renderAnyCard(canvas, data) {
-  return data.cardType === 'Associate' ? renderAssociateCard(canvas, data) : renderCard(canvas, data);
+  if (data.cardType === 'Associate') return renderAssociateCard(canvas, data);
+  if (TYPE_PRESETS[data.cardType]?.isAsset) return renderAssetCard(canvas, data);
+  return renderCard(canvas, data);
 }

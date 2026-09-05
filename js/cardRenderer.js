@@ -301,19 +301,23 @@ function wrapLines(ctx, text, maxWidth) {
   return lines;
 }
 
-// Tokenize text into words, flagging specific "keyword" words (Gadget /
-// Mishap) so a Gadget-flagged Asset card description can render those
-// labels in bold — per explicit user feedback, "Gadget" and "Mishap" are
-// the main keywords a player scans for on a Gear/Gadget card, so they
-// should stand out from the rest of the effect text. Punctuation attached
-// to the word (e.g. "Gadget.", "Mishap:") is kept as part of the bold run
-// rather than split off, since visually there's no difference and it's
-// simpler to lay out.
+// Tokenize one paragraph of Asset card description text into words,
+// flagging only its own leading "label" word as bold — e.g. "Gadget." /
+// "BOOM:" / "Mishap:" / "Health:" / "Mindgame:" — a short word immediately
+// followed by "." or ":" at the very start of the paragraph. Per explicit
+// user feedback, the label should stand out as a tag for the clause that
+// follows it, but the effect text itself — including any later repeat of
+// that same word elsewhere in the paragraph (e.g. "the Gadget does not
+// function" inside the Mishap note) — must stay regular weight. Since
+// resourceCardsData.js already writes each distinct clause (Gadget tag,
+// BOOM effect, Mishap rule, Health/Skills line, etc.) as its own
+// \n\n-separated paragraph, "first word of the paragraph" is exactly the
+// label.
 function tokenizeRichText(text) {
-  return text.split(/\s+/).filter(Boolean).map(word => {
-    const core = word.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, '');
-    return { text: word, bold: core === 'Gadget' || core === 'Mishap' };
-  });
+  return text.split(/\s+/).filter(Boolean).map((word, i) => ({
+    text: word,
+    bold: i === 0 && /^[A-Za-z][A-Za-z'-]*[.:]$/.test(word),
+  }));
 }
 
 // Like wrapLines, but for an array of { text, bold } word tokens (see
@@ -1343,8 +1347,9 @@ function renderAssetCard(canvas, data) {
 
   if (description) {
     const paragraphs = description.split(/\n+/).map(p => p.trim()).filter(Boolean);
-    // Tokenized once (independent of font size) so the "Gadget"/"Mishap"
-    // keyword flags don't need recomputing on every shrink-fit attempt.
+    // Tokenized once (independent of font size) so each paragraph's
+    // leading-label bold flag doesn't need recomputing on every shrink-fit
+    // attempt.
     const paragraphTokens = paragraphs.map(p => tokenizeRichText(p));
     const buildLines = (fs) => {
       const normalFont = `400 ${fs}px Inter, sans-serif`;
@@ -1400,9 +1405,11 @@ function renderAssetCard(canvas, data) {
     for (const line of res.lines) {
       if (line === '') { y += gapHeight; continue; }
       // Each line is an array of { text, bold } word tokens (see
-      // tokenizeRichText/wrapRichLine) — draw word-by-word so "Gadget"/
-      // "Mishap" render in the bold weight while the rest of the effect
-      // text stays regular weight.
+      // tokenizeRichText/wrapRichLine) — draw word-by-word so each
+      // paragraph's own leading label (e.g. "Gadget.", "BOOM:", "Mishap:",
+      // "Health:") renders bold while the rest of the effect text —
+      // including any later repeat of that same word — stays regular
+      // weight.
       let x = descLeft;
       for (const tok of line) {
         ctx.font = tok.bold ? boldFont : normalFont;

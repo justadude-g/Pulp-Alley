@@ -348,6 +348,17 @@ const ASSOCIATE_HEADER_H = 90;
 // of the card"): vertically centered on the card (165 + 420/2 = 375 =
 // ASSOC_CARD_H/2), right edge inset 40px from the card's own right edge.
 const ASSOCIATE_PORTRAIT = { x: 640, y: 165, w: 370, h: 420 };
+// The "ASSOCIATE:" label, the Associate's name, and the Abilities body text
+// all share this one size by default, per explicit user feedback — the
+// original mix (label fixed at 24px, name auto-shrinking from 40px, and
+// Abilities defaulting to 33px) read as inconsistent and too small. 33
+// doubles as the app's existing default Abilities size elsewhere (see
+// `statsFontSize`/`picked` in renderCard), so this also keeps the Associate
+// card's typography in step with every other card rather than inventing a
+// new number. Each of the three still auto-shrinks independently below this
+// when its own content genuinely doesn't fit (a long name, a lot of
+// ability text) — they match in the common case, not by force.
+const ASSOCIATE_TEXT_SIZE = 33;
 
 // Card-type-aware: Associate cards' portrait lives at a different position
 // in a different-sized canvas than every other Card Type.
@@ -867,7 +878,7 @@ function renderAssociateCard(canvas, data) {
   const headerBaselineY = 56;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '700 24px Rajdhani, Inter, sans-serif';
+  ctx.font = `700 ${ASSOCIATE_TEXT_SIZE}px Rajdhani, Inter, sans-serif`;
   ctx.fillStyle = accent;
   ctx.fillText('ASSOCIATE:', headerLeft, headerBaselineY);
   const labelWidth = ctx.measureText('ASSOCIATE:').width;
@@ -881,7 +892,7 @@ function renderAssociateCard(canvas, data) {
     const nameAreaRight = ASSOCIATE_PORTRAIT.x - 30;
     const nameCenterX = (nameAreaLeft + nameAreaRight) / 2;
     const maxW = nameAreaRight - nameAreaLeft;
-    let fontSize = 40;
+    let fontSize = ASSOCIATE_TEXT_SIZE;
     let name = data.name || 'Unnamed Associate';
     do {
       ctx.font = `700 ${fontSize}px Rajdhani, Inter, sans-serif`;
@@ -975,7 +986,7 @@ function renderAssociateCard(canvas, data) {
   ctx.textBaseline = 'alphabetic';
 
   if (abilities.length) {
-    const picked = data.abilityFontSize || 33;
+    const picked = data.abilityFontSize || ASSOCIATE_TEXT_SIZE;
     let fontSize = picked;
     const buildBlocks = (fs) => {
       ctx.font = `400 ${fs}px Inter, sans-serif`;

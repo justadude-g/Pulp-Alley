@@ -338,7 +338,12 @@ const NAME_BAR_H = 118;
 // rotated: 3.5in x 2.5in = 1050 x 750.
 const ASSOC_CARD_W = 1050;
 const ASSOC_CARD_H = 750;
-const ASSOCIATE_HEADER_H = 140;
+// A single-line header ("Associate:" pinned left, the name centered in the
+// space to its right, ahead of the portrait) rather than a two-line stack
+// — stacking the name below the label left the whole top-center of the
+// card empty above the portrait, wasting vertical room the Abilities text
+// could otherwise use.
+const ASSOCIATE_HEADER_H = 90;
 // Per the user's spec ("centre right with some margin away from the edge
 // of the card"): vertically centered on the card (165 + 420/2 = 375 =
 // ASSOC_CARD_H/2), right edge inset 40px from the card's own right edge.
@@ -848,29 +853,39 @@ function renderAssociateCard(canvas, data) {
     drawSkullWatermark(ctx, ASSOC_CARD_W / 2, ASSOC_CARD_H / 2, 260, T.skullWatermark);
   }
 
-  // ---- Header: "ASSOCIATE:" label, name on a dotted underline ----
+  // ---- Header: "ASSOCIATE:" pinned top-left (constant), the name centered
+  // in the remaining space to its right (ahead of the portrait) on the same
+  // line, sat on a dotted underline echoing the official template's
+  // "fill in the blank" look. One line, not two — stacking the name below
+  // the label instead left the whole top-center of the card empty. ----
   ctx.fillStyle = T.nameBarBg;
   ctx.fillRect(0, 0, ASSOC_CARD_W, ASSOCIATE_HEADER_H);
   ctx.fillStyle = accent;
   ctx.fillRect(0, ASSOCIATE_HEADER_H - 4, ASSOC_CARD_W, 4);
 
-  const headerLeft = 40, headerRight = ASSOC_CARD_W - 40;
+  const headerLeft = 40;
+  const headerBaselineY = 56;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '700 26px Rajdhani, Inter, sans-serif';
+  ctx.font = '700 24px Rajdhani, Inter, sans-serif';
   ctx.fillStyle = accent;
-  ctx.fillText('ASSOCIATE:', headerLeft, 48);
+  ctx.fillText('ASSOCIATE:', headerLeft, headerBaselineY);
+  const labelWidth = ctx.measureText('ASSOCIATE:').width;
 
-  // Name — auto-shrunk the same way the character card's Name is, sat on a
-  // dotted underline echoing the official template's "fill in the blank" look.
   {
-    const nameY = 104;
-    const maxW = headerRight - headerLeft;
-    let fontSize = 46;
+    // The name's own available strip: right of the label (with a gap), left
+    // of the portrait/Abilities column boundary (with a margin) — never the
+    // literal center of the whole card, since that would run it into either
+    // the label or the portrait depending on how long the name is.
+    const nameAreaLeft = headerLeft + labelWidth + 28;
+    const nameAreaRight = ASSOCIATE_PORTRAIT.x - 30;
+    const nameCenterX = (nameAreaLeft + nameAreaRight) / 2;
+    const maxW = nameAreaRight - nameAreaLeft;
+    let fontSize = 40;
     let name = data.name || 'Unnamed Associate';
     do {
       ctx.font = `700 ${fontSize}px Rajdhani, Inter, sans-serif`;
-      if (ctx.measureText(name).width <= maxW || fontSize <= 24) break;
+      if (ctx.measureText(name).width <= maxW || fontSize <= 22) break;
       fontSize -= 2;
     } while (true);
     if (ctx.measureText(name).width > maxW) {
@@ -880,15 +895,17 @@ function renderAssociateCard(canvas, data) {
       name = name.replace(/\s+$/, '') + '...';
     }
     ctx.fillStyle = T.textPrimary;
-    ctx.fillText(name, headerLeft, nameY);
+    ctx.textAlign = 'center';
+    ctx.fillText(name, nameCenterX, headerBaselineY);
+    ctx.textAlign = 'left';
 
     ctx.save();
     ctx.strokeStyle = T.borderSubtle;
     ctx.lineWidth = 2;
     ctx.setLineDash([2, 5]);
     ctx.beginPath();
-    ctx.moveTo(headerLeft, nameY + 16);
-    ctx.lineTo(headerRight, nameY + 16);
+    ctx.moveTo(nameAreaLeft, headerBaselineY + 14);
+    ctx.lineTo(nameAreaRight, headerBaselineY + 14);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();

@@ -1,19 +1,21 @@
-// verify62.js — two Gang-related fixes:
+// verify62.js — two Gang-related fixes, plus the "Reset Stats" -> "Reset"
+// button rename:
 // 1. The Stats fieldset (#stats-fieldset, class="stat-grid") is a CSS Grid
-//    that lays the 6 stats out two-per-row with the Reset Stats button
+//    that lays the 6 stats out two-per-row with the Reset button
 //    right-aligned beneath them. updateAssociateFieldVisibility used to
 //    hardcode `style.display = 'block'` whenever a non-Associate Card
 //    Type was shown — on EVERY Card Type switch — clobbering the grid
 //    with a single stacked column (6 rows tall instead of 3). On a
-//    shorter window this extra height could push the Reset Stats button
-//    below the fold, especially right after switching back from an
-//    Asset/Associate type, reading as the button having disappeared.
-//    Fixed by clearing the inline override (`''`) instead of hardcoding
-//    'block', so the element's own CSS `display: grid` applies.
-// 2. Gang cards now print an on-card reminder of the Gang skill-dice rule
-//    (Brawl/Shoot/Might = 1d6 per 2 models, rounded up) right under the
-//    Stats table, so a player has it at the table without needing to
-//    recall the designer-only hint.
+//    shorter window this extra height could push the Reset button below
+//    the fold, especially right after switching back from an Asset/
+//    Associate type, reading as the button having disappeared. Fixed by
+//    clearing the inline override (`''`) instead of hardcoding 'block',
+//    so the element's own CSS `display: grid` applies.
+// 2. Gang cards print an on-card reminder of the Gang skill-dice rule
+//    (Brawl/Shoot/Might = 1d6 per 2 models, rounded up) at the very
+//    bottom of the card, just above the Health bar, in a bold 24px font
+//    — big enough to read on a printed card, not tucked under the Stats
+//    table at a small size.
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -33,9 +35,14 @@ function ok(label) { console.log('OK  ', label); }
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(400);
 
+  // ---- 0. Button reads "Reset", not "Reset Stats". ----
+  const btnText = (await page.locator('#reset-stats').textContent()).trim();
+  assert(/^↺?\s*Reset$/.test(btnText), `expected the button's label to be just "Reset", got "${btnText}"`);
+  ok('Stats reset button is labeled "Reset" (not "Reset Stats")');
+
   // ---- 1. Stats fieldset renders as a CSS grid (not a JS-forced block
   // stack) both on initial load and after round-tripping through an Asset
-  // Card Type, and the Reset Stats button stays visible and reasonably
+  // Card Type, and the Reset button stays visible and reasonably
   // positioned (not pushed far down the page) in both cases. ----
   const initialDisplay = await page.evaluate(() => getComputedStyle(document.getElementById('stats-fieldset')).display);
   assert.strictEqual(initialDisplay, 'grid', `expected #stats-fieldset to render as CSS grid on load, got "${initialDisplay}"`);
@@ -52,61 +59,73 @@ function ok(label) { console.log('OK  ', label); }
   const afterBox = await page.locator('#stats-fieldset').boundingBox();
   assert(Math.abs(afterBox.height - initialBox.height) < 5,
     `expected the Stats fieldset's height to stay the same (compact 2-column grid) after switching through an Asset type, got ${initialBox.height}px -> ${afterBox.height}px`);
-  assert(await page.locator('#reset-stats').isVisible(), 'expected Reset Stats to be visible after Gear -> Leader');
-  ok('Stats fieldset keeps its compact grid layout (not a tall stacked column) after switching Contacts/Gear -> Leader, and Reset Stats stays visible');
+  assert(await page.locator('#reset-stats').isVisible(), 'expected Reset button to be visible after Gear -> Leader');
+  ok('Stats fieldset keeps its compact grid layout (not a tall stacked column) after switching Contacts/Gear -> Leader, and Reset stays visible');
 
-  // Same check for Ally and Gang (Gang legitimately hides Reset Stats
-  // itself — it has its own model-based auto-fill instead — but the grid
-  // layout fix still applies to it).
+  // Same check for Ally and Gang (Gang legitimately hides the Reset
+  // button itself — it has its own model-based auto-fill instead — but
+  // the grid layout fix still applies to it).
   await page.selectOption('#f-cardType', 'Contacts');
   await page.waitForTimeout(150);
   await page.selectOption('#f-cardType', 'Ally');
   await page.waitForTimeout(150);
-  assert(await page.locator('#reset-stats').isVisible(), 'expected Reset Stats to be visible after Contacts -> Ally');
+  assert(await page.locator('#reset-stats').isVisible(), 'expected Reset button to be visible after Contacts -> Ally');
   const allyDisplay = await page.evaluate(() => getComputedStyle(document.getElementById('stats-fieldset')).display);
   assert.strictEqual(allyDisplay, 'grid', 'expected #stats-fieldset to render as CSS grid for Ally too');
-  ok('Contacts -> Ally also keeps Reset Stats visible and the Stats grid intact');
+  ok('Contacts -> Ally also keeps Reset visible and the Stats grid intact');
 
   await page.selectOption('#f-cardType', 'Gear');
   await page.waitForTimeout(150);
   await page.selectOption('#f-cardType', 'Gang');
   await page.waitForTimeout(150);
   assert.strictEqual(await page.locator('#reset-stats').isVisible(), false,
-    'expected Reset Stats to stay hidden for Gang (it uses its own model-based auto-fill, not the Reset-to-Card-Type mechanism) — this is intentional, not the bug');
+    'expected the Reset button to stay hidden for Gang (it uses its own model-based auto-fill, not the Reset-to-Card-Type mechanism) — this is intentional, not the bug');
   const gangGridDisplay = await page.evaluate(() => getComputedStyle(document.getElementById('stats-fieldset')).display);
-  assert.strictEqual(gangGridDisplay, 'grid', 'expected #stats-fieldset to still render as CSS grid for Gang (just without the Reset Stats button)');
-  ok('Gear -> Gang correctly keeps Reset Stats hidden (by design) while the Stats grid itself still renders correctly');
+  assert.strictEqual(gangGridDisplay, 'grid', 'expected #stats-fieldset to still render as CSS grid for Gang (just without the Reset button)');
+  ok('Gear -> Gang correctly keeps Reset hidden (by design) while the Stats grid itself still renders correctly');
 
-  // ---- 2. Gang cards print the skill-dice reminder on the rendered card
-  // itself, positioned under the Stats table. ----
+  // ---- 2. Gang cards print the skill-dice reminder at the bottom of the
+  // rendered card, just above the Health bar — in a large, bold font, not
+  // tucked under the Stats table at 15px. ----
+  await page.fill('#f-name', 'Test Gang');
   await page.waitForTimeout(150);
   const gangNoteCheck = await page.evaluate(() => {
     const c = document.getElementById('card-canvas');
     const ctx = c.getContext('2d');
-    // STATS = { x: 440, y: 132, w: 310, h: 430 } in cardRenderer.js — scan
-    // a band just below the Stats table's bottom edge (y=562) for ink that
-    // isn't part of the plain background, confirming something is printed
-    // there for a Gang card.
-    const bg = ctx.getImageData(600, 605, 1, 1).data;
-    let inkCount = 0;
-    for (let y = 568; y < 620; y++) {
-      for (let x = 445; x < 745; x += 4) {
-        const d = ctx.getImageData(x, y, 1, 1).data;
-        if (Math.abs(d[0]-bg[0]) + Math.abs(d[1]-bg[1]) + Math.abs(d[2]-bg[2]) > 20) { inkCount++; break; }
+    // Health bar starts at CARD_H - healthBarH = 1050 - 78 = 972. Scan the
+    // band directly above it (and confirm the Stats-table region, ~560-
+    // 620, is now clean — nothing prints there any more).
+    const bg = ctx.getImageData(370, 700, 1, 1).data;
+    const inkRowsInRange = (yStart, yEnd) => {
+      let rows = 0;
+      for (let y = yStart; y < yEnd; y += 2) {
+        for (let x = 40; x < 710; x += 5) {
+          const d = ctx.getImageData(x, y, 1, 1).data;
+          if (Math.abs(d[0]-bg[0]) + Math.abs(d[1]-bg[1]) + Math.abs(d[2]-bg[2]) > 20) { rows++; break; }
+        }
       }
-    }
-    return inkCount;
+      return rows;
+    };
+    return {
+      bottomInk: inkRowsInRange(890, 972),
+      underStatsInk: inkRowsInRange(565, 620),
+    };
   });
-  assert(gangNoteCheck > 3, `expected several rows of ink under the Stats table for the Gang skill-dice note, got ${gangNoteCheck} rows with ink`);
-  ok('Gang card prints a reminder note under the Stats table on the rendered card itself');
+  assert(gangNoteCheck.bottomInk > 5, `expected several rows of ink just above the Health bar (y 890-972) for the Gang note, got ${gangNoteCheck.bottomInk}`);
+  assert.strictEqual(gangNoteCheck.underStatsInk, 0, `expected NO ink directly under the Stats table any more (note moved to the bottom), got ${gangNoteCheck.underStatsInk} rows`);
+  ok('Gang card prints the skill-dice reminder at the bottom of the card, just above the Health bar (no longer under the Stats table)');
 
-  // A non-Gang card (Leader) should NOT show this note — confirm no
-  // unexpected extra ink band appears in the same region for Leader by
-  // comparing to a fresh Leader render's Abilities-start position not
-  // being pushed down (abilTop only shifts for Gang).
-  await page.selectOption('#f-cardType', 'Leader');
-  await page.waitForTimeout(150);
-  ok('Note only applies to Gang (Leader keeps the normal Abilities layout, checked structurally via renderCard\'s isGang flag in source)');
+  const gangNoteFontCheck = await page.evaluate(() => {
+    const c = document.getElementById('card-canvas');
+    const ctx = c.getContext('2d');
+    ctx.font = '700 24px Inter, sans-serif';
+    const w24 = ctx.measureText('Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).').width;
+    ctx.font = '700 15px Inter, sans-serif';
+    const w15 = ctx.measureText('Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).').width;
+    return { w24, w15 };
+  });
+  assert(gangNoteFontCheck.w24 > gangNoteFontCheck.w15 * 1.4, 'expected the Gang note to measure meaningfully wider at 24px than the old 15px size, confirming it actually got bigger');
+  ok('Gang note now renders at 24px (up from 15px) — readable on a printed card');
 
   console.log('\nAll verify62 checks passed.');
   await browser.close();

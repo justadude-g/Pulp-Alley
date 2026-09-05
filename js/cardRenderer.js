@@ -678,18 +678,32 @@ function renderCard(canvas, data) {
   }
 
   // ---- Abilities geometry + auto-fit font size ----
-  // Gang cards get a couple of extra pixels between the Stats table and the
-  // Abilities column to fit a printed reminder of the Gang skill-dice rule
-  // (see the note drawn right after the Stats table below) — a player
-  // reading the card at the table has no other way to remember that
-  // Brawl/Shoot/Might scale with the gang's current model count.
   const isGang = data.cardType === 'Gang';
-  const abilTop = PORTRAIT.y + PORTRAIT.h + 22 + (isGang ? 40 : 0);
+  const abilTop = PORTRAIT.y + PORTRAIT.h + 22;
   const abilLeft = 28;
   const abilRight = CARD_W - 28;
   const abilMaxWidth = abilRight - abilLeft;
   const healthBarH = 78;
-  const abilBottom = CARD_H - healthBarH - (data.quote ? 72 : 14);
+
+  // Gang cards print a reminder of the Gang skill-dice rule at the very
+  // bottom of the card, just above the Health bar — a player reading the
+  // card at the table has no other way to remember that Brawl/Shoot/Might
+  // scale with the gang's current model count (Dodge/Cunning/Finesse stay
+  // a flat 1d6 regardless). Sized and measured here (rather than down by
+  // the Health bar itself) so the Abilities/Quote auto-fit above can
+  // reserve exactly the space it needs, the same way Quote already does.
+  const gangNoteFontSize = 24;
+  const gangNoteLineHeight = 29;
+  const gangNoteText = 'Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).';
+  let gangNoteLines = [];
+  let gangNoteReserve = 0;
+  if (isGang) {
+    ctx.font = `700 ${gangNoteFontSize}px Inter, sans-serif`;
+    gangNoteLines = wrapLines(ctx, gangNoteText, abilMaxWidth);
+    gangNoteReserve = gangNoteLines.length * gangNoteLineHeight + 10;
+  }
+
+  const abilBottom = CARD_H - healthBarH - (data.quote ? 72 : 14) - gangNoteReserve;
 
   const abilities = (data.abilities || []).filter(a => a.name || a.text);
   // Stats (labels + dice values) always render at exactly the picked
@@ -808,28 +822,6 @@ function renderCard(canvas, data) {
     ctx.strokeRect(STATS.x + 0.5, STATS.y + 0.5, STATS.w - 1, STATS.h - 1);
   }
 
-  // Gang skill-dice reminder — printed directly under the Stats table (in
-  // the extra gap opened up by `isGang` above) so it's always on the card
-  // itself, not just a designer-only hint. Brawl/Shoot/Might are the three
-  // skills that scale with the gang's current model count (Core Rules
-  // p.22); Dodge/Cunning/Finesse stay fixed at 1d6 regardless, so calling
-  // out only the three that change is what a player actually needs mid-
-  // game.
-  if (isGang) {
-    ctx.font = 'italic 400 15px Inter, sans-serif';
-    ctx.fillStyle = T.textMuted;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    const noteLines = wrapLines(ctx, 'Brawl/Shoot/Might: 1d6 per 2 models in the gang (round up).', STATS.w - 12);
-    let ny = STATS.y + STATS.h + 6;
-    for (const line of noteLines) {
-      ctx.fillText(line, STATS.x + STATS.w / 2, ny);
-      ny += 17;
-    }
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-  }
-
   if (T.skullWatermark) {
     drawSkullWatermark(ctx, CARD_W / 2, (abilTop + abilBottom) / 2, 260, T.skullWatermark);
   }
@@ -868,6 +860,9 @@ function renderCard(canvas, data) {
   }
 
   // Quote — sized to stay legible once printed at true card size (2.5"x3.5").
+  // Bottom-anchored 18px above the Health bar, same as always — shifted up
+  // by `gangNoteReserve` on a Gang card so the Gang skill-dice note (drawn
+  // next, below) can claim that bottommost spot instead.
   if (data.quote) {
     const quoteFontSize = 26;
     const quoteLineHeight = 32;
@@ -875,10 +870,32 @@ function renderCard(canvas, data) {
     ctx.fillStyle = T.textMuted;
     ctx.textAlign = 'center';
     const lines = wrapLines(ctx, `“${data.quote}”`, abilMaxWidth);
-    let qy = CARD_H - healthBarH - 18 - (lines.length - 1) * quoteLineHeight;
+    let qy = CARD_H - healthBarH - 18 - gangNoteReserve - (lines.length - 1) * quoteLineHeight;
     for (const l of lines) {
       ctx.fillText(l, CARD_W / 2, qy);
       qy += quoteLineHeight;
+    }
+    ctx.textAlign = 'left';
+  }
+
+  // Gang skill-dice reminder — printed at the very bottom of the card,
+  // just above the Health bar (bottom-anchored the same way Quote is,
+  // stacking above it here if a Quote is also present) so it's always on
+  // the printed card itself, not just a designer-only hint. Brawl/Shoot/
+  // Might are the three skills that scale with the gang's current model
+  // count (Core Rules p.22); Dodge/Cunning/Finesse stay a flat 1d6
+  // regardless, so calling out only the three that change is what a
+  // player actually needs mid-game. Bold and sized well above body text
+  // (24px vs. the 29-42px Abilities range) so it reads clearly at arm's
+  // length on a printed card.
+  if (isGang) {
+    ctx.font = `700 ${gangNoteFontSize}px Inter, sans-serif`;
+    ctx.fillStyle = accent;
+    ctx.textAlign = 'center';
+    let gy = CARD_H - healthBarH - 18 - (gangNoteLines.length - 1) * gangNoteLineHeight;
+    for (const line of gangNoteLines) {
+      ctx.fillText(line, CARD_W / 2, gy);
+      gy += gangNoteLineHeight;
     }
     ctx.textAlign = 'left';
   }

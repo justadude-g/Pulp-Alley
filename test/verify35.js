@@ -152,7 +152,11 @@ function ok(label) { console.log('OK  ', label); }
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ff0000';
-    ctx.fillText('3d10', (STATS_x + STATS_w - 20) - rectX, (ry + rowH / 2 + 1) - rectY);
+    // "3 d 10" (with spaces around the "d"), not the tighter "3d10" — a
+    // little breathing room was added around the "d" on the printed card
+    // per user feedback, separately from the 0d0 special case this test
+    // file is really about.
+    ctx.fillText('3 d 10', (STATS_x + STATS_w - 20) - rectX, (ry + rowH / 2 + 1) - rectY);
     const refData = ctx.getImageData(0, 0, rectW, rectH);
     let diff = 0;
     for (let i = 0; i < liveData.data.length; i += 4) {
@@ -160,8 +164,8 @@ function ok(label) { console.log('OK  ', label); }
     }
     return diff / (liveData.data.length / 4);
   });
-  assert(normalDiff < 10, `expected a normal 3d10 Brawl to still print "3d10" as before, got avg diff ${normalDiff.toFixed(2)}`);
-  ok('A normal, non-zero stat (3d10) still prints its ordinary form, unaffected by the 0d0 special case');
+  assert(normalDiff < 10, `expected a normal 3d10 Brawl to still print "3 d 10" as before, got avg diff ${normalDiff.toFixed(2)}`);
+  ok('A normal, non-zero stat (3 d 10) still prints its ordinary form, unaffected by the 0d0 special case');
 
   console.log('\nAll verify35 checks passed.');
   await browser.close();

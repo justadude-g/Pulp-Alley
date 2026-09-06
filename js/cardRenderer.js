@@ -813,7 +813,7 @@ function renderCard(canvas, data) {
       // at all (as opposed to a normal, if weak, 1d6) — printed as "–d–"
       // instead of the literal "0d0", which reads as a data-entry mistake
       // rather than a deliberate "no skill here" mark.
-      const dieStr = !val ? '—' : (val.n === 0 && val.d === 0) ? '–d–' : `${val.n}d${val.d}`;
+      const dieStr = !val ? '—' : (val.n === 0 && val.d === 0) ? '–d–' : `${val.n} d ${val.d}`;
       ctx.font = `700 ${statsFontSize}px Inter, sans-serif`;
       ctx.textAlign = 'right';
       ctx.fillStyle = accent;

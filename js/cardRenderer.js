@@ -550,20 +550,24 @@ function renderCard(canvas, data) {
   ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
 
   // Level badge — Classical uses the template's brown-ring-on-cream look;
-  // light/dark fill the badge solid with the accent color.
-  const badgeCx = 85, badgeCy = 59, badgeR = 46;
+  // light/dark fill the badge solid with the accent color. Radius/font/ring
+  // shrunk (46->38 / 60->50 / 4->3.5) per explicit user feedback that the
+  // badge read too large on the printed card — kept in the same ~1.3:1
+  // font-to-radius ratio as before so the number still fills the circle
+  // with the same proportions, just smaller overall.
+  const badgeCx = 85, badgeCy = 59, badgeR = 38;
   ctx.beginPath();
   ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
   ctx.fillStyle = T.badgeFill || accent;
   ctx.fill();
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3.5;
   ctx.strokeStyle = T.badgeRing || shade(accent, -0.3);
   ctx.stroke();
   ctx.fillStyle = T.badgeText || '#ffffff';
-  // Sized to fill the 46px-radius badge with much less surrounding empty
-  // space, while still leaving safe clearance inside the ring for a
-  // worst-case two-digit level (the Level field allows up to 20).
-  ctx.font = '700 60px Rajdhani, Inter, sans-serif';
+  // Sized to fill the badge with much less surrounding empty space, while
+  // still leaving safe clearance inside the ring for a worst-case
+  // two-digit level (the Level field allows up to 20).
+  ctx.font = '700 50px Rajdhani, Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(String(data.level ?? ''), badgeCx, badgeCy + 3);
@@ -572,7 +576,11 @@ function renderCard(canvas, data) {
   // feedback that the Card Type label was hard to read; pillW is measured
   // from the actual (now-larger) label width rather than a fixed guess, so
   // the Name text below always reserves exactly the room this pill needs
-  // — no fixed-width assumption to go stale as the font size changes.
+  // — no fixed-width assumption to go stale as the font size changes. py
+  // is derived from the Name text's own vertical center (NAME_BAR_H/2+2,
+  // the same y the Name fillText below uses with textBaseline:'middle')
+  // instead of a fixed 16, so the pill's height is centered on the Name
+  // text instead of just floating near the top of the name bar.
   let typeLabelW = 0;
   if (data.cardType) {
     ctx.font = '700 27px Rajdhani, Inter, sans-serif';
@@ -580,7 +588,7 @@ function renderCard(canvas, data) {
     const tw = ctx.measureText(label).width;
     const padX = 18, pillH = 40;
     const pillW = tw + padX * 2;
-    const px = CARD_W - 24 - pillW, py = 16;
+    const px = CARD_W - 24 - pillW, py = (NAME_BAR_H / 2 + 2) - pillH / 2;
     typeLabelW = pillW + 24;
     roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
     ctx.fillStyle = tint;
@@ -1275,17 +1283,19 @@ function renderAssetCard(canvas, data) {
 
   // Badge fill/ring/text also ignore the Classical theme's own brown/cream
   // badge colors (T.badgeFill/T.badgeRing/T.badgeText) for the same reason
-  // as `tint` above — always accent-green, not theme-brown.
-  const badgeCx = 85, badgeCy = 59, badgeR = 46;
+  // as `tint` above — always accent-green, not theme-brown. Radius/font/
+  // ring shrunk to match renderCard's Level badge above (46->38 / 60->50 /
+  // 4->3.5), same "too large on the printed card" feedback.
+  const badgeCx = 85, badgeCy = 59, badgeR = 38;
   ctx.beginPath();
   ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
   ctx.fillStyle = accent;
   ctx.fill();
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3.5;
   ctx.strokeStyle = shade(accent, -0.3);
   ctx.stroke();
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 60px Rajdhani, Inter, sans-serif';
+  ctx.font = '700 50px Rajdhani, Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const cost = data.assetCost;
@@ -1293,7 +1303,8 @@ function renderAssetCard(canvas, data) {
 
   // 27px (up from 23px) — matches the same bump made to renderCard's Type
   // tag pill above, per explicit user feedback that the Card Type label
-  // was hard to read.
+  // was hard to read. py centers the pill's height on the Name text's own
+  // vertical center (NAME_BAR_H/2+2), same fix as renderCard above.
   let typeLabelW = 0;
   {
     const label = (data.cardType || 'Asset').toUpperCase();
@@ -1301,7 +1312,7 @@ function renderAssetCard(canvas, data) {
     const tw = ctx.measureText(label).width;
     const padX = 18, pillH = 40;
     const pillW = tw + padX * 2;
-    const px = CARD_W - 24 - pillW, py = 16;
+    const px = CARD_W - 24 - pillW, py = (NAME_BAR_H / 2 + 2) - pillH / 2;
     typeLabelW = pillW + 24;
     roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
     ctx.fillStyle = tint;

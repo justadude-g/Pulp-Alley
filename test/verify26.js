@@ -32,9 +32,14 @@ function ok(label) { console.log('OK  ', label); }
   const OLD_PILLW_20PX = 93; // "LEADER" at the previous 20px font + old 32px padding
   const typeTagScan = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
-    const bg = ctx.getImageData(500, 36, 1, 1).data; // plain background, left of the pill
+    // Scan at the pill's own vertical center (NAME_BAR_H/2+2 — the pill's
+    // py is derived from that value, no longer a fixed y=36) rather than a
+    // hardcoded row, so this doesn't silently stop measuring the real pill
+    // if its position shifts again.
+    const midY = Math.round(NAME_BAR_H / 2 + 2);
+    const bg = ctx.getImageData(500, midY, 1, 1).data; // plain background, left of the pill
     const isBg = (x) => {
-      const d = ctx.getImageData(x, 36, 1, 1).data;
+      const d = ctx.getImageData(x, midY, 1, 1).data;
       return Math.abs(d[0] - bg[0]) + Math.abs(d[1] - bg[1]) + Math.abs(d[2] - bg[2]) <= 4;
     };
     // Scan leftward from clear of the pill's right side (x=740): first skip
@@ -61,7 +66,11 @@ function ok(label) { console.log('OK  ', label); }
     // the plain name-bar background used everywhere else on the card.
     const bg = ctx.getImageData(midX, 2, 1, 1).data;
     let top = null, bottom = null;
-    for (let y = 2; y < 70; y++) {
+    // Scan the full name bar height (NAME_BAR_H), not just the pill's old
+    // fixed position near the top — the pill's y is now derived from the
+    // Name text's own vertical center, so it no longer sits in a fixed
+    // spot near y=16-56.
+    for (let y = 2; y < NAME_BAR_H - 4; y++) {
       const d = ctx.getImageData(midX, y, 1, 1).data;
       const diff = Math.abs(d[0] - bg[0]) + Math.abs(d[1] - bg[1]) + Math.abs(d[2] - bg[2]);
       if (diff > 4) { if (top === null) top = y; bottom = y; }
@@ -127,10 +136,14 @@ function ok(label) { console.log('OK  ', label); }
     const c = document.getElementById('card-canvas');
     const ctx = c.getContext('2d');
     // Type tag: leftmost pixel of the pill must stay right of the name
-    // column's reserved boundary (x=150) with real room to spare.
-    const bg1 = ctx.getImageData(140, 36, 1, 1).data;
+    // column's reserved boundary (x=150) with real room to spare. Scan at
+    // the pill's own vertical center (NAME_BAR_H/2+2 — the pill's py is
+    // now derived from that same value, no longer a fixed y=36) rather
+    // than a hardcoded row.
+    const pillMidY = Math.round(NAME_BAR_H / 2 + 2);
+    const bg1 = ctx.getImageData(140, pillMidY, 1, 1).data;
     const isBg1 = (x) => {
-      const d = ctx.getImageData(x, 36, 1, 1).data;
+      const d = ctx.getImageData(x, pillMidY, 1, 1).data;
       return Math.abs(d[0] - bg1[0]) + Math.abs(d[1] - bg1[1]) + Math.abs(d[2] - bg1[2]) <= 4;
     };
     let tx = c.width - 20; // clear of the pill's right side, in plain background

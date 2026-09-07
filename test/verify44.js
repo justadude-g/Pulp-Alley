@@ -22,14 +22,14 @@ function ok(label) { console.log('OK  ', label); }
 
   // ---- 1. Upload a portrait, zoom in, and save. The saved card's
   // portraitDataURL should now be an image exactly the size of the
-  // portrait box (412x430), not the much larger original upload. ----
+  // portrait box (440x430), not the much larger original upload. ----
   await page.fill('#f-name', 'Zoomed Hero');
   const samplePortrait = '/mnt/user-data/uploads/Pulp Alley/Sample Card 1.png';
   await page.setInputFiles('#f-portrait', samplePortrait);
   await page.waitForTimeout(400);
 
   const boxSize = await page.evaluate(() => getPortraitBox());
-  assert.deepStrictEqual({ w: boxSize.w, h: boxSize.h }, { w: 412, h: 430 }, `expected the portrait box to be 412x430, got ${JSON.stringify(boxSize)}`);
+  assert.deepStrictEqual({ w: boxSize.w, h: boxSize.h }, { w: 440, h: 430 }, `expected the portrait box to be 440x430, got ${JSON.stringify(boxSize)}`);
 
   await page.fill('#f-zoom', '2');
   await page.dispatchEvent('#f-zoom', 'input');
@@ -48,9 +48,9 @@ function ok(label) { console.log('OK  ', label); }
     });
     return { w: img.width, h: img.height, view: c.portraitView, dataLen: c.portraitDataURL.length };
   });
-  assert.strictEqual(savedInfo.w, 412, `expected the saved portrait to be cropped to box width 412, got ${savedInfo.w}`);
+  assert.strictEqual(savedInfo.w, 440, `expected the saved portrait to be cropped to box width 440, got ${savedInfo.w}`);
   assert.strictEqual(savedInfo.h, 430, `expected the saved portrait to be cropped to box height 430, got ${savedInfo.h}`);
-  ok('Saving a card crops its stored portrait down to exactly the portrait box size (412x430)');
+  ok('Saving a card crops its stored portrait down to exactly the portrait box size (440x430)');
 
   assert.deepStrictEqual(savedInfo.view, { scale: 1, offsetX: 0, offsetY: 0 }, `expected the saved portraitView to reset to scale 1 / no offset after cropping, got ${JSON.stringify(savedInfo.view)}`);
   ok('The saved portraitView resets to {scale:1, offsetX:0, offsetY:0} since the crop already matches exactly');
@@ -92,7 +92,7 @@ function ok(label) { console.log('OK  ', label); }
     });
     return { w: img.width, h: img.height };
   });
-  assert.deepStrictEqual(secondSaveInfo, { w: 412, h: 430 }, `expected a second save to leave the crop exactly box-sized, got ${JSON.stringify(secondSaveInfo)}`);
+  assert.deepStrictEqual(secondSaveInfo, { w: 440, h: 430 }, `expected a second save to leave the crop exactly box-sized, got ${JSON.stringify(secondSaveInfo)}`);
   ok('Saving again after the crop is idempotent — still exactly box-sized, no further shrinkage/distortion');
 
   console.log('\nAll verify44 checks passed.');

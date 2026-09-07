@@ -43,7 +43,7 @@ function ok(label) { console.log('OK  ', label); }
     noArg: getPortraitBox(),
   }));
   assert.deepStrictEqual(boxes.associate, { x: 640, y: 114, w: 370, h: 420 }, `expected getPortraitBox('Associate') to return ASSOCIATE_PORTRAIT, got ${JSON.stringify(boxes.associate)}`);
-  assert.deepStrictEqual(boxes.leader, { x: 28, y: 132, w: 412, h: 430 }, `expected getPortraitBox('Leader') to return the standard character-card PORTRAIT, got ${JSON.stringify(boxes.leader)}`);
+  assert.deepStrictEqual(boxes.leader, { x: 0, y: 118, w: 440, h: 430 }, `expected getPortraitBox('Leader') to return the standard character-card PORTRAIT, got ${JSON.stringify(boxes.leader)}`);
   assert.deepStrictEqual(boxes.noArg, boxes.leader, `expected getPortraitBox() with no argument to default to the standard PORTRAIT (backward-compatible with existing callers/tests), got ${JSON.stringify(boxes.noArg)}`);
   // Top-aligned with the Abilities block (ASSOCIATE_HEADER_H + 24 = 114),
   // per explicit user feedback that centering it lower left a gap the

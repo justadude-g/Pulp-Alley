@@ -127,6 +127,13 @@ const TYPE_PRESETS = {
 // Shared palette for both Classical variants (see THEMES.classical /
 // classicalNoSkull below) — kept as one object so the two themes can never
 // drift apart on anything except the skull watermark.
+// Combat band (fixedTint below) recolored 2026-09-07 to a warmer, more
+// saturated rust-terracotta than the original pale peach, per explicit
+// user preference after an A/B preview against a wider ChatGPT-suggested
+// palette swap — contrast against the near-black ink text stays
+// comfortably above WCAG AA (6.18:1). Attributes (fixedTint2) was tried
+// alongside it during that preview but deliberately left at its original
+// value — only the Combat change was confirmed liked.
 const CLASSICAL_BASE = {
   bgTop: '#e9cb9f', bgBottom: '#ddbb8a',
   textPrimary: '#241b13',
@@ -140,7 +147,7 @@ const CLASSICAL_BASE = {
   placeholderBg: '#e7c786',
   placeholderPattern: 'rgba(36,27,19,0.10)',
   placeholderText: 'rgba(36,27,19,0.45)',
-  fixedTint: '#ebb185',
+  fixedTint: '#d9895a',
   fixedTint2: '#c1ac9c',
   // Down/Out pills sit on the health bar's own olive-khaki background
   // (healthBarBg above), so they need an opaque fill of their own — a
@@ -393,17 +400,21 @@ function drawSkullWatermark(ctx, cx, cy, w, color) {
   ctx.restore();
 }
 
-// Portrait's left edge lines up with the Abilities text's left inset
-// (abilLeft, below) rather than the card's literal edge, so the two
-// columns of content read as aligned; its right edge stays flush to the
-// Stats table's left edge (no gap). Stats itself now runs flush to the
-// card's right edge (background fill included) instead of stopping short
-// of it, and starts further right than before — tightening the label-to-
-// dice-value gap inside each row — which hands the reclaimed width to the
-// portrait.
-const PORTRAIT = { x: 28, y: 132, w: 412, h: 430 };
-const STATS = { x: 440, y: 132, w: CARD_W - 440, h: 430 };
 const NAME_BAR_H = 118;
+
+// Portrait now runs flush to the card's own left edge (x:0) instead of
+// stopping at the Abilities text's left inset — the 28px margin it used to
+// leave there just sat empty as unused background, so its width grew by
+// that same 28px to fill it, while its right edge stays exactly where it
+// was: flush to the Stats table's left edge (no gap). Portrait and Stats
+// both start at y:NAME_BAR_H (not 14px below it) so they sit immediately
+// under the name bar's accent stripe with no gap — that gap used to just
+// be empty background too. Stats itself runs flush to the card's right
+// edge (background fill included) instead of stopping short of it, and
+// starts further right than before — tightening the label-to-dice-value
+// gap inside each row — which hands the reclaimed width to the portrait.
+const PORTRAIT = { x: 0, y: NAME_BAR_H, w: 440, h: 430 };
+const STATS = { x: 440, y: NAME_BAR_H, w: CARD_W - 440, h: 430 };
 
 // Associate cards (renderAssociateCard below) are landscape — a completely
 // different canvas size from every other Card Type, which all stay

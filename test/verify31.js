@@ -50,7 +50,7 @@ function ok(label) { console.log('OK  ', label); }
   async function statLabelInkWidth() {
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      const rowY = 132, rowH = 430 / 6;
+      const rowY = STATS.y, rowH = STATS.h / 6;
       const midY = Math.round(rowY + rowH / 2 + 1);
       const textColor = [24, 28, 36]; // Ivory's textPrimary
       let left = null, right = null;
@@ -133,12 +133,13 @@ function ok(label) { console.log('OK  ', label); }
   assert(transitionDiff > 15, `expected a clear color transition right around x=440 (Stats' new left edge), got before=${justBeforeStats} after=${justAfterStats}`);
   ok('Stats table now starts at x=440 (previously x=340), confirmed by the color transition at that boundary');
 
-  // ---- 4. Portrait's left edge lines up with the Abilities text margin
-  // (x=28), and its right edge stays flush to Stats (x=440). ----
+  // ---- 4. Portrait's left edge runs flush to the card's own left edge
+  // (x=0, filling what used to be an empty 28px margin there), and its
+  // right edge stays flush to Stats (x=440). ----
   const box = await page.evaluate(() => getPortraitBox());
-  assert.strictEqual(box.x, 28, `expected the portrait box to start at x=28 (matching the Abilities text's left margin), got x=${box.x}`);
+  assert.strictEqual(box.x, 0, `expected the portrait box to start at x=0 (flush to the card's left edge), got x=${box.x}`);
   assert.strictEqual(box.x + box.w, 440, `expected the portrait box's right edge to stay flush to Stats (x=440), got ${box.x + box.w}`);
-  ok('Portrait\'s left edge lines up with the Abilities text margin (x=28), right edge flush to Stats (x=440)');
+  ok('Portrait\'s left edge runs flush to the card\'s left edge (x=0), right edge flush to Stats (x=440)');
 
   console.log('\nAll verify31 checks passed.');
   await browser.close();

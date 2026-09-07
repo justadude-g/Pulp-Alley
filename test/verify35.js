@@ -77,7 +77,7 @@ function ok(label) { console.log('OK  ', label); }
     const liveCtx = liveCanvas.getContext('2d');
 
     // Same STATS geometry as cardRenderer.js: {x:440, y:132, w:750-440, h:430}.
-    const STATS_x = 440, STATS_y = 132, STATS_w = 750 - 440, STATS_h = 430;
+    const STATS_x = STATS.x, STATS_y = STATS.y, STATS_w = STATS.w, STATS_h = STATS.h;
     const rowH = STATS_h / 6;
     const ry = STATS_y; // Brawl is row 0
     const rectX = STATS_x + Math.floor(STATS_w / 2);
@@ -134,7 +134,7 @@ function ok(label) { console.log('OK  ', label); }
   const normalDiff = await page.evaluate(() => {
     const liveCanvas = document.getElementById('card-canvas');
     const liveCtx = liveCanvas.getContext('2d');
-    const STATS_x = 440, STATS_y = 132, STATS_w = 750 - 440, STATS_h = 430;
+    const STATS_x = STATS.x, STATS_y = STATS.y, STATS_w = STATS.w, STATS_h = STATS.h;
     const rowH = STATS_h / 6;
     const ry = STATS_y;
     const rectX = STATS_x + Math.floor(STATS_w / 2);

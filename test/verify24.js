@@ -31,28 +31,24 @@ function ok(label) { console.log('OK  ', label); }
   await page.selectOption('#f-theme', 'light');
   await page.waitForTimeout(150);
 
-  // The portrait box currently runs {x:28, y:132, w:412, h:430} — its left
-  // edge lines up with the Abilities text margin (not the card's literal
-  // edge) and its right edge stays flush to the Stats table (x:440), so
-  // there's no open background margin beside it, only above and below (the
-  // card's vertical gradient means a comparison pixel must share the same
-  // y as its subject, since color only varies with y).
+  // The portrait box now runs flush to the card's own left edge and
+  // immediately under the name bar (PORTRAIT — read live from the page's
+  // own global rather than hardcoded, so this doesn't go stale again next
+  // time the layout shifts), so unlike before there's no open background
+  // margin left beside OR above it any more — Portrait+Stats together now
+  // span the full card width with zero gap under the name bar. Sample
+  // points below are chosen to avoid needing such a margin at all.
   async function borderPixel() {
-    // Just above the portrait box's flat top edge, horizontally centered
-    // so it's away from the rounded corners. Never touched by the
-    // portrait's own clipped fill/image — only a stroke drawn with Image
-    // Frame on would paint here.
+    // Exactly on the portrait's flat top edge (PORTRAIT.y itself),
+    // horizontally centered. Empirically this row gets full stroke
+    // coverage when Image Frame is on (pure accent) and shows the
+    // portrait's own placeholder fill/hatch — not the name bar's
+    // same-colored accent stripe, which ends one row above this — when
+    // it's off; the row immediately below only gets partial (anti-aliased,
+    // blended) coverage and isn't a reliable sample point.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(234, 131, 1, 1).data.slice(0, 3)];
-    });
-  }
-  async function plainBackgroundPixel() {
-    // Same y as the border sample (so it's the same point on the vertical
-    // gradient), far to the right where nothing else is drawn.
-    return page.evaluate(() => {
-      const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(700, 131, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(Math.round(PORTRAIT.x + PORTRAIT.w / 2), PORTRAIT.y, 1, 1).data.slice(0, 3)];
     });
   }
   // Leader's fixed accent color (TYPE_PRESETS.Leader.accent in
@@ -63,11 +59,11 @@ function ok(label) { console.log('OK  ', label); }
   const LEADER_ACCENT_RGB = [0xf6, 0x93, 0x0a];
 
   // ---- 2. No image yet, Image Frame off: no border stroke — the sample
-  // point just outside the box matches the plain card background. ----
+  // point (inside the portrait's own placeholder fill/hatch, off but not
+  // remotely accent-orange) is clearly NOT the accent color. ----
   const noBorderPixel = await borderPixel();
-  const bgPixel = await plainBackgroundPixel();
-  const diff = noBorderPixel.reduce((s, v, i) => s + Math.abs(v - bgPixel[i]), 0);
-  assert(diff <= 6, `expected no border stroke with Image Frame off (edge pixel should match plain background), got edge=${noBorderPixel} vs background=${bgPixel}`);
+  const diffOffFromAccent = noBorderPixel.reduce((s, v, i) => s + Math.abs(v - LEADER_ACCENT_RGB[i]), 0);
+  assert(diffOffFromAccent > 40, `expected no border stroke with Image Frame off (edge pixel should NOT be accent-colored), got edge=${noBorderPixel} vs accent=${LEADER_ACCENT_RGB}`);
   ok('Image Frame off: no border stroke around the portrait box');
 
   // ---- 3. Turning Image Frame on draws the accent-colored border. ----
@@ -88,26 +84,29 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(400);
 
   async function transparentCornerPixel() {
-    // Near the portrait box's top-left corner (same offset from the box's
-    // origin verify15 originally used — (6,8) — which stays safely inside
-    // the rounded corner's fill and clear of its stroke band regardless of
-    // where the box origin itself sits), which the circular fixture leaves
-    // transparent.
+    // Near the portrait box's top-left corner — (6,8) in from its own
+    // origin (read live from PORTRAIT, not hardcoded), which the circular
+    // fixture leaves transparent and which sits well clear of the card's
+    // own rounded-corner clip (that only affects the literal card corners,
+    // and the portrait now starts well below the top one).
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(28 + 6, 140, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(PORTRAIT.x + 6, PORTRAIT.y + 8, 1, 1).data.slice(0, 3)];
     });
   }
   async function plainBackgroundNearTop() {
-    // Same y as the corner sample (vertical gradient). The portrait
-    // (x:28-440) and Stats (x:440-750) boxes now span the row at y=140
-    // all the way from x=28 to the card's right edge with no gap, so the
-    // only open background left at that y is the sliver left of the
-    // portrait's own left edge (x:0-28, since it's now inset to match the
-    // Abilities text margin instead of starting at the card's edge).
+    // Portrait (x:0-440) and Stats (x:440-750) now together span the full
+    // card width with no gap at any y within their own row, so there's no
+    // "open background beside them" left to sample any more. Sample well
+    // below both boxes instead, in the open Abilities area (no ability
+    // text filled in this test, and x:10 is left of the text's own
+    // margin) — a different y than the corner sample, but the 'light'
+    // theme's gradient (bgTop #ffffff -> bgBottom #fbfbfa) is close enough
+    // to flat that the few units of y-drift are well within the
+    // comparison's own tolerance.
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      return [...ctx.getImageData(10, 140, 1, 1).data.slice(0, 3)];
+      return [...ctx.getImageData(10, PORTRAIT.y + PORTRAIT.h + 40, 1, 1).data.slice(0, 3)];
     });
   }
 

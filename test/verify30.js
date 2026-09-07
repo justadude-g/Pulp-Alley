@@ -79,7 +79,7 @@ function hue(r, g, b) {
   await page.waitForTimeout(150);
   const diceInkPresent = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
-    const rowY = 132, rowH = 430 / 6;
+    const rowY = STATS.y, rowH = STATS.h / 6;
     const midY = Math.round(rowY + rowH / 2 + 1);
     const accent = ctx.getImageData(85, 59, 1, 1).data;
     // STATS = {x:440, y:132, w:316, h:430} as of the portrait/stats width

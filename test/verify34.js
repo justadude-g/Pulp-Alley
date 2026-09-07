@@ -39,15 +39,19 @@ function colorDist(a, b) { return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) 
   await page.waitForTimeout(400);
 
   const BLUE = [0, 128, 255];
-  // PORTRAIT box is {x:28, y:132, w:412, h:430}; sample points a few px in
-  // from the middle of each flat side (not the rounded corners).
+  // Portrait box geometry read live from the page (getPortraitBox()) rather
+  // than hardcoded, so this doesn't go stale the next time the layout
+  // shifts. Sample points a few px in from the middle of each flat side
+  // (not the rounded corners).
+  const portraitBox = await page.evaluate(() => getPortraitBox());
+  const { x: pbx, y: pby, w: pbw, h: pbh } = portraitBox;
   const edgePoints = {
-    left: [28 + 6, 132 + 215],
-    right: [28 + 412 - 6, 132 + 215],
-    top: [28 + 206, 132 + 8],
-    bottom: [28 + 206, 132 + 430 - 8],
+    left: [pbx + 6, pby + Math.round(pbh / 2)],
+    right: [pbx + pbw - 6, pby + Math.round(pbh / 2)],
+    top: [pbx + Math.round(pbw / 2), pby + 8],
+    bottom: [pbx + Math.round(pbw / 2), pby + pbh - 8],
   };
-  const center = [28 + 206, 132 + 215];
+  const center = [pbx + Math.round(pbw / 2), pby + Math.round(pbh / 2)];
 
   async function samplePoint([x, y]) {
     return page.evaluate(([px, py]) => {

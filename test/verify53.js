@@ -89,16 +89,22 @@ function ok(label) { console.log('OK  ', label); }
 
   const extent = await abilitiesInkExtent();
   // The old whole-pixel-only search landed at font size 25 (9 wrapped
-  // lines, 308 of 374px used — 82%). The fine pass finds a fractional size
-  // around 25.4-25.9px that still fits, wrapping to 10 lines and using
-  // 345px (92%) — a whole extra line recovered. Assert comfortably inside
-  // that recovered range (well past the old 308px ceiling, still under the
-  // 374px available) so this fails if the fine pass regresses to the old
-  // whole-pixel-only behavior, without being pinned to the exact pixel.
-  assert(extent.lastInkRow > 320, `expected the fine-grained auto-fit to use noticeably more of the Abilities box than the old whole-pixel-only search (which stopped at row 308 of 374), got last ink at row ${extent.lastInkRow} of ${extent.available}`);
+  // lines, 308 of 374px available at the time — 82%). The fine pass finds
+  // a fractional size that still fits, recovering a whole extra wrapped
+  // line. The portrait/stats block was later moved up flush under the
+  // name bar (closing a 14px gap that used to sit above it), which handed
+  // the Abilities box 14 more px of its own (374 -> 388 available) — on
+  // this exact card that's enough for one further extra line (10 -> 11
+  // bands) on top of the fine pass's own recovered line, so the figures
+  // below reflect that box, not the original 374px one. Assert
+  // comfortably inside the recovered range (well past where a whole-
+  // pixel-only search would land, still under the box's own limit) so
+  // this fails if the fine pass regresses, without being pinned to the
+  // exact pixel.
+  assert(extent.lastInkRow > 330, `expected the fine-grained auto-fit to use most of the Abilities box, got last ink at row ${extent.lastInkRow} of ${extent.available}`);
   assert(extent.lastInkRow < extent.available, `expected the Abilities text to stay inside its box (not overflow into the health bar), got last ink at row ${extent.lastInkRow} of ${extent.available}`);
-  assert.strictEqual(extent.bands, 10, `expected the fine pass to land on a font size that wraps to 10 lines (up from the 9 lines a whole-pixel-only search finds), got ${extent.bands} ink bands`);
-  ok(`The fine pass recovers a whole extra wrapped line on the reported card (ink reaches row ${extent.lastInkRow} of ${extent.available}, ${extent.bands} lines, vs the old 308/374 and 9 lines)`);
+  assert.strictEqual(extent.bands, 11, `expected the fine pass to land on a font size that wraps to 11 lines in the current (taller) Abilities box, got ${extent.bands} ink bands`);
+  ok(`The fine pass recovers extra wrapped lines on the reported card (ink reaches row ${extent.lastInkRow} of ${extent.available}, ${extent.bands} lines)`);
 
   // ---- 1b. Stats stays at the picked Ability Text Size (Medium, 33px) on
   // this exact card, even though the Abilities text itself shrank down to
@@ -110,7 +116,7 @@ function ok(label) { console.log('OK  ', label); }
   async function statLabelInkWidth() {
     return page.evaluate(() => {
       const ctx = document.getElementById('card-canvas').getContext('2d');
-      const rowY = 132, rowH = 430 / 6;
+      const rowY = STATS.y, rowH = STATS.h / 6;
       const midY = Math.round(rowY + rowH / 2 + 1);
       const textColor = [24, 28, 36]; // Ivory's textPrimary
       let left = null, right = null;

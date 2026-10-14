@@ -81,7 +81,12 @@ function hue(r, g, b) {
     const ctx = document.getElementById('card-canvas').getContext('2d');
     const rowY = STATS.y, rowH = STATS.h / 6;
     const midY = Math.round(rowY + rowH / 2 + 1);
-    const accent = ctx.getImageData(85, 59, 1, 1).data;
+    // Badge center (85,59) used to be solid accent fill, but the badge is
+    // now a 3-color medallion with a white inner circle at that point — so
+    // this instead samples the colored band around it (31px left of
+    // center), which on Ivory (T.badgeFill undefined, so it falls back to
+    // the plain accent color) is still pure accent.
+    const accent = ctx.getImageData(54, 59, 1, 1).data;
     // STATS = {x:440, y:132, w:316, h:430} as of the portrait/stats width
     // rebalance (see verify31.js) — scan its content span for accent ink.
     for (let x = 440 + 20; x <= 440 + 316 - 15; x++) {
@@ -96,7 +101,10 @@ function hue(r, g, b) {
   // ---- 2. Leader's accent is a punchier, less-pink orange. ----
   const badgeFill = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
-    return [...ctx.getImageData(85, 59, 1, 1).data.slice(0, 3)]; // badge center = solid accent fill on Ivory
+    // Badge center is now the white inner circle, not solid accent fill —
+    // sample the colored band around it instead (31px left of center),
+    // same fix as the dice-ink reference point above.
+    return [...ctx.getImageData(54, 59, 1, 1).data.slice(0, 3)];
   });
   assert(closeTo(badgeFill, '#f6930a', 10), `expected Leader's accent to be the new punchier orange #f6930a, got rgb(${badgeFill})`);
   ok("Leader's solid accent color is the new punchier orange (#f6930a)");

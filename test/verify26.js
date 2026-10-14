@@ -2,6 +2,19 @@
 // the Health track pills (bottom) render at a larger font size than
 // before (20px -> 23px, 27px -> 30px in cardRenderer.js), since the user
 // found them hard to read on an actual printed sheet.
+//
+// The Card Type tag was later removed from character cards entirely (per
+// explicit user request, along with centering the Name text) — it only
+// renders on Asset cards (Gear/Contacts/Backup/Minions/Cult/Gifts) now, via
+// renderAssetCard's own copy of the same pill code. Section 1 below tests
+// that pill on an Asset card type ('Gear') instead of 'Leader'. Section 2
+// (Health track pills) is unaffected — Health only exists on character
+// cards, so it still tests against 'Leader'. The old worst-case section 3
+// used to test the pill and the Health chain together on the same
+// (Follower) card; since those two elements no longer coexist on one card
+// type, that's now two separate checks (3a: widest Asset Card Type label
+// clears the pill's own left-side margin; 3b: the Follower/d12 Health
+// chain, unchanged from before).
 const { chromium } = require('playwright');
 const path = require('path');
 const http = require('http');
@@ -21,15 +34,16 @@ function ok(label) { console.log('OK  ', label); }
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.waitForTimeout(400);
 
-  await page.selectOption('#f-cardType', 'Leader');
+  await page.selectOption('#f-cardType', 'Gear');
   await page.selectOption('#f-theme', 'light');
   await page.waitForTimeout(150);
 
-  // ---- 1. Card Type tag pill: right edge is always CARD_W-24=732
-  // (independent of font size, since the pill is right-anchored), so its
-  // rendered width is just 732 minus wherever the pill visually starts.
-  // Scan for that left edge at the pill's vertical middle. ----
-  const OLD_PILLW_20PX = 93; // "LEADER" at the previous 20px font + old 32px padding
+  // ---- 1. Card Type tag pill (Asset cards only — see header comment):
+  // right edge is always CARD_W-24=732 (independent of font size, since
+  // the pill is right-anchored), so its rendered width is just 732 minus
+  // wherever the pill visually starts. Scan for that left edge at the
+  // pill's vertical middle. ----
+  const OLD_PILLW_20PX = 93; // "LEADER" at the previous 20px font + old 32px padding — still a valid size baseline, just measured against a different (now pill-bearing) Card Type
   const typeTagScan = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
     // Scan at the pill's own vertical center (NAME_BAR_H/2+2 — the pill's
@@ -80,11 +94,15 @@ function ok(label) { console.log('OK  ', label); }
   assert(typeTagHeight >= 34, `expected the enlarged Card Type pill to be at least ~34px tall (36px pill height), got ${typeTagHeight}px`);
   ok(`Card Type tag pill is now ${typeTagHeight}px tall`);
 
-  // ---- 2. Health track pills: measure the actual rendered group width via
-  // pixel scan, and independently compute the expected width using the
-  // same layout formula cardRenderer.js uses (measureText + 26 padding per
-  // pill, 14px gaps) at the font size it's supposed to be using now (30px,
-  // up from 27px), for Leader's default D10/D8/D6/DOWN/OUT sequence. ----
+  // ---- 2. Health track pills (character cards only — Asset cards have no
+  // Health bar, so switch back to a character Card Type here): measure the
+  // actual rendered group width via pixel scan, and independently compute
+  // the expected width using the same layout formula cardRenderer.js uses
+  // (measureText + 26 padding per pill, 14px gaps) at the font size it's
+  // supposed to be using now (30px, up from 27px), for Leader's default
+  // D10/D8/D6/DOWN/OUT sequence. ----
+  await page.selectOption('#f-cardType', 'Leader');
+  await page.waitForTimeout(150);
   const expectedHealthWidth = await page.evaluate(() => {
     const ctx = document.getElementById('card-canvas').getContext('2d');
     ctx.font = '700 30px Rajdhani, Inter, sans-serif';
@@ -127,19 +145,20 @@ function ok(label) { console.log('OK  ', label); }
     `expected the Health pills to render noticeably wider than at the old 27px font (${oldFontHealthWidth}px), got ${healthScan}px`);
   ok(`Health track pills now span ${healthScan}px (formula predicts ${expectedHealthWidth}px at 30px font; old 27px font would give ~${oldFontHealthWidth}px)`);
 
-  // ---- 3. Worst case still fits on the card without overflow: longest
-  // Card Type label (Follower) and longest Health die chain (d12 start). ----
-  await page.selectOption('#f-cardType', 'Follower');
-  await page.selectOption('#f-healthStart', 'd12');
+  // ---- 3a. Worst case Card Type pill still fits: the longest Asset Card
+  // Type label ("Contacts", 8 letters — longer than Gear/Backup/Minions/
+  // Cult/Gifts) must still sit well clear of the left side of the name
+  // bar. (No Name text to collide with on Asset cards per se, but this
+  // keeps the same clearance check the old Follower-based version had.) ----
+  await page.selectOption('#f-cardType', 'Contacts');
   await page.waitForTimeout(150);
-  const worstCase = await page.evaluate(() => {
+  const worstPill = await page.evaluate(() => {
     const c = document.getElementById('card-canvas');
     const ctx = c.getContext('2d');
-    // Type tag: leftmost pixel of the pill must stay right of the name
-    // column's reserved boundary (x=150) with real room to spare. Scan at
-    // the pill's own vertical center (NAME_BAR_H/2+2 — the pill's py is
-    // now derived from that same value, no longer a fixed y=36) rather
-    // than a hardcoded row.
+    // Leftmost pixel of the pill must stay right of the name column's
+    // reserved boundary (x=150) with real room to spare. Scan at the
+    // pill's own vertical center (NAME_BAR_H/2+2 — the pill's py is
+    // derived from that same value) rather than a hardcoded row.
     const pillMidY = Math.round(NAME_BAR_H / 2 + 2);
     const bg1 = ctx.getImageData(140, pillMidY, 1, 1).data;
     const isBg1 = (x) => {
@@ -149,8 +168,20 @@ function ok(label) { console.log('OK  ', label); }
     let tx = c.width - 20; // clear of the pill's right side, in plain background
     while (tx >= 140 && isBg1(tx)) tx--;
     while (tx >= 140 && !isBg1(tx)) tx--;
-    const typeLeft = tx + 1;
-    // Health pills: full group must stay within the card's width.
+    return tx + 1;
+  });
+  assert(worstPill > 300, `expected the widest Card Type pill ("Contacts") to still sit well clear of the name column, got left edge at x=${worstPill}`);
+  ok('Worst-case Asset Card Type label ("Contacts") still fits without overflowing the name bar');
+
+  // ---- 3b. Worst case Health die chain still fits: Follower (no pill any
+  // more, but still the longest character Card Type label, so kept as the
+  // card type here) with a d12 start, the longest possible die chain. ----
+  await page.selectOption('#f-cardType', 'Follower');
+  await page.selectOption('#f-healthStart', 'd12');
+  await page.waitForTimeout(150);
+  const worstHealth = await page.evaluate(() => {
+    const c = document.getElementById('card-canvas');
+    const ctx = c.getContext('2d');
     const y = c.height - 39;
     const bg2 = ctx.getImageData(10, y, 1, 1).data;
     let left = null, right = null;
@@ -158,12 +189,11 @@ function ok(label) { console.log('OK  ', label); }
       const d = ctx.getImageData(x, y, 1, 1).data;
       if (Math.abs(d[0] - bg2[0]) + Math.abs(d[1] - bg2[1]) + Math.abs(d[2] - bg2[2]) > 4) { if (left === null) left = x; right = x; }
     }
-    return { typeLeft, cardW: c.width, healthLeft: left, healthRight: right };
+    return { cardW: c.width, left, right };
   });
-  assert(worstCase.typeLeft > 300, `expected the widest Card Type pill (Follower) to still sit well clear of the name column, got left edge at x=${worstCase.typeLeft}`);
-  assert(worstCase.healthLeft > 4 && worstCase.healthRight < worstCase.cardW - 4,
-    `expected the widest Health pill group (d12 start: D12*/D10/D8/D6/OUT) to stay within the card bounds, got [${worstCase.healthLeft}, ${worstCase.healthRight}] on a ${worstCase.cardW}px-wide card`);
-  ok('Worst-case label lengths (Follower + d12 health chain) still fit without overflowing the card');
+  assert(worstHealth.left > 4 && worstHealth.right < worstHealth.cardW - 4,
+    `expected the widest Health pill group (d12 start: D12*/D10/D8/D6/OUT) to stay within the card bounds, got [${worstHealth.left}, ${worstHealth.right}] on a ${worstHealth.cardW}px-wide card`);
+  ok('Worst-case Health die chain (Follower, d12 start) still fits without overflowing the card');
 
   console.log('\nAll verify26 checks passed.');
   await browser.close();

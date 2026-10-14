@@ -549,13 +549,12 @@ function renderCard(canvas, data) {
   ctx.fillStyle = accent;
   ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
 
-  // Level badge — Classical uses the template's brown-ring-on-cream look;
-  // light/dark fill the badge solid with the accent color. Radius/font/ring
-  // shrunk (46->38 / 60->50 / 4->3.5) per explicit user feedback that the
-  // badge read too large on the printed card — kept in the same ~1.3:1
-  // font-to-radius ratio as before so the number still fills the circle
-  // with the same proportions, just smaller overall.
-  const badgeCx = 85, badgeCy = 59, badgeR = 38;
+  // Level badge — PREVIEW ONLY, not yet committed: three-color medallion
+  // (outer ring / colored band / white center) per explicit user request,
+  // matching the look of the official printed Pulp Alley cards. Ring and
+  // band keep the theme's existing colors (T.badgeRing/T.badgeFill, same
+  // as before); only the inner white circle + black digit are new.
+  const badgeCx = 85, badgeCy = 59, badgeR = 38, badgeInnerR = 27;
   ctx.beginPath();
   ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
   ctx.fillStyle = T.badgeFill || accent;
@@ -563,51 +562,58 @@ function renderCard(canvas, data) {
   ctx.lineWidth = 3.5;
   ctx.strokeStyle = T.badgeRing || shade(accent, -0.3);
   ctx.stroke();
-  ctx.fillStyle = T.badgeText || '#ffffff';
-  // Sized to fill the badge with much less surrounding empty space, while
-  // still leaving safe clearance inside the ring for a worst-case
-  // two-digit level (the Level field allows up to 20).
-  ctx.font = '700 50px Rajdhani, Inter, sans-serif';
+  // Inner white circle + black digit — always black-on-white regardless of
+  // theme, so the number stays legible even under Classical's bronze badge.
+  ctx.beginPath();
+  ctx.arc(badgeCx, badgeCy, badgeInnerR, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.fillStyle = '#000000';
+  const levelText = String(data.level ?? '');
+  // 56px — sized up twice per explicit user feedback that the number
+  // needed to stand out more. Confirmed safe at a flat size with no
+  // fallback needed: the Level field is a 0-4 dropdown (one digit,
+  // always), and per explicit user confirmation, older saved cards are
+  // single-digit too — there's no real two-digit case to size around here.
+  // Checked empirically against the 27px-radius white circle: the widest
+  // single digit reaches ~24px from center at this size, a safe ~3px
+  // margin — 60px+ starts crowding the edge.
+  const levelFontSize = 56;
+  ctx.font = `700 ${levelFontSize}px Rajdhani, Inter, sans-serif`;
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(String(data.level ?? ''), badgeCx, badgeCy + 3);
+  // Precise vertical centering instead of a guessed offset: canvas's
+  // 'middle' baseline centers the font's em-box, not the digit's own
+  // visible shape, and these digits render with ~0 descent (nothing below
+  // the baseline) — so 'middle' consistently sits the glyph too high, per
+  // the reported "a bit off up" look. Measuring the glyph's own ascent/
+  // descent and solving for the baseline that actually centers it fixes
+  // this regardless of font size or which digit is drawn.
+  const levelMetrics = ctx.measureText(levelText);
+  ctx.textBaseline = 'alphabetic';
+  const levelBaselineY = badgeCy + (levelMetrics.actualBoundingBoxAscent - levelMetrics.actualBoundingBoxDescent) / 2;
+  ctx.fillText(levelText, badgeCx, levelBaselineY);
 
-  // Type tag (top-right pill) — 27px (up from 23px) per explicit user
-  // feedback that the Card Type label was hard to read; pillW is measured
-  // from the actual (now-larger) label width rather than a fixed guess, so
-  // the Name text below always reserves exactly the room this pill needs
-  // — no fixed-width assumption to go stale as the font size changes. py
-  // is derived from the Name text's own vertical center (NAME_BAR_H/2+2,
-  // the same y the Name fillText below uses with textBaseline:'middle')
-  // instead of a fixed 16, so the pill's height is centered on the Name
-  // text instead of just floating near the top of the name bar.
-  let typeLabelW = 0;
-  if (data.cardType) {
-    ctx.font = '700 27px Rajdhani, Inter, sans-serif';
-    const label = data.cardType.toUpperCase();
-    const tw = ctx.measureText(label).width;
-    const padX = 18, pillH = 40;
-    const pillW = tw + padX * 2;
-    const px = CARD_W - 24 - pillW, py = (NAME_BAR_H / 2 + 2) - pillH / 2;
-    typeLabelW = pillW + 24;
-    roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
-    ctx.fillStyle = tint;
-    ctx.fill();
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.fillStyle = accent;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, px + pillW / 2, py + pillH / 2 + 1);
-  }
+  // Card Type tag (previously a top-right pill, e.g. "LEADER") removed per
+  // explicit user request. Only character cards (this function) lost it —
+  // renderAssetCard's own Card Type pill below is untouched, since the
+  // request specifically said "character type".
 
-  // Name text (auto-shrink to fit)
+  // Name text (auto-shrink to fit), centered on the card's own true
+  // horizontal center (CARD_W/2) — per explicit user feedback that it
+  // should be centered relative to the card, not just centered in
+  // whatever space happened to be left of the badge (which, since the
+  // badge sits off to the left, pulled the visual center noticeably right
+  // of CARD_W/2). nameMaxW is kept symmetric around that center — capped
+  // by the tighter, left-hand distance out to the badge's clearance
+  // boundary (nameLeft, the same clearance the old left-aligned version
+  // always used) — so a long name can never extend left under the badge,
+  // even though there's more open room on the right.
   {
-    const nameX = 150;
-    const nameMaxW = CARD_W - nameX - 24 - typeLabelW;
+    const nameLeft = 150;
+    const nameCenterX = CARD_W / 2;
+    const nameMaxW = (nameCenterX - nameLeft) * 2;
     let fontSize = 42;
-    ctx.textAlign = 'left';
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     let name = data.name || 'Unnamed Character';
     do {
@@ -624,7 +630,7 @@ function renderCard(canvas, data) {
       name = name.replace(/\s+$/, '') + '...';
     }
     ctx.fillStyle = T.textPrimary;
-    ctx.fillText(name, nameX, NAME_BAR_H / 2 + 2);
+    ctx.fillText(name, nameCenterX, NAME_BAR_H / 2 + 2);
   }
 
   // ---- Portrait ----
@@ -1282,12 +1288,12 @@ function renderAssetCard(canvas, data) {
   ctx.fillStyle = accent;
   ctx.fillRect(0, NAME_BAR_H - 4, CARD_W, 4);
 
-  // Badge fill/ring/text also ignore the Classical theme's own brown/cream
-  // badge colors (T.badgeFill/T.badgeRing/T.badgeText) for the same reason
-  // as `tint` above — always accent-green, not theme-brown. Radius/font/
-  // ring shrunk to match renderCard's Level badge above (46->38 / 60->50 /
-  // 4->3.5), same "too large on the printed card" feedback.
-  const badgeCx = 85, badgeCy = 59, badgeR = 38;
+  // Badge fill/ring also ignore the Classical theme's own brown/cream badge
+  // colors for the same reason as `tint` above — always accent-green, not
+  // theme-brown. PREVIEW ONLY, not yet committed: three-color medallion
+  // (ring / colored band / white center) matching renderCard's Level badge
+  // above, per explicit user request.
+  const badgeCx = 85, badgeCy = 59, badgeR = 38, badgeInnerR = 27;
   ctx.beginPath();
   ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
   ctx.fillStyle = accent;
@@ -1295,12 +1301,26 @@ function renderAssetCard(canvas, data) {
   ctx.lineWidth = 3.5;
   ctx.strokeStyle = shade(accent, -0.3);
   ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(badgeCx, badgeCy, badgeInnerR, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 50px Rajdhani, Inter, sans-serif';
+  ctx.fill();
+  ctx.fillStyle = '#000000';
+  // Kept at 44px rather than growing to match renderCard's Level badge
+  // above (56px) — unlike Level (confirmed always one digit), the Cost
+  // field itself allows up to 20 (min=0 max=20 on #f-assetCost), so a
+  // genuinely two-digit value is a real, current case here, not just a
+  // legacy fallback — the same margin-vs-size tradeoff checked earlier
+  // still applies.
+  ctx.font = '700 44px Rajdhani, Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
   const cost = data.assetCost;
-  ctx.fillText(cost === undefined || cost === null || cost === '' ? '' : String(cost), badgeCx, badgeCy + 3);
+  const costText = cost === undefined || cost === null || cost === '' ? '' : String(cost);
+  // Same precise vertical-centering fix as renderCard's Level badge above.
+  const costMetrics = ctx.measureText(costText);
+  ctx.textBaseline = 'alphabetic';
+  const costBaselineY = badgeCy + (costMetrics.actualBoundingBoxAscent - costMetrics.actualBoundingBoxDescent) / 2;
+  ctx.fillText(costText, badgeCx, costBaselineY);
 
   // 27px (up from 23px) — matches the same bump made to renderCard's Type
   // tag pill above, per explicit user feedback that the Card Type label

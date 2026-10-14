@@ -2226,10 +2226,19 @@ const colleaguePickerList = document.getElementById('colleague-picker-list');
 const colleagueSearchInput = document.getElementById('colleague-search');
 const colleagueThemeFilterSelect = document.getElementById('colleague-theme-filter');
 const colleagueAffiliationFilterSelect = document.getElementById('colleague-affiliation-filter');
+// Card Type filter, mirroring the My Cards gallery's own Type filter (see
+// galleryTypeFilterSelect / refreshGallery) — but with a fixed option list
+// instead of one derived from the saved cards, since this picker's pool is
+// always exactly Leader/Sidekick/Ally/Follower/Villain/Creature/Gang/Custom
+// (Associates and the Asset types are excluded from it entirely — see
+// nonAssociateCards below — so they're left off this dropdown too, rather
+// than offering a filter option that can only ever show zero results).
+const colleagueTypeFilterSelect = document.getElementById('colleague-type-filter');
 
 document.getElementById('open-colleague-picker').addEventListener('click', async () => {
   colleaguePickerModal.classList.remove('hidden');
   colleagueSearchInput.value = '';
+  colleagueTypeFilterSelect.value = '';
   colleagueThemeFilterSelect.value = '';
   colleagueAffiliationFilterSelect.value = '';
   await renderColleaguePicker();
@@ -2241,6 +2250,7 @@ colleaguePickerModal.addEventListener('click', (e) => {
   if (e.target === colleaguePickerModal) colleaguePickerModal.classList.add('hidden');
 });
 colleagueSearchInput.addEventListener('input', renderColleaguePicker);
+colleagueTypeFilterSelect.addEventListener('change', renderColleaguePicker);
 colleagueThemeFilterSelect.addEventListener('change', renderColleaguePicker);
 colleagueAffiliationFilterSelect.addEventListener('change', renderColleaguePicker);
 
@@ -2260,6 +2270,7 @@ async function renderColleaguePicker() {
   const addedCounts = {};
   rosterState.members.forEach(m => { addedCounts[m.cardId] = (addedCounts[m.cardId] || 0) + 1; });
   const searchText = colleagueSearchInput.value.trim().toLowerCase();
+  const typeFilter = colleagueTypeFilterSelect.value;
   const themeFilter = colleagueThemeFilterSelect.value;
   const affiliationFilter = colleagueAffiliationFilterSelect.value;
   const isRepeatable = (c) => c.formData?.cardType === 'Gang' || !!c.formData?.nonUnique;
@@ -2274,6 +2285,7 @@ async function renderColleaguePicker() {
   const available = nonAssociateCards.filter(c => {
     if (!isRepeatable(c) && addedCounts[c.id]) return false;
     if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;
+    if (typeFilter && (c.formData?.cardType || '') !== typeFilter) return false;
     if (themeFilter && (c.formData?.collection || '') !== themeFilter) return false;
     if (affiliationFilter && (c.formData?.affiliation || '') !== affiliationFilter) return false;
     return true;
@@ -2282,7 +2294,7 @@ async function renderColleaguePicker() {
     const allAdded = nonAssociateCards.length && nonAssociateCards.every(c => !isRepeatable(c) && addedCounts[c.id]);
     colleaguePickerList.innerHTML = allAdded
       ? '<div class="library-empty">Every saved card is already on this roster (or you haven’t saved any yet in the Card Designer).</div>'
-      : '<div class="library-empty">No cards match your search/Theme/Affiliation filter.</div>';
+      : '<div class="library-empty">No cards match your search/Type/Theme/Affiliation filter.</div>';
     return;
   }
   colleaguePickerList.innerHTML = available.map(c => {

@@ -131,7 +131,23 @@ main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
    between them. */
 .designer-grid {
   display: grid;
-  grid-template-columns: minmax(300px, 380px) minmax(400px, 460px) minmax(360px, 1fr);
+  /* Every column's lower bound is its own true minimum content width,
+     found empirically (measuring scrollWidth vs clientWidth in a headless
+     browser) rather than picked by eye — in particular the right column's
+     520px, sized to the Stats grid's content (two fixed-width die selects
+     per row plus its label, times 2 side-by-side columns). Below its own
+     floor a column ran out of room and grew a horizontal scrollbar
+     (overflow-y:auto on .form-panel implicitly makes overflow-x auto too,
+     per the CSS spec's mixed-overflow rule) — raising the right column's
+     floor to fix that pushed the left column below ITS floor at narrower
+     widths instead (CSS Grid shrinks non-flex minmax tracks to fit before
+     it'll shrink a flex (1fr) track below its own minimum), so the left
+     column's floor also moved up to its measured true minimum (344px),
+     and the single-column breakpoint below moved up to match — the three
+     floors plus gaps plus main's own padding is right at that breakpoint,
+     so no combination of column widths between the two layouts can force
+     a column below what its content actually needs. */
+  grid-template-columns: minmax(344px, 380px) minmax(400px, 460px) minmax(520px, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -147,7 +163,7 @@ main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
 #preview-panel { grid-column: 2; grid-row: 1; }
 .designer-col-right { grid-column: 3; grid-row: 1; }
 
-@media (max-width: 1300px) {
+@media (max-width: 1370px) {
   .designer-grid { grid-template-columns: 1fr; }
   .designer-col-left, #preview-panel, .designer-col-right { grid-column: auto; grid-row: auto; }
 }
@@ -357,7 +373,11 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 
 .preview-panel { display: flex; flex-direction: column; align-items: center; gap: 16px; position: sticky; top: 84px; }
 .card-stage {
-  background: var(--bg);
+  /* Transparent, not var(--bg) — .preview-panel is already a .panel (so
+     already var(--panel)), and var(--bg) is a visibly different shade from
+     var(--panel) in both themes, which was showing as a grey box behind
+     the card instead of blending into the panel around it. */
+  background: transparent;
   border-radius: 16px;
   padding: 20px;
   display: flex;

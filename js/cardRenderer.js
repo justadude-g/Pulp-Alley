@@ -991,22 +991,13 @@ function renderCard(canvas, data, opts = {}) {
 
   ctx.restore(); // end clip
 
-  // outer border stroke — doubles as a cut guide when printing a single
-  // card. Skipped when opts.suppressCutGuideBorder is set — the Print
-  // Sheet (js/roster.js) re-renders each card through this flag so flush
-  // neighbouring cards don't each draw their own dashed edge right next to
-  // the next card's, which doubled up into what looked like a cut line
-  // running across the cards themselves; the sheet's own margin-only tick
-  // marks are the only cut guide there. A plain single-card download still
-  // gets this border as normal.
-  if (!opts.suppressCutGuideBorder) {
-    roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
-    ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
-    ctx.strokeStyle = T.outerBorder;
-    if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+  // No outer border stroke — removed per explicit user request. It used
+  // to double as a cut guide, but with CARD_RADIUS now 0 (square corners,
+  // see above) the card's own printed edge is already a clean straight
+  // cut line, so a separate dashed line just inside it was redundant.
+  // opts.suppressCutGuideBorder is still accepted (and still passed by
+  // the Print Sheet's renderCardForPrintSheet() in app.js) for backward
+  // compatibility, but has nothing left to suppress.
 }
 
 // Associates (Core Rules p. 27-28) are non-character support cast — a
@@ -1246,16 +1237,7 @@ function renderAssociateCard(canvas, data, opts = {}) {
 
   ctx.restore(); // end clip
 
-  // outer border stroke — doubles as a cut guide when printing a single
-  // card; see renderCard()'s matching comment for why this is skippable.
-  if (!opts.suppressCutGuideBorder) {
-    roundedRectPath(ctx, 1, 1, ASSOC_CARD_W - 2, ASSOC_CARD_H - 2, CARD_RADIUS);
-    ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
-    ctx.strokeStyle = T.outerBorder;
-    if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+  // No outer border stroke — see renderCard()'s matching comment.
 }
 
 // Resource/"Asset" cards (Resources & Assets chapter, Core Rules p. 93-100)
@@ -1544,16 +1526,7 @@ function renderAssetCard(canvas, data, opts = {}) {
 
   ctx.restore(); // end clip
 
-  // outer border stroke — doubles as a cut guide when printing a single
-  // card; see renderCard()'s matching comment for why this is skippable.
-  if (!opts.suppressCutGuideBorder) {
-    roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
-    ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
-    ctx.strokeStyle = T.outerBorder;
-    if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+  // No outer border stroke — see renderCard()'s matching comment.
 }
 
 // Dispatcher used everywhere a card gets rendered/re-rendered (live preview,

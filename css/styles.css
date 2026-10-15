@@ -402,7 +402,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 #card-canvas {
   width: min(360px, 78vw);
   height: auto;
-  border-radius: 18px;
+  /* No border-radius — the card art itself now has square corners (see
+     CARD_RADIUS in cardRenderer.js), so rounding this display element
+     would clip the preview into a shape the exported file doesn't have. */
   box-shadow: 0 12px 40px rgba(0,0,0,0.5);
   cursor: grab;
   touch-action: none;

@@ -4,7 +4,13 @@
 
 const CARD_W = 750;
 const CARD_H = 1050;
-const CARD_RADIUS = 34;
+// Square corners, not rounded — a rounded corner needs a corner-rounder
+// punch to cut cleanly, which not everyone printing these at home has; a
+// straight guillotine/paper-cutter cut (see the Print Sheet's own crop
+// marks in js/roster.js) handles a plain rectangle. roundedRectPath()
+// still takes a radius argument everywhere it's called below, so a
+// nonzero value here would still work if this is ever revisited.
+const CARD_RADIUS = 0;
 
 const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 
@@ -815,10 +821,18 @@ function renderCard(canvas, data, opts = {}) {
       ['Cunning', data.stats?.cunning],
     ];
     const rowH = STATS.h / 6;
+    // Paint each same-colour group (Brawl/Shoot/Dodge, then Might/Finesse/
+    // Cunning) as one fillRect instead of one per row. Three adjacent
+    // same-colour fillRect calls sharing a fractional-pixel edge each get
+    // anti-aliased independently, which left a faint hairline seam between
+    // rows even though the colour either side of it was identical — one
+    // rect per group has no internal edge left to seam.
+    ctx.fillStyle = tint;
+    ctx.fillRect(STATS.x, STATS.y, STATS.w, rowH * 3);
+    ctx.fillStyle = tint2;
+    ctx.fillRect(STATS.x, STATS.y + rowH * 3, STATS.w, STATS.h - rowH * 3);
     rows.forEach(([label, val], i) => {
       const ry = STATS.y + i * rowH;
-      ctx.fillStyle = i < 3 ? tint : tint2;
-      ctx.fillRect(STATS.x, ry, STATS.w, rowH);
       if (i === 3) {
         ctx.fillStyle = accent;
         ctx.globalAlpha = 0.6;

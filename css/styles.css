@@ -1,4 +1,27 @@
+/* Light mode is the default UI theme (see #btn-theme-toggle in app.js,
+   which flips :root[data-theme] and remembers the choice in localStorage).
+   Dark mode, below, is the app's original palette, preserved exactly as it
+   was for anyone who switches back to it. */
 :root {
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --panel-2: #eef1f4;
+  --border: #d7dbe1;
+  --text: #1a1f27;
+  --text-dim: #5c6472;
+  --accent: #0d9488;
+  --danger: #dc2626;
+  --topbar-bg: #ffffff;
+  --tag-warn: #b91c1c;
+  --tag-info: #0369a1;
+  --banner-warn-bg: #fef3c7;
+  --banner-warn-border: #fde68a;
+  --banner-warn-text: #92400e;
+  --radius: 12px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+:root[data-theme="dark"] {
   --bg: #0b0e13;
   --panel: #141922;
   --panel-2: #1a2029;
@@ -7,8 +30,12 @@
   --text-dim: #9aa4b2;
   --accent: #2dd4bf;
   --danger: #ef4444;
-  --radius: 12px;
-  font-family: 'Inter', system-ui, sans-serif;
+  --topbar-bg: #0d1117;
+  --tag-warn: #ffb4b4;
+  --tag-info: #7dd3fc;
+  --banner-warn-bg: #2a2010;
+  --banner-warn-border: #4a3a18;
+  --banner-warn-text: #f0c96b;
 }
 
 * { box-sizing: border-box; }
@@ -26,7 +53,7 @@ body {
   justify-content: space-between;
   padding: 14px 28px;
   border-bottom: 1px solid var(--border);
-  background: #0d1117;
+  background: var(--topbar-bg);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -57,8 +84,8 @@ body {
 .backup-reminder-banner {
   display: flex; align-items: center; gap: 12px;
   padding: 9px 24px;
-  background: #2a2010; border-bottom: 1px solid #4a3a18;
-  color: #f0c96b; font-size: 13px;
+  background: var(--banner-warn-bg); border-bottom: 1px solid var(--banner-warn-border);
+  color: var(--banner-warn-text); font-size: 13px;
 }
 .backup-reminder-banner.hidden { display: none; }
 .backup-reminder-banner span { flex: 1; }
@@ -330,7 +357,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 
 .preview-panel { display: flex; flex-direction: column; align-items: center; gap: 16px; position: sticky; top: 84px; }
 .card-stage {
-  background: repeating-conic-gradient(#11151c 0% 25%, #14181f 0% 50%) 50% / 24px 24px;
+  background: var(--bg);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -423,7 +450,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   flex-direction: column;
   align-items: center;
   gap: 22px;
-  background: #1a2029;
+  background: var(--panel-2);
   border-radius: 12px;
   padding: 20px;
   overflow: auto;
@@ -685,7 +712,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   font-size: 9.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #ffb4b4;
+  color: var(--tag-warn);
   margin-left: 8px;
   font-weight: 700;
 }
@@ -693,7 +720,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   font-size: 9.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #7dd3fc;
+  color: var(--tag-info);
   margin-left: 8px;
   font-weight: 700;
 }

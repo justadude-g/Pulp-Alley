@@ -7,6 +7,17 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/styles.css">
+<script>
+// Applied before first paint so the page never flashes the wrong theme on
+// load. Light mode is the default when nothing's saved yet (see
+// #btn-theme-toggle's click handler in app.js, which writes this same key).
+(function () {
+  try {
+    var saved = localStorage.getItem('pulp-alley-ui-theme');
+    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  } catch (e) { /* private browsing etc. — falls back to the light default */ }
+})();
+</script>
 </head>
 <body>
 <header class="topbar">
@@ -29,6 +40,7 @@
     <button type="button" id="btn-import-backup" class="btn-secondary" title="Restore cards and rosters from a backup file">⬆ Import Backup</button>
     <input type="file" id="import-backup-file" accept="application/json,.json" style="display:none">
     <button type="button" id="btn-recently-deleted" class="btn-secondary" title="Restore a card or roster deleted in the last 30 days">🗑 Recently Deleted<span id="trash-count-badge"></span></button>
+    <button type="button" id="btn-theme-toggle" class="btn-secondary" title="Switch between Light and Dark mode">☾ Dark</button>
   </div>
 </header>
 

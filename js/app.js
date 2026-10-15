@@ -32,6 +32,31 @@ function activateTab(tab) {
 }
 document.getElementById('go-print').addEventListener('click', () => activateTab('print'));
 
+// ---------------- UI theme (Light/Dark) ----------------
+// This is the app's own chrome (page background, panels, text) — unrelated
+// to a card's own "Card Background" field (ivory/classical/etc., see
+// #f-theme), which only affects the rendered card art. Light mode is the
+// default (index.html's inline pre-paint script applies a saved 'dark'
+// choice before first paint, so the page never flashes the wrong theme);
+// this click handler just flips it and remembers the choice for next time.
+const THEME_KEY = 'pulp-alley-ui-theme';
+const themeToggleBtn = document.getElementById('btn-theme-toggle');
+function applyUiTheme(theme) {
+  if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    themeToggleBtn.textContent = '☀ Light';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    themeToggleBtn.textContent = '☾ Dark';
+  }
+}
+applyUiTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+themeToggleBtn.addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyUiTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch { /* private browsing etc. — just won't persist */ }
+});
+
 // ---------------- Ability rows ----------------
 const abilitiesList = document.getElementById('abilities-list');
 function renderAbilityRows() {

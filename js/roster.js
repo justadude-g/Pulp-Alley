@@ -8,11 +8,21 @@
 // separating all 9 cards on a guillotine paper cutter takes exactly 2 full
 // vertical cuts (splitting the 3 columns) + 2 full horizontal cuts
 // (splitting the 3 rows) = 4 cuts total, stacking the column strips so each
-// horizontal cut is made once across all three at a time. The dotted guide
-// lines below mark exactly those 4 cut lines, drawn edge-to-edge across the
-// whole sheet (matching how a guillotine cut actually works) rather than as
-// small per-corner tick marks, since flush cards leave no gap for corner
-// marks to live in any more.
+// horizontal cut is made once across all three at a time.
+//
+// The cut-guide marks are short tick marks in the page margin around the
+// outside of the grid — never a line drawn across a card — matching a
+// reference commercial print-and-play sheet the user supplied (official
+// Star Wars: Legion Command Cards). That sheet marks each cut line only
+// where it crosses the sheet's outer edge: a short tick in the top/bottom
+// margin for each vertical cut, a short tick in the left/right margin for
+// each horizontal cut, offset from the card edge by a small gap, with nothing
+// drawn at the interior points where 4 cards meet flush. See cropMarks()
+// below. The two interior lines are the only cuts actually needed to free
+// all 9 cards; the tick marks at the sheet's own outer edge (where the
+// grid's bounding box meets the page) are the same style, for trimming the
+// surrounding white margin if the user wants to — an optional 5th/6th cut,
+// not one of the required four.
 
 const A4_W = 2480; // 210mm @ 300dpi
 const A4_H = 3508; // 297mm @ 300dpi
@@ -38,19 +48,62 @@ function gridSlots() {
   return slots;
 }
 
-// The straight guillotine cut lines needed to separate the grid: one per
-// internal column boundary (vertical cuts) and one per internal row
-// boundary (horizontal cuts), each running the full length of the sheet.
-function cutLines() {
+// Every vertical and horizontal grid line bounding the card block: COLS+1
+// x-positions (outer left edge, each internal column boundary, outer right
+// edge) and ROWS+1 y-positions, in sheet coordinates.
+function gridLines() {
   const totalW = COLS * CARD_W + (COLS - 1) * GAP;
   const totalH = ROWS * CARD_H + (ROWS - 1) * GAP;
   const marginX = (A4_W - totalW) / 2;
   const marginY = (A4_H - totalH) / 2;
-  const vertical = [];
-  for (let c = 1; c < COLS; c++) vertical.push(marginX + c * (CARD_W + GAP));
-  const horizontal = [];
-  for (let r = 1; r < ROWS; r++) horizontal.push(marginY + r * (CARD_H + GAP));
-  return { vertical, horizontal };
+  const xs = [];
+  for (let c = 0; c <= COLS; c++) xs.push(marginX + c * (CARD_W + GAP));
+  const ys = [];
+  for (let r = 0; r <= ROWS; r++) ys.push(marginY + r * (CARD_H + GAP));
+  return { xs, ys };
+}
+
+// Short tick marks in the page margin, one pair per grid line, never drawn
+// across any card — see the file header comment above for the reasoning.
+function cropMarks(ctx) {
+  const { xs, ys } = gridLines();
+  const top = ys[0], bottom = ys[ys.length - 1];
+  const left = xs[0], right = xs[xs.length - 1];
+  const gap = 10; // clearance between the card edge and where a tick starts
+  const len = 26; // tick length
+
+  ctx.save();
+  ctx.strokeStyle = '#3a4150';
+  ctx.lineWidth = 2;
+
+  // A vertical tick at the top and bottom margins for every vertical grid
+  // line (the 2 internal column boundaries plus the block's own left/right
+  // edges) — this is where each vertical cut would enter/exit the sheet.
+  xs.forEach(x => {
+    ctx.beginPath();
+    ctx.moveTo(x, top - gap);
+    ctx.lineTo(x, top - gap - len);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, bottom + gap);
+    ctx.lineTo(x, bottom + gap + len);
+    ctx.stroke();
+  });
+
+  // A horizontal tick at the left and right margins for every horizontal
+  // grid line, same idea.
+  ys.forEach(y => {
+    ctx.beginPath();
+    ctx.moveTo(left - gap, y);
+    ctx.lineTo(left - gap - len, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(right + gap, y);
+    ctx.lineTo(right + gap + len, y);
+    ctx.stroke();
+  });
+
+  ctx.restore();
 }
 
 function renderRosterSheet(canvas, images) {
@@ -76,27 +129,7 @@ function renderRosterSheet(canvas, images) {
     }
   });
 
-  // Dotted cut-guide lines, full sheet length, at each internal grid
-  // boundary — these are the only 4 cuts needed (2 vertical, 2 horizontal)
-  // to separate all 9 cards.
-  const { vertical, horizontal } = cutLines();
-  ctx.save();
-  ctx.setLineDash([10, 8]);
-  ctx.strokeStyle = '#8a92a0';
-  ctx.lineWidth = 2;
-  vertical.forEach(x => {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, A4_H);
-    ctx.stroke();
-  });
-  horizontal.forEach(y => {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(A4_W, y);
-    ctx.stroke();
-  });
-  ctx.restore();
+  cropMarks(ctx);
 }
 
 function loadImage(src) {

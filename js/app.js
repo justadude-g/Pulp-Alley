@@ -41,13 +41,22 @@ document.getElementById('go-print').addEventListener('click', () => activateTab(
 // this click handler just flips it and remembers the choice for next time.
 const THEME_KEY = 'pulp-alley-ui-theme';
 const themeToggleBtn = document.getElementById('btn-theme-toggle');
+// Icon-only (see .btn-icon in styles.css) — no "Dark"/"Light" text label,
+// per explicit user request. The glyph and the title/aria-label both
+// describe the mode a click switches *to*, same as the old text label did;
+// aria-label carries the accessible name now that there's no visible text
+// for it to fall back to.
 function applyUiTheme(theme) {
   if (theme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    themeToggleBtn.textContent = '☀ Light';
+    themeToggleBtn.textContent = '☀';
+    themeToggleBtn.title = 'Switch to Light mode';
+    themeToggleBtn.setAttribute('aria-label', 'Switch to Light mode');
   } else {
     document.documentElement.removeAttribute('data-theme');
-    themeToggleBtn.textContent = '☾ Dark';
+    themeToggleBtn.textContent = '☾';
+    themeToggleBtn.title = 'Switch to Dark mode';
+    themeToggleBtn.setAttribute('aria-label', 'Switch to Dark mode');
   }
 }
 applyUiTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');

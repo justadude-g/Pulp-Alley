@@ -504,7 +504,7 @@ function renderPortraitCrop(img, view, box) {
 //   portraitImg: HTMLImageElement|null,
 //   portraitView: {scale, offsetX, offsetY}  // pixel offsets in canvas space
 // }
-function renderCard(canvas, data) {
+function renderCard(canvas, data, opts = {}) {
   const ctx = canvas.getContext('2d');
   canvas.width = CARD_W;
   canvas.height = CARD_H;
@@ -977,13 +977,22 @@ function renderCard(canvas, data) {
 
   ctx.restore(); // end clip
 
-  // outer border stroke — doubles as a cut guide when printing a single card
-  roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
-  ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
-  ctx.strokeStyle = T.outerBorder;
-  if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  // outer border stroke — doubles as a cut guide when printing a single
+  // card. Skipped when opts.suppressCutGuideBorder is set — the Print
+  // Sheet (js/roster.js) re-renders each card through this flag so flush
+  // neighbouring cards don't each draw their own dashed edge right next to
+  // the next card's, which doubled up into what looked like a cut line
+  // running across the cards themselves; the sheet's own margin-only tick
+  // marks are the only cut guide there. A plain single-card download still
+  // gets this border as normal.
+  if (!opts.suppressCutGuideBorder) {
+    roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
+    ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
+    ctx.strokeStyle = T.outerBorder;
+    if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 }
 
 // Associates (Core Rules p. 27-28) are non-character support cast — a
@@ -1005,7 +1014,7 @@ function renderCard(canvas, data) {
 //   portraitView: {scale, offsetX, offsetY},
 //   portraitFrame,
 // }
-function renderAssociateCard(canvas, data) {
+function renderAssociateCard(canvas, data, opts = {}) {
   const ctx = canvas.getContext('2d');
   canvas.width = ASSOC_CARD_W;
   canvas.height = ASSOC_CARD_H;
@@ -1223,13 +1232,16 @@ function renderAssociateCard(canvas, data) {
 
   ctx.restore(); // end clip
 
-  // outer border stroke — doubles as a cut guide when printing a single card
-  roundedRectPath(ctx, 1, 1, ASSOC_CARD_W - 2, ASSOC_CARD_H - 2, CARD_RADIUS);
-  ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
-  ctx.strokeStyle = T.outerBorder;
-  if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  // outer border stroke — doubles as a cut guide when printing a single
+  // card; see renderCard()'s matching comment for why this is skippable.
+  if (!opts.suppressCutGuideBorder) {
+    roundedRectPath(ctx, 1, 1, ASSOC_CARD_W - 2, ASSOC_CARD_H - 2, CARD_RADIUS);
+    ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
+    ctx.strokeStyle = T.outerBorder;
+    if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 }
 
 // Resource/"Asset" cards (Resources & Assets chapter, Core Rules p. 93-100)
@@ -1251,7 +1263,7 @@ function renderAssociateCard(canvas, data) {
 //   assetCost, assetDescription,
 //   portraitImg: HTMLImageElement|null, portraitView, portraitFrame,
 // }
-function renderAssetCard(canvas, data) {
+function renderAssetCard(canvas, data, opts = {}) {
   const ctx = canvas.getContext('2d');
   canvas.width = CARD_W;
   canvas.height = CARD_H;
@@ -1518,13 +1530,16 @@ function renderAssetCard(canvas, data) {
 
   ctx.restore(); // end clip
 
-  // outer border stroke — doubles as a cut guide when printing a single card
-  roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
-  ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
-  ctx.strokeStyle = T.outerBorder;
-  if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  // outer border stroke — doubles as a cut guide when printing a single
+  // card; see renderCard()'s matching comment for why this is skippable.
+  if (!opts.suppressCutGuideBorder) {
+    roundedRectPath(ctx, 1, 1, CARD_W - 2, CARD_H - 2, CARD_RADIUS);
+    ctx.lineWidth = T.outerBorderDashed ? 2.5 : 2;
+    ctx.strokeStyle = T.outerBorder;
+    if (T.outerBorderDashed) ctx.setLineDash([10, 7]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 }
 
 // Dispatcher used everywhere a card gets rendered/re-rendered (live preview,
@@ -1532,8 +1547,8 @@ function renderAssetCard(canvas, data) {
 // renderer, Asset cards (Contacts/Gear/Backup/Minions/Cult/Gifts) need the
 // simpler no-Stats/no-Health renderer, and every other Card Type keeps
 // using renderCard.
-function renderAnyCard(canvas, data) {
-  if (data.cardType === 'Associate') return renderAssociateCard(canvas, data);
-  if (TYPE_PRESETS[data.cardType]?.isAsset) return renderAssetCard(canvas, data);
-  return renderCard(canvas, data);
+function renderAnyCard(canvas, data, opts = {}) {
+  if (data.cardType === 'Associate') return renderAssociateCard(canvas, data, opts);
+  if (TYPE_PRESETS[data.cardType]?.isAsset) return renderAssetCard(canvas, data, opts);
+  return renderCard(canvas, data, opts);
 }

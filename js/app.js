@@ -1568,6 +1568,23 @@ function chunkArray(arr, size) {
   return out;
 }
 
+// Re-renders a saved card fresh from its own formData, instead of loading
+// its stored pngDataURL, specifically so the Print Sheet can pass
+// suppressCutGuideBorder (see renderCard/renderAssetCard/
+// renderAssociateCard in cardRenderer.js) — the stored PNG always has that
+// border baked in for a plain single-card download, but with cards sitting
+// flush in the sheet's 3x3 grid (js/roster.js), two neighbouring cards'
+// own dashed borders doubled up right next to each other into what looked
+// like a cut line drawn across the cards themselves. Returns a canvas,
+// which drawImage() accepts just as readily as an Image.
+async function renderCardForPrintSheet(record) {
+  const data = { ...record.formData };
+  data.portraitImg = record.portraitDataURL ? await loadImage(record.portraitDataURL) : null;
+  const offscreen = document.createElement('canvas');
+  renderAnyCard(offscreen, data, { suppressCutGuideBorder: true });
+  return offscreen;
+}
+
 async function refreshPrintSheet() {
   const cards = await getAllCards();
   const selectedIds = [...state.selected];
@@ -1580,7 +1597,7 @@ async function refreshPrintSheet() {
   // now, skip them here rather than showing a squashed card.
   const printableRecords = records.filter(r => r.formData?.cardType !== 'Associate');
   const skippedAssociates = records.length - printableRecords.length;
-  const images = await Promise.all(printableRecords.map(r => loadImage(r.pngDataURL)));
+  const images = await Promise.all(printableRecords.map(renderCardForPrintSheet));
 
   // Always render at least one (possibly empty) page, matching the
   // previous single-canvas behavior when nothing's selected yet.

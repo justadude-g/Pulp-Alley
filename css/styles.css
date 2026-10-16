@@ -866,71 +866,203 @@ body.copying-roster-sheet #roster-print-sheet {
 }
 
 /* ---- Quick Reference tab ----
-   Two on-screen "sheets" styled to preview roughly what "Save as PDF"
-   produces (see downloadQuickReferencePDF in app.js, which draws its own
-   independent two-page PDF rather than rasterizing this DOM — so it stays
-   crisp at any zoom and paginates predictably). Kept in the app's normal
-   dark theme for on-screen reading; the PDF itself is plain black-on-white,
-   the way a printed cheat sheet should be. */
+   Modeled directly on a printed-card-style reference sheet the user
+   supplied (two letter-size pages, a cream "REMEMBER" callout, a
+   Turn&Activation/Fighting/Moving&Evading/Dice,Modifiers&Saves/
+   Actions,Perils&Scenario category legend). Every qr-box-* section header
+   is colored by which of those five categories it belongs to — navy,
+   maroon, teal, green or purple — matching the swatches in that legend
+   row (.qr-categories). Gold is reserved for the "Where do I look?" lookup
+   table, and qr-box-brown is currently unused (kept defined in case a
+   future revision of the source sheet brings a box back to it).
+   This is a fixed, print-style palette of its own, independent of the
+   app's own Light/Dark UI toggle (same reasoning as card art already not
+   following the UI theme — see .card-stage) so it always matches the
+   reference sheet's look on screen.
+   "Save as PDF" (see downloadQuickReferencePDF in app.js) still draws its
+   own plain black-on-white two-page PDF independently of this DOM, so it
+   no longer visually matches this on-screen tab — a known follow-up, not
+   addressed here. */
 .qr-sheet {
-  background: var(--panel-2);
-  border: 1px solid var(--border);
+  --qr-navy: #14213d;
+  --qr-teal: #1f5f6b;
+  --qr-maroon: #9b1c1c;
+  --qr-purple: #5b2a86;
+  --qr-gold: #c49a1a;
+  --qr-brown: #7a4a12;
+  --qr-green: #2f6b2f;
+  --qr-cream: #fbf6e4;
+  --qr-box-border: #cfc9b8;
+  --qr-ink: #1a1a1a;
+  --qr-ink-dim: #444444;
+  background: #ffffff;
+  color: var(--qr-ink);
   border-radius: var(--radius);
-  padding: 20px 22px;
+  padding: 0 0 22px;
   margin-top: 18px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
-.qr-sheet-head {
+
+.qr-banner {
+  background: var(--qr-navy);
+  color: #ffffff;
+  padding: 16px 22px 14px;
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
-  border-bottom: 2px solid var(--accent);
-  padding-bottom: 8px;
-  margin-bottom: 14px;
+  gap: 16px;
   flex-wrap: wrap;
 }
-.qr-sheet-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: 0.02em; }
-.qr-sheet-sub { font-size: 12px; color: var(--text-dim); }
-
-.qr-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
-.qr-col { min-width: 0; }
-
-.qr-section { margin-bottom: 16px; }
-.qr-section h4 {
-  margin: 0 0 6px;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--accent);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 3px;
-}
-.qr-section ul, .qr-section ol {
+.qr-banner-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: 0.01em;
   margin: 0;
-  padding-left: 18px;
-  font-size: 12.5px;
-  line-height: 1.45;
+  text-transform: uppercase;
 }
-.qr-section li { margin-bottom: 5px; }
-.qr-section li:last-child { margin-bottom: 0; }
-.qr-section li ul {
-  margin-top: 4px;
+.qr-banner-sub { font-size: 12.5px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+.qr-banner-right { text-align: right; flex-shrink: 0; }
+.qr-page-label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--qr-gold); }
+.qr-success { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 0.01em; }
+.qr-success-sub { font-size: 11px; color: rgba(255,255,255,0.7); }
+.qr-banner-accent { height: 4px; background: var(--qr-gold); }
+
+/* A row of five colored swatches naming the sheet's five topic categories
+   (Turn & Activation, Fighting, Moving & Evading, Dice/Modifiers & Saves,
+   Actions/Perils & Scenario) — those same five colors are what every
+   qr-box-* header below is now drawn from, so this row doubles as a legend
+   for the section colors on the rest of the sheet. */
+.qr-categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px;
+  background: #f2f0e8;
+  border: 1px solid var(--qr-box-border);
+  border-top: none;
+  margin: 0 22px;
+  padding: 9px 16px;
+}
+.qr-cat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11.5px;
-  color: var(--text-dim);
+  font-weight: 700;
+  color: var(--qr-ink);
 }
-.qr-section li ul li { margin-bottom: 3px; }
-.qr-note { margin: 6px 0 0; font-size: 11.5px; font-style: italic; color: var(--text-dim); }
+.qr-cat-swatch { display: inline-block; width: 8px; height: 18px; border-radius: 1px; }
+.qr-cat-navy { background: var(--qr-navy); }
+.qr-cat-maroon { background: var(--qr-maroon); }
+.qr-cat-teal { background: var(--qr-teal); }
+.qr-cat-green { background: var(--qr-green); }
+.qr-cat-purple { background: var(--qr-purple); }
 
-.qr-callout {
-  background: rgba(45, 212, 191, 0.1);
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 13.5px;
-  margin-bottom: 16px;
+.qr-remember {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  background: var(--qr-cream);
+  border: 2px solid var(--qr-gold);
+  margin: 14px 22px 0;
+  padding: 10px 16px;
+  font-size: 12.5px;
+  color: var(--qr-ink);
 }
-.qr-callout-compact { font-size: 11.5px; line-height: 1.5; margin-bottom: 0; }
+.qr-remember-label {
+  color: var(--qr-gold);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.qr-remember-tip {
+  flex: 1;
+  min-width: 120px;
+  padding-left: 16px;
+  border-left: 1px solid var(--qr-gold);
+  display: flex;
+  align-items: center;
+}
 
-@media (max-width: 700px) {
+.qr-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 18px 22px 0; }
+.qr-col { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+
+.qr-box {
+  border: 1px solid var(--qr-box-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.qr-box h4 {
+  margin: 0;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+.qr-box-navy h4 { background: var(--qr-navy); }
+.qr-box-teal h4 { background: var(--qr-teal); }
+.qr-box-maroon h4 { background: var(--qr-maroon); }
+.qr-box-purple h4 { background: var(--qr-purple); }
+/* Gold is light enough that white header text (every other qr-box-* color
+   uses white) loses contrast, so the one box still using it — the "Where
+   Do I Look?" lookup table below — gets dark brown text instead. */
+.qr-box-gold h4 { background: var(--qr-gold); color: var(--qr-brown); }
+.qr-box-brown h4 { background: var(--qr-brown); }
+.qr-box-green h4 { background: var(--qr-green); }
+
+.qr-box ul, .qr-box ol {
+  margin: 0;
+  padding: 10px 14px 10px 30px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.qr-box > p.qr-plain { margin: 10px 14px; font-size: 12px; line-height: 1.4; }
+.qr-box li { margin-bottom: 6px; }
+.qr-box li:last-child { margin-bottom: 0; }
+.qr-intro, .qr-note {
+  margin: 10px 14px 0;
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--qr-ink-dim);
+}
+.qr-box ul + .qr-note, .qr-box ol + .qr-note { margin-top: -2px; padding-bottom: 10px; }
+.qr-intro + ul, .qr-intro + ol { padding-top: 6px; }
+.qr-lead { margin: 10px 14px 0; font-size: 12.5px; font-weight: 700; }
+.qr-lead + ul { padding-top: 6px; }
+
+/* "Where do I look?" — a quick symptom-to-section lookup table, the one
+   qr-box that isn't a ul/ol/p. Reuses qr-box-gold's header, cream fill and
+   a thicker gold border like qr-remember's, since it's meant to read as a
+   second at-a-table quick-reference, not just one more rule box. */
+.qr-box-lookup { border: 2px solid var(--qr-gold); }
+.qr-lookup { background: var(--qr-cream); }
+.qr-lookup-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 14px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--qr-ink);
+  border-bottom: 1px solid rgba(196, 154, 26, 0.35);
+}
+.qr-lookup-row:last-child { border-bottom: none; }
+.qr-lookup-a { font-weight: 700; color: var(--qr-navy); }
+
+@media (max-width: 760px) {
   .qr-columns { grid-template-columns: 1fr; }
+  .qr-categories { gap: 14px 18px; }
+  .qr-remember { flex-direction: column; gap: 8px; }
+  .qr-remember-tip { border-left: none; padding-left: 0; border-top: 1px solid var(--qr-gold); padding-top: 8px; }
+  .qr-remember-label { padding-bottom: 4px; }
+  .qr-banner { flex-direction: column; align-items: flex-start; }
+  .qr-banner-right { text-align: left; }
+  .qr-lookup-row { grid-template-columns: 1fr; gap: 2px; }
 }

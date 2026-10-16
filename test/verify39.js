@@ -43,22 +43,37 @@ function ok(label) { console.log('OK  ', label); }
   const colCount = await page.$$eval('.qr-sheet .qr-col', els => els.length);
   assert.strictEqual(colCount, 4, `expected 2 columns per sheet across 2 sheets (4 total), got ${colCount}`);
 
+  // On-screen section headings and callout copy were redesigned (colored
+  // header boxes, a "Remember" callout, etc.) to match a reference sheet
+  // the user supplied — this list tracks that redesign's actual section
+  // names, not the pre-redesign wording checked here before. The user's
+  // second revision of that reference sheet added a five-category legend
+  // row (re-coloring every section to match one of the five categories)
+  // and a "Where do I look?" lookup table closing out page 2.
   const bodyText = await page.$eval('#tab-quickref', el => el.textContent);
   const expectedHeadingsPage1 = [
-    'Director', 'Key Terms', 'Action Sequence', 'Health & Recovery', 'Engagement & Dodge',
-    'Blocking Hits', 'Shooting Sequence', 'Brawling Sequence', 'Fortune Cards', 'Competitive Rolls',
+    'Director & Initiative', 'Key Terms', 'Activation Sequence', 'Moving', 'One Action Per Turn',
+    'When a Fight Starts', 'Fight Sequence', 'Blocking', 'Health, Hits & Injuries', 'Fight Modifiers',
+    'Opposed Checks', 'End of Turn: Recovery',
   ];
   const expectedHeadingsPage2 = [
-    'Dodging', 'Disengage', 'Basic Modifiers', 'Defensive Fire', 'Splitting Dice',
-    'Cover Save', 'Shooting Engaged Characters', 'Bursts', 'Stealth', 'Spotting', 'Ambush',
+    'Dodge', 'Disengage', 'Defensive Fire', 'Splitting Dice', 'Shooting Into an Engagement', 'Cover Save',
+    'Perils & Challenges', 'Plot Points', 'Bursts', 'Stealth, Spotting & Ambush', 'Where Do I Look?',
   ];
   for (const heading of [...expectedHeadingsPage1, ...expectedHeadingsPage2]) {
     assert.ok(bodyText.includes(heading), `expected the Quick Reference tab to include a "${heading}" section`);
   }
-  assert.ok(bodyText.includes('Success is a 4+ on any die'), 'expected the core success-rule callout on screen');
+  assert.ok(bodyText.includes('Success = 4+'), 'expected the "Success = 4+" banner callout on screen');
+  assert.ok(bodyText.includes('on any die'), 'expected the "on any die" banner sub-line on screen');
   assert.ok(bodyText.includes('Page 1 of 2'), 'expected the first sheet to be labeled "Page 1 of 2"');
   assert.ok(bodyText.includes('Page 2 of 2'), 'expected the second sheet to be labeled "Page 2 of 2"');
-  ok('Both on-screen sheets render two columns each and cover all the key sections from the source rules, including the p. 57-73 additions');
+  const expectedCategories = ['Turn & Activation', 'Fighting', 'Moving & Evading', 'Dice, Modifiers & Saves', 'Actions, Perils & Scenario'];
+  for (const cat of expectedCategories) {
+    assert.ok(bodyText.includes(cat), `expected the category legend row to include "${cat}"`);
+  }
+  const categoryRowCount = await page.$$eval('.qr-categories', els => els.length);
+  assert.strictEqual(categoryRowCount, 2, `expected a category legend row on both sheets, got ${categoryRowCount}`);
+  ok('Both on-screen sheets render two columns each, a five-category legend row, and cover all the key sections from the source rules, including the p. 57-73 additions and the "Where do I look?" lookup table');
 
   // ---- 3. "Save as PDF" downloads a real PDF file named as expected. ----
   const [download] = await Promise.all([

@@ -186,13 +186,15 @@ const CLASSICAL_BASE = {
 // keep rendering correctly.
 //
 // LIGHT_BASE is pulled out (rather than inlined under 'light' below) so
-// 'sciFiBlue' / 'sciFiRed' can reuse the exact same bright, minimal-ink
-// background — requested as a Star Wars-flavored Card Background option
-// after an on-screen preview (Light background, Jedi blue vs. Imperial red
-// accent). The two SciFi themes are visually identical to 'light'; what
-// actually makes them their own dropdown entries is defaultAccentForCardType
-// in app.js, which forces every character Card Type's accent to that fixed
-// blue/red the same way it forces Classical's accent to black, instead of
+// 'sciFiBlue' / 'sciFiRed' / 'sciFiGreen' can reuse the exact same bright,
+// minimal-ink background — requested as Star Wars-flavored Card Background
+// options after an on-screen preview (Light background, Jedi blue vs.
+// Imperial red accent); Green followed for mercenaries, matching the
+// user's own crew-color scheme (Blue=Empire, Red=Rebels, Green=Mercenary).
+// The three SciFi themes are visually identical to 'light'; what actually
+// makes them their own dropdown entries is defaultAccentForCardType in
+// app.js, which forces every character Card Type's accent to that fixed
+// color the same way it forces Classical's accent to black, instead of
 // each Card Type keeping its own default accent color.
 const LIGHT_BASE = {
   bgTop: '#ffffff', bgBottom: '#fbfbfa',
@@ -237,6 +239,7 @@ const THEMES = {
   light: { ...LIGHT_BASE },
   sciFiBlue: { ...LIGHT_BASE },
   sciFiRed: { ...LIGHT_BASE },
+  sciFiGreen: { ...LIGHT_BASE },
   dark: {
     bgTop: '#12161d', bgBottom: '#0b0e13',
     textPrimary: '#f4f6f8',

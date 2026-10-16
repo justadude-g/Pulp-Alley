@@ -184,6 +184,36 @@ const CLASSICAL_BASE = {
 // 'dark' is no longer offered in that dropdown (not practical to print),
 // but its definition stays here so cards saved with it before this change
 // keep rendering correctly.
+//
+// LIGHT_BASE is pulled out (rather than inlined under 'light' below) so
+// 'sciFiBlue' / 'sciFiRed' can reuse the exact same bright, minimal-ink
+// background — requested as a Star Wars-flavored Card Background option
+// after an on-screen preview (Light background, Jedi blue vs. Imperial red
+// accent). The two SciFi themes are visually identical to 'light'; what
+// actually makes them their own dropdown entries is defaultAccentForCardType
+// in app.js, which forces every character Card Type's accent to that fixed
+// blue/red the same way it forces Classical's accent to black, instead of
+// each Card Type keeping its own default accent color.
+const LIGHT_BASE = {
+  bgTop: '#ffffff', bgBottom: '#fbfbfa',
+  textPrimary: '#181c24',
+  textSecondary: '#333a46',
+  textMuted: 'rgba(24,28,36,0.45)',
+  nameBarBg: 'rgba(24,28,36,0.025)',
+  healthBarBg: 'rgba(24,28,36,0.035)',
+  borderSubtle: 'rgba(24,28,36,0.12)',
+  outerBorder: 'rgba(24,28,36,0.22)',
+  placeholderBg: '#f1f3f6',
+  placeholderPattern: 'rgba(24,28,36,0.06)',
+  placeholderText: 'rgba(24,28,36,0.38)',
+  tintAlpha: 0.11,
+  tint2: 'rgba(24,28,36,0.045)',
+  downOutFill: 'rgba(24,28,36,0.02)',
+  downOutBorder: 'rgba(24,28,36,0.28)',
+  downOutText: 'rgba(24,28,36,0.6)',
+  cornerAccentAlpha: 0,
+};
+
 const THEMES = {
   ivory: {
     bgTop: '#fdfaf2', bgBottom: '#f8f2e6',
@@ -204,25 +234,9 @@ const THEMES = {
     downOutText: 'rgba(24,28,36,0.6)',
     cornerAccentAlpha: 0,
   },
-  light: {
-    bgTop: '#ffffff', bgBottom: '#fbfbfa',
-    textPrimary: '#181c24',
-    textSecondary: '#333a46',
-    textMuted: 'rgba(24,28,36,0.45)',
-    nameBarBg: 'rgba(24,28,36,0.025)',
-    healthBarBg: 'rgba(24,28,36,0.035)',
-    borderSubtle: 'rgba(24,28,36,0.12)',
-    outerBorder: 'rgba(24,28,36,0.22)',
-    placeholderBg: '#f1f3f6',
-    placeholderPattern: 'rgba(24,28,36,0.06)',
-    placeholderText: 'rgba(24,28,36,0.38)',
-    tintAlpha: 0.11,
-    tint2: 'rgba(24,28,36,0.045)',
-    downOutFill: 'rgba(24,28,36,0.02)',
-    downOutBorder: 'rgba(24,28,36,0.28)',
-    downOutText: 'rgba(24,28,36,0.6)',
-    cornerAccentAlpha: 0,
-  },
+  light: { ...LIGHT_BASE },
+  sciFiBlue: { ...LIGHT_BASE },
+  sciFiRed: { ...LIGHT_BASE },
   dark: {
     bgTop: '#12161d', bgBottom: '#0b0e13',
     textPrimary: '#f4f6f8',

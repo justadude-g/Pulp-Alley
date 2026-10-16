@@ -121,13 +121,14 @@ function hue(r, g, b) {
   ok(`The light accent tint on Brawl/Shoot/Dodge reads as orange/peach, not pink (hue ${tintHue.toFixed(1)}°)`);
 
   // ---- 3. Card Background dropdown: Classical no-skull first & default,
-  // Classical second, Ivory/Light after, Dark removed. ----
+  // Classical second, Ivory/Light after, then the two SciFi options, Dark
+  // removed. ----
   await page.reload();
   await page.waitForTimeout(400);
   const themeOptions = await page.$$eval('#f-theme option', els => els.map(e => e.value));
-  assert.deepStrictEqual(themeOptions, ['classicalNoSkull', 'classical', 'ivory', 'light'],
-    `expected Card Background options in order [classicalNoSkull, classical, ivory, light], got ${JSON.stringify(themeOptions)}`);
-  ok('Card Background options are ordered Classical (no skull), Classical, Ivory, Light, with Dark removed');
+  assert.deepStrictEqual(themeOptions, ['classicalNoSkull', 'classical', 'ivory', 'light', 'sciFiBlue', 'sciFiRed'],
+    `expected Card Background options in order [classicalNoSkull, classical, ivory, light, sciFiBlue, sciFiRed], got ${JSON.stringify(themeOptions)}`);
+  ok('Card Background options are ordered Classical (no skull), Classical, Ivory, Light, SciFi Blue, SciFi Red, with Dark removed');
 
   const selectedTheme = await page.$eval('#f-theme', el => el.value);
   assert.strictEqual(selectedTheme, 'classicalNoSkull', `expected Classical (no skull) to be the default on a fresh page, got ${selectedTheme}`);

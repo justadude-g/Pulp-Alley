@@ -555,6 +555,15 @@ form.addEventListener('change', updatePreview);
 // Card Type and Card Background change handlers below so switching either
 // one keeps Accent Color in sync — it's still a normal, editable color
 // picker afterward, same as every other auto-filled field in this app.
+// SciFi Blue / SciFi Red (see THEMES.sciFiBlue/sciFiRed in cardRenderer.js)
+// force every character Card Type to this one accent instead of its usual
+// per-Type color, the same way Classical forces black below — requested
+// after an on-screen preview built as Light background + a hand-picked
+// accent (blue for a Jedi-flavored Leader, red for an Imperial-flavored
+// Villain) so picking the theme fills in the right color automatically
+// instead of needing the Accent Color picker set by hand every time.
+const SCI_FI_ACCENTS = { sciFiBlue: '#1f5fa6', sciFiRed: '#b3262b' };
+
 function defaultAccentForCardType(cardType, theme) {
   // Resource "Asset" Card Types (Contacts/Gear/Backup/Minions/Cult/Gifts)
   // keep their own green identity even under a Classical parchment
@@ -564,9 +573,11 @@ function defaultAccentForCardType(cardType, theme) {
   // character cards, and from each other's old "Classical brown/peach"
   // look, at a glance) in any Card Background. See renderAssetCard in
   // cardRenderer.js, which also ignores the Classical theme's own
-  // badge/tint colors for the same reason.
+  // badge/tint colors for the same reason. SciFi Blue/Red follow the same
+  // exception for the same reason.
   const isClassical = theme === 'classical' || theme === 'classicalNoSkull';
   if (isClassical && !isAssetCardType(cardType)) return '#000000';
+  if (SCI_FI_ACCENTS[theme] && !isAssetCardType(cardType)) return SCI_FI_ACCENTS[theme];
   const preset = TYPE_PRESETS[cardType];
   return preset ? preset.accent : '#000000';
 }

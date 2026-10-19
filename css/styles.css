@@ -245,6 +245,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   min-height: 120px;
 }
 
+.card-type-field { flex: 1 1 120px; min-width: 100px; display: flex; flex-direction: column; gap: 6px; }
+.card-type-caption { display: flex; align-items: center; gap: 12px; }
+.card-type-caption .checkbox-label { color: var(--text-dim); }
 .checkbox-label { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; }
 .checkbox-label input { width: auto; }
 

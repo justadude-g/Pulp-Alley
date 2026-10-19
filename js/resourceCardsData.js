@@ -153,6 +153,13 @@ const GIFTS_ITEMS = [
   { name: 'Summoning Circle (Leader only)', cost: 4, description: 'During set-up, select one type of level 1 Minion for your summoning. As a full action, place X + 1 of these Minions within 3" of your base. These Minions are under your control and ready to activate this turn.' },
 ];
 
+// Bystanders (p. 91): a recruited Bystander is a random Level 2 Backup, so
+// the Library offers exactly the four Level 2 Backup rows from p. 97.
+// The Cost badge already shows the 2, so the name drops the "Level 2: " prefix.
+const BYSTANDERS_ITEMS = BACKUP_ITEMS
+  .filter(it => /^Level 2: (Brawler|Shooter|Scout|Animal)$/.test(it.name))
+  .map(it => ({ ...it, name: it.name.replace(/^Level 2: /, '') }));
+
 const RESOURCE_ITEMS_BY_TYPE = {
   Contacts: CONTACTS_ITEMS,
   Gear: GEAR_ITEMS,
@@ -160,6 +167,7 @@ const RESOURCE_ITEMS_BY_TYPE = {
   Minions: MINIONS_ITEMS,
   Cult: CULT_ITEMS,
   Gifts: GIFTS_ITEMS,
+  Bystanders: BYSTANDERS_ITEMS,
 };
 
 // General per-table rule reminders (p. 93-100) shown as a hint under the
@@ -167,6 +175,7 @@ const RESOURCE_ITEMS_BY_TYPE = {
 // "explain the rule, don't enforce it" philosophy as every other rules hint
 // in this app.
 const RESOURCE_TYPE_NOTES = {
+  Bystanders: 'Bystanders (p. 91) belong to no league. They wander 1d8" in a random direction at the end of each turn, and a character in contact can try to recruit one as an action. A recruited Bystander becomes a Level 2 Backup (Brawler, Shooter, Animal, or Scout, p. 97): Cost 2, Health d6. Browse the Asset Library for the four options.',
   Contacts: 'All Contacts assets are temporary, purchased for one scenario only. Except where noted, they are not assigned to a specific character. You cannot select a Contacts asset more than once per scenario.',
   Gear: 'All Gear assets are temporary, purchased for one scenario only, and must be assigned to a specific character. You cannot assign an asset more than once to the same character. Gadgets carry a Mishap risk — see their own description.',
   Backup: 'All Backup assets are temporary, purchased for one scenario only. The Skills & Abilities line only lists skills over 1d6 — anything not listed is 1d6.',

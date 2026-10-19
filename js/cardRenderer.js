@@ -24,6 +24,7 @@ const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 // (below) references it at module-init time.
 const ASSET_ACCENT = '#4b6b3c';
 
+
 // Saturated-but-print-safe accents: dark enough to stay legible as text/line
 // color on a white background, still read fine on the dark theme too.
 // Each default accent corresponds to a Gamegenic Prime Sleeves color, so a
@@ -128,7 +129,23 @@ const TYPE_PRESETS = {
   Minions:  { accent: ASSET_ACCENT, isAsset: true },
   Cult:     { accent: ASSET_ACCENT, isAsset: true },
   Gifts:    { accent: ASSET_ACCENT, isAsset: true },
+  // Bystanders (Core Rules p. 91 + 97): a recruited Bystander becomes a
+  // random Level 2 Backup character (Brawler, Shooter, Animal, or Scout) for
+  // the scenario, so the card is a Backup-style asset: Cost badge (2 = the
+  // Backup table's Level 2 price, not a regular character Level), Health and
+  // skills in the description, and the Asset Library offers just those four
+  // rows. Shares the asset green like every other resource type.
+  Bystanders: { accent: ASSET_ACCENT, isAsset: true, defaultCost: 2 },
 };
+
+// The optional top-right Card Type tag (the "include" checkbox beside Card
+// Type in the Designer). Associate cards already print "ASSOCIATE:" in their
+// header, and the six resource Asset types always print their tag (their
+// only identifier), so the checkbox only applies to everything else.
+function cardTypeTagIsOptional(cardType) {
+  if (cardType === 'Associate') return false;
+  return !TYPE_PRESETS[cardType]?.isAsset;
+}
 
 // Shared palette for both Classical variants (see THEMES.classical /
 // classicalNoSkull below) — kept as one object so the two themes can never
@@ -270,6 +287,38 @@ const THEMES = {
   // rendering exactly as before.
   classical: { ...CLASSICAL_BASE, skullWatermark: 'rgba(36,27,19,0.075)' },
   classicalNoSkull: { ...CLASSICAL_BASE },
+  // 'Stone' is Classical's structure with a contemporary palette: the same
+  // fixed two-band Stats treatment and solid-fill level badge, but the
+  // aged-parchment ground, terracotta/taupe bands, olive health bar and
+  // bronze medallion are all swapped for warm-neutral stone, muted clay
+  // and flat charcoal. Picked from a side-by-side preview of three
+  // candidate re-colorings (cool slate / warm stone / sage) as the one
+  // that modernizes the card without reading clinical next to painted
+  // miniatures. Ink coverage drops a lot versus Classical's solid tan
+  // ground, so it prints lighter and with more text contrast; the trade is
+  // that a near-white card has no visible edge on white cardstock, which
+  // the Print Sheet's crop marks (cropMarks in roster.js) cover for sheets
+  // but not for a card printed on its own.
+  stone: {
+    bgTop: '#fbfaf8', bgBottom: '#f1efeb',
+    textPrimary: '#17181a',
+    textSecondary: '#33353a',
+    textMuted: 'rgba(23,24,26,0.55)',
+    nameBarBg: 'rgba(23,24,26,0.04)',
+    healthBarBg: '#e8e3da',
+    borderSubtle: 'rgba(23,24,26,0.14)',
+    placeholderBg: '#efece6',
+    placeholderPattern: 'rgba(23,24,26,0.06)',
+    placeholderText: 'rgba(23,24,26,0.38)',
+    fixedTint: '#e3c3b2',
+    fixedTint2: '#ece8e2',
+    downOutFill: '#ece8e2',
+    downOutBorder: 'rgba(23,24,26,0.42)',
+    downOutText: '#17181a',
+    badgeFill: '#262522',
+    badgeRing: '#0d0d0c',
+    cornerAccentAlpha: 0,
+  },
 };
 
 // Build a Health dice sequence from a starting die type, e.g. 'd10' -> ['d10','d8','d6']
@@ -518,6 +567,28 @@ function renderPortraitCrop(img, view, box) {
   return c.toDataURL('image/png');
 }
 
+// Top-right Card Type pill shared by renderCard and renderAssetCard. 27px label, pill height centered on the Name text's own
+// vertical center (NAME_BAR_H/2+2). Returns the pill's left edge (x).
+function drawCardTypeTag(ctx, cardType, accent, tint) {
+  const label = String(cardType).toUpperCase();
+  ctx.font = '700 27px Rajdhani, Inter, sans-serif';
+  const tw = ctx.measureText(label).width;
+  const padX = 18, pillH = 40;
+  const pillW = tw + padX * 2;
+  const px = CARD_W - 24 - pillW, py = (NAME_BAR_H / 2 + 2) - pillH / 2;
+  roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
+  ctx.fillStyle = tint;
+  ctx.fill();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = accent;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, px + pillW / 2, py + pillH / 2 + 1);
+  return px;
+}
+
 // data: {
 //   name, level, cardType, accentColor, theme: 'light'|'dark',
 //   stats: {brawl:{n,d}, shoot:{n,d}, dodge:{n,d}, might:{n,d}, finesse:{n,d}, cunning:{n,d}},
@@ -616,10 +687,16 @@ function renderCard(canvas, data, opts = {}) {
   const levelBaselineY = badgeCy + (levelMetrics.actualBoundingBoxAscent - levelMetrics.actualBoundingBoxDescent) / 2;
   ctx.fillText(levelText, badgeCx, levelBaselineY);
 
-  // Card Type tag (previously a top-right pill, e.g. "LEADER") removed per
-  // explicit user request. Only character cards (this function) lost it —
-  // renderAssetCard's own Card Type pill below is untouched, since the
-  // request specifically said "character type".
+  // Card Type tag (top-right pill, e.g. "LEADER") — opt-in via the
+  // "include" checkbox beside Card Type in the Designer (data.showCardType,
+  // off by default). Same pill the card used to always carry: label width
+  // measured from the real text, height centered on the Name's own
+  // vertical center. Returns the pill's left edge so the Name below can
+  // keep clear of it.
+  let tagLeft = CARD_W;
+  if (data.showCardType && data.cardType) {
+    tagLeft = drawCardTypeTag(ctx, data.cardType, accent, tint);
+  }
 
   // Name text (auto-shrink to fit), centered on the card's own true
   // horizontal center (CARD_W/2) — per explicit user feedback that it
@@ -630,11 +707,13 @@ function renderCard(canvas, data, opts = {}) {
   // by the tighter, left-hand distance out to the badge's clearance
   // boundary (nameLeft, the same clearance the old left-aligned version
   // always used) — so a long name can never extend left under the badge,
-  // even though there's more open room on the right.
+  // even though there's more open room on the right. With the Card Type
+  // tag on, the right side is the tighter one, so the same symmetric rule
+  // narrows the Name to stay clear of the pill.
   {
     const nameLeft = 150;
     const nameCenterX = CARD_W / 2;
-    const nameMaxW = (nameCenterX - nameLeft) * 2;
+    const nameMaxW = 2 * Math.min(nameCenterX - nameLeft, tagLeft - 16 - nameCenterX);
     let fontSize = 42;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1318,63 +1397,41 @@ function renderAssetCard(canvas, data, opts = {}) {
   // theme-brown. PREVIEW ONLY, not yet committed: three-color medallion
   // (ring / colored band / white center) matching renderCard's Level badge
   // above, per explicit user request.
-  const badgeCx = 85, badgeCy = 59, badgeR = 38, badgeInnerR = 27;
-  ctx.beginPath();
-  ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
-  ctx.fillStyle = accent;
-  ctx.fill();
-  ctx.lineWidth = 3.5;
-  ctx.strokeStyle = shade(accent, -0.3);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(badgeCx, badgeCy, badgeInnerR, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.fillStyle = '#000000';
-  // Kept at 44px rather than growing to match renderCard's Level badge
-  // above (56px) — unlike Level (confirmed always one digit), the Cost
-  // field itself allows up to 20 (min=0 max=20 on #f-assetCost), so a
-  // genuinely two-digit value is a real, current case here, not just a
-  // legacy fallback — the same margin-vs-size tradeoff checked earlier
-  // still applies.
-  ctx.font = '700 44px Rajdhani, Inter, sans-serif';
-  ctx.textAlign = 'center';
-  const cost = data.assetCost;
-  const costText = cost === undefined || cost === null || cost === '' ? '' : String(cost);
-  // Same precise vertical-centering fix as renderCard's Level badge above.
-  const costMetrics = ctx.measureText(costText);
-  ctx.textBaseline = 'alphabetic';
-  const costBaselineY = badgeCy + (costMetrics.actualBoundingBoxAscent - costMetrics.actualBoundingBoxDescent) / 2;
-  ctx.fillText(costText, badgeCx, costBaselineY);
-
-  // 27px (up from 23px) — matches the same bump made to renderCard's Type
-  // tag pill above, per explicit user feedback that the Card Type label
-  // was hard to read. py centers the pill's height on the Name text's own
-  // vertical center (NAME_BAR_H/2+2), same fix as renderCard above.
-  let typeLabelW = 0;
   {
-    const label = (data.cardType || 'Asset').toUpperCase();
-    ctx.font = '700 27px Rajdhani, Inter, sans-serif';
-    const tw = ctx.measureText(label).width;
-    const padX = 18, pillH = 40;
-    const pillW = tw + padX * 2;
-    const px = CARD_W - 24 - pillW, py = (NAME_BAR_H / 2 + 2) - pillH / 2;
-    typeLabelW = pillW + 24;
-    roundedRectPath(ctx, px, py, pillW, pillH, pillH / 2);
-    ctx.fillStyle = tint;
-    ctx.fill();
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    const badgeCx = 85, badgeCy = 59, badgeR = 38, badgeInnerR = 27;
+    ctx.beginPath();
+    ctx.arc(badgeCx, badgeCy, badgeR, 0, Math.PI * 2);
     ctx.fillStyle = accent;
+    ctx.fill();
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = shade(accent, -0.3);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(badgeCx, badgeCy, badgeInnerR, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.fillStyle = '#000000';
+    // Kept at 44px. The Cost field is a 1-4 dropdown (single digit), so
+  // this could grow like renderCard's Level badge if the number needs to
+  // stand out more.
+  ctx.font = '700 44px Rajdhani, Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, px + pillW / 2, py + pillH / 2 + 1);
+    const cost = data.assetCost;
+    const costText = cost === undefined || cost === null || cost === '' ? '' : String(cost);
+    // Same precise vertical-centering fix as renderCard's Level badge above.
+    const costMetrics = ctx.measureText(costText);
+    ctx.textBaseline = 'alphabetic';
+    const costBaselineY = badgeCy + (costMetrics.actualBoundingBoxAscent - costMetrics.actualBoundingBoxDescent) / 2;
+    ctx.fillText(costText, badgeCx, costBaselineY);
   }
+
+  // The resource types always carry the Card Type pill — it's their only
+  // identifier (the optional "include" tag only applies to character cards).
+  const tagLeft = drawCardTypeTag(ctx, data.cardType || 'Asset', accent, tint);
 
   {
     const nameX = 150;
-    const nameMaxW = CARD_W - nameX - 24 - typeLabelW;
+    const nameMaxW = tagLeft - 24 - nameX;
     let fontSize = 42;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';

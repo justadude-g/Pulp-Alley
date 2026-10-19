@@ -119,7 +119,7 @@ function ok(label) { console.log('OK  ', label); }
   await page.selectOption('#f-cardType', 'Backup');
   await page.waitForTimeout(150);
   await page.fill('#f-name', 'Level 1: Brawler');
-  await page.fill('#f-assetCost', '1');
+  await page.selectOption('#f-assetCost', '1');
   await page.fill('#f-assetDescription', 'Health: d6*. Skills: Brawl 2d6.');
   await page.waitForTimeout(150);
   await page.click('#btn-save-card');

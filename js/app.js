@@ -555,35 +555,46 @@ form.addEventListener('change', updatePreview);
 // Card Type and Card Background change handlers below so switching either
 // one keeps Accent Color in sync — it's still a normal, editable color
 // picker afterward, same as every other auto-filled field in this app.
-// SciFi Blue / SciFi Red / SciFi Green (see THEMES.sciFiBlue/sciFiRed/
-// sciFiGreen in cardRenderer.js) force every character Card Type to this
-// one accent instead of its usual per-Type color, the same way Classical
-// forces black below — requested after an on-screen preview built as Light
-// background + a hand-picked accent (blue for a Jedi-flavored Leader, red
-// for an Imperial-flavored Villain), matching the user's own crew-color
-// scheme: Blue=Empire, Red=Rebels, Green=Mercenary. Green is picked well
-// clear in hue of both Sidekick's own default green (#16a34a) and the
-// Asset Card Types' fixed green (ASSET_ACCENT, #4b6b3c below) so a roster
-// mixing SciFi Green characters with Sidekicks or Assets still reads as
-// three distinct greens, not one blur.
-const SCI_FI_ACCENTS = { sciFiBlue: '#1f5fa6', sciFiRed: '#b3262b', sciFiGreen: '#208858' };
+// Card Backgrounds that pin the Accent Color to one fixed value for every
+// character Card Type, instead of letting each Type keep its own
+// Gamegenic-sleeve-matched default (see TYPE_PRESETS in cardRenderer.js):
+//   - Classical (both variants): black. The Card Types' bright modern
+//     colors clash with the aged-parchment palette.
+//   - Stone: near-black charcoal, matching the flat charcoal badge in that
+//     theme's own palette.
+//   - SciFi Blue/Red/Green: the faction color itself, so picking the theme
+//     fills in the right color automatically instead of needing the Accent
+//     Color picker set by hand on every card. These match the user's own
+//     crew-color scheme: Blue=Empire, Red=Rebels, Green=Mercenary. Green is
+//     picked well clear in hue of both Sidekick's own default green
+//     (#16a34a) and the Asset Card Types' fixed green (ASSET_ACCENT,
+//     #4b6b3c) so a roster mixing SciFi Green characters with Sidekicks or
+//     Assets still reads as three distinct greens, not one blur.
+// Accent Color stays a normal, editable picker per card either way — this
+// only decides what it auto-fills to.
+const THEME_FIXED_ACCENTS = {
+  classical: '#000000',
+  classicalNoSkull: '#000000',
+  stone: '#1d1c1a',
+  sciFiBlue: '#1f5fa6',
+  sciFiRed: '#b3262b',
+  sciFiGreen: '#208858',
+};
 
 function defaultAccentForCardType(cardType, theme) {
   // Resource "Asset" Card Types (Contacts/Gear/Backup/Minions/Cult/Gifts)
-  // keep their own green identity even under a Classical parchment
-  // background — unlike character Card Types, whose bright default colors
-  // clash with the aged-parchment look, Asset cards were explicitly asked
-  // to stay a consistent green (so they read as visually distinct from
-  // character cards, and from each other's old "Classical brown/peach"
-  // look, at a glance) in any Card Background. See renderAssetCard in
+  // are the one exception to every entry above: they keep their own green
+  // identity under any Card Background. Unlike character Card Types, whose
+  // bright default colors clash with the aged-parchment look, Asset cards
+  // were explicitly asked to stay a consistent green (so they read as
+  // visually distinct from character cards, and from each other's old
+  // "Classical brown/peach" look, at a glance). See renderAssetCard in
   // cardRenderer.js, which also ignores the Classical theme's own
-  // badge/tint colors for the same reason. All three SciFi themes follow
-  // the same exception for the same reason — including SciFi Green itself,
-  // so an Asset card never gets swapped onto the exact same green a SciFi
-  // Green character would use.
-  const isClassical = theme === 'classical' || theme === 'classicalNoSkull';
-  if (isClassical && !isAssetCardType(cardType)) return '#000000';
-  if (SCI_FI_ACCENTS[theme] && !isAssetCardType(cardType)) return SCI_FI_ACCENTS[theme];
+  // badge/tint colors for the same reason. It matters for SciFi Green in
+  // particular, so an Asset card never lands on the exact same green a
+  // SciFi Green character would use.
+  const fixed = THEME_FIXED_ACCENTS[theme];
+  if (fixed && !isAssetCardType(cardType)) return fixed;
   const preset = TYPE_PRESETS[cardType];
   return preset ? preset.accent : '#000000';
 }
@@ -625,6 +636,9 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   updateNonUniqueVisibility(e.target.value);
   updateAssociateFieldVisibility(e.target.value);
   updateAssetFieldVisibility(e.target.value);
+  updateTypeTagToggleVisibility(e.target.value);
+  // Bystanders are Level 2 Backups (p. 97): Cost starts at 2.
+  if (preset && preset.defaultCost !== undefined) document.getElementById('f-assetCost').value = preset.defaultCost;
   updateHealthPreview();
   updatePreview();
 });
@@ -777,6 +791,14 @@ function updateAssetFieldVisibility(cardType) {
   assetTypeHintEl.textContent = isAsset ? (RESOURCE_TYPE_NOTES[cardType] || '') : '';
 }
 
+// "(include)" beside Card Type: print the type as a top-right tag. Hidden
+// for the card types that already carry their own label (see
+// cardTypeTagIsOptional in cardRenderer.js).
+const typeTagToggleEl = document.getElementById('type-tag-toggle');
+function updateTypeTagToggleVisibility(cardType) {
+  typeTagToggleEl.style.display = cardTypeTagIsOptional(cardType) ? '' : 'none';
+}
+
 // Shared by both the Card Type auto-fill (above) and the Reset Stats
 // button below, so there's exactly one place that knows how to apply a
 // Card Type's default stat allocation.
@@ -797,6 +819,7 @@ updateNpcHintVisibility(document.getElementById('f-cardType').value);
 updateNonUniqueVisibility(document.getElementById('f-cardType').value);
 updateAssociateFieldVisibility(document.getElementById('f-cardType').value);
 updateAssetFieldVisibility(document.getElementById('f-cardType').value);
+updateTypeTagToggleVisibility(document.getElementById('f-cardType').value);
 
 document.getElementById('f-healthStart').addEventListener('change', updateHealthPreview);
 document.getElementById('f-healthAsterisk').addEventListener('change', updateHealthPreview);
@@ -875,6 +898,10 @@ function collectFormData() {
     // Asset Card Types (Contacts/Gear/Backup/Minions/Cult/Gifts) only —
     // harmless to always collect since renderCard/renderAssociateCard
     // simply ignore fields they don't use.
+    // Optional top-right Card Type tag (the "include" checkbox beside Card
+    // Type). Off by default; cards saved before it existed have no key and
+    // stay off.
+    showCardType: document.getElementById('f-showCardType').checked,
     assetCost: +document.getElementById('f-assetCost').value || 0,
     assetDescription: document.getElementById('f-assetDescription').value,
   };
@@ -1120,6 +1147,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   updateNonUniqueVisibility(document.getElementById('f-cardType').value);
   updateAssociateFieldVisibility(document.getElementById('f-cardType').value);
   updateAssetFieldVisibility(document.getElementById('f-cardType').value);
+  updateTypeTagToggleVisibility(document.getElementById('f-cardType').value);
   // f-portrait (and f-portrait-frame) now live in the preview panel,
   // outside <form id="card-form"> (see index.html), so form.reset() above
   // doesn't touch them — reset explicitly instead. Image Frame defaults
@@ -1543,7 +1571,12 @@ async function loadCardIntoForm(record) {
   updateNonUniqueVisibility(d.cardType);
   updateAssociateFieldVisibility(d.cardType);
   updateAssetFieldVisibility(d.cardType);
-  document.getElementById('f-assetCost').value = (d.assetCost ?? '') === '' ? 1 : d.assetCost;
+  updateTypeTagToggleVisibility(d.cardType);
+  document.getElementById('f-showCardType').checked = !!d.showCardType;
+  // Cost is a 1-4 dropdown (4 is the p. 93-100 maximum). Clamp anything
+  // saved when it was a free 0-20 number so an old card still shows a
+  // valid, selected option.
+  document.getElementById('f-assetCost').value = String(Math.max(1, Math.min(4, Math.round(Number(d.assetCost)) || 1)));
   document.getElementById('f-assetDescription').value = d.assetDescription || '';
   if (isGang) {
     const models = d.health?.sequence?.length ? +d.health.sequence[0] : 5;

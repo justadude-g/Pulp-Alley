@@ -1,8 +1,9 @@
-// verify66.js — three Card Designer changes made together:
+// verify66.js — Card Designer changes made together (Backup now uses the
+// character layout; there is no separate Bystanders type):
 //   1. An opt-in "(include)" checkbox beside Card Type that prints the type
 //      as a top-right tag again (off by default; persisted per card).
-//   2. A new "Bystanders" Card Type (Core Rules p. 91): not a character, so
-//      no Level/Health/Stats/Cost, the p. 91 rules pre-filled as text.
+//   2. Backup (Core Rules p. 97) as a regular character-layout card with a
+//      Backup Type picker (Level 1-3 rows fill Level, Health, Stats).
 //   3. "Custom" is labelled "Custom (NPC)" in the Designer (value unchanged).
 const { chromium } = require('playwright');
 const path = require('path');
@@ -77,7 +78,7 @@ function norm(hex) { return String(hex).toLowerCase(); }
     await page.waitForTimeout(100);
     assert.strictEqual(await page.isVisible('#type-tag-toggle'), false, `checkbox should be hidden for ${t}`);
   }
-  ok('Checkbox is hidden for Associate and the six resource types');
+  ok('Checkbox is hidden for Associate and the resource types');
 
   // Resource cards keep their always-on pill regardless of the flag.
   await page.selectOption('#f-cardType', 'Gear');
@@ -116,71 +117,140 @@ function norm(hex) { return String(hex).toLowerCase(); }
   assert.strictEqual(await page.isChecked('#f-showCardType'), false, 'a card saved without it reloads unticked');
   ok('include persists per card through Save -> My Cards -> Edit; New Card resets it');
 
-  // ---- 7. Bystanders (p. 91 + 97): a Level 2 Backup-style asset. ----
+  // ---- 7. Cost is a 1-4 dropdown on the resource (asset) types. ----
   await page.click('.tab-btn[data-tab="designer"]');
   await page.click('#btn-new-card');
   await page.waitForTimeout(100);
-  const types = await page.$$eval('#f-cardType option', els => els.map(e => e.value || e.textContent));
-  assert(types.includes('Bystanders'), 'Bystanders in Card Type dropdown');
   await page.selectOption('#f-theme', 'ivory');
-  await page.selectOption('#f-cardType', 'Bystanders');
-  await page.waitForTimeout(150);
-  assert.strictEqual(norm(await page.inputValue('#f-accentColor')), '#4b6b3c', 'shares the Backup/asset green');
-  assert.strictEqual(await page.inputValue('#f-assetCost'), '2', 'Cost starts at 2 (Level 2 Backup)');
-  for (const sel of ['#level-field-wrap', '#stats-fieldset', '#health-fieldset', '#abilities-fieldset']) {
-    assert.strictEqual(await page.isVisible(sel), false, `${sel} hidden: not a regular character Level`);
-  }
-  assert.strictEqual(await page.isVisible('#asset-fieldset'), true);
-  assert.strictEqual(await page.isVisible('#type-tag-toggle'), false, 'asset pill is always on, so no checkbox');
-  assert(/Level 2 Backup/.test(await page.textContent('#asset-type-hint')), 'p. 91 note shown');
-  const costOpts = await page.$$eval('#f-assetCost option', els => els.map(e => e.value));
-  assert.deepStrictEqual(costOpts, ['1', '2', '3', '4'], 'Cost is a 1-4 dropdown');
+  await page.selectOption('#f-cardType', 'Gear');
+  await page.waitForTimeout(100);
   assert.strictEqual(await page.$eval('#f-assetCost', e => e.tagName), 'SELECT');
+  assert.deepStrictEqual(await page.$$eval('#f-assetCost option', els => els.map(e => e.value)), ['1', '2', '3', '4']);
   ok('Cost is a 1-4 dropdown');
-  ok('Bystanders: asset layout, own Cost 2, Backup green, p. 91 note, no regular Level/Stats');
 
-  // Library: exactly the four Level 2 Backup rows from p. 97.
-  await page.click('#open-asset-library');
-  await page.waitForTimeout(200);
-  assert.strictEqual(await page.textContent('#asset-library-title'), 'Bystanders Library');
-  const names = await page.$$eval('#asset-library-list .library-item-name', els => els.map(e => e.textContent.trim()));
-  assert.deepStrictEqual(names, ['Brawler', 'Shooter', 'Scout', 'Animal']);
-  ok('Library offers the four Level 2 Backup options');
+  // ---- 8. Backup / Bystanders: regular character layout + p. 97 options. ----
+  const readStats = () => page.$$eval('.stat-row', rows => Object.fromEntries(rows.map(r => [
+    r.dataset.stat, `${r.querySelector('.stat-n').value}d${r.querySelector('.stat-d').value}`])));
+  const S = (b, s, d, m, f, c) => ({ brawl: b, shoot: s, dodge: d, might: m, finesse: f, cunning: c });
+  const expected = {
+    '1:Brawler': { lvl: '1', hp: 'd6', ast: true,  st: S('2d6', '1d6', '1d6', '1d6', '1d6', '1d6') },
+    '1:Shooter': { lvl: '1', hp: 'd6', ast: true,  st: S('1d6', '2d6', '1d6', '1d6', '1d6', '1d6') },
+    '1:Scout':   { lvl: '1', hp: 'd6', ast: true,  st: S('1d6', '1d6', '2d6', '1d6', '1d6', '1d6') },
+    '1:Animal':  { lvl: '1', hp: 'd6', ast: true,  st: S('2d6', '0d0', '2d6', '1d6', '1d6', '1d6') },
+    '2:Brawler': { lvl: '2', hp: 'd6', ast: false, st: S('3d6', '1d6', '2d6', '1d6', '1d6', '1d6') },
+    '2:Shooter': { lvl: '2', hp: 'd6', ast: false, st: S('1d6', '3d6', '2d6', '1d6', '1d6', '1d6') },
+    '2:Scout':   { lvl: '2', hp: 'd6', ast: false, st: S('1d6', '1d6', '3d6', '1d6', '2d6', '1d6') },
+    '2:Animal':  { lvl: '2', hp: 'd6', ast: false, st: S('3d6', '0d0', '3d6', '1d6', '1d6', '1d6') },
+    '3:Brawler': { lvl: '3', hp: 'd8', ast: false, st: S('4d8', '2d6', '3d8', '4d8', '2d6', '2d6') },
+    '3:Shooter': { lvl: '3', hp: 'd8', ast: false, st: S('2d6', '4d8', '3d8', '2d6', '2d6', '4d8') },
+    '3:Scout':   { lvl: '3', hp: 'd8', ast: false, st: S('2d6', '2d6', '4d8', '2d6', '4d8', '3d8') },
+    '3:Animal':  { lvl: '3', hp: 'd8', ast: false, st: S('5d8', '0d0', '4d8', '3d8', '2d6', '2d6') },
+  };
 
-  await page.click('#asset-library-list .library-item:has-text("Animal") .library-add-btn');
-  await page.waitForTimeout(200);
-  assert.strictEqual(await page.inputValue('#f-name'), 'Animal', 'no "Level 2:" prefix on the card name');
-  assert.strictEqual(await page.inputValue('#f-assetCost'), '2');
-  assert.strictEqual(await page.inputValue('#f-assetDescription'), 'Health: d6. Skills: Brawl 3d6, Shoot no-dice, Dodge 3d6.');
-  ok('Picking an option fills a plain name (no "Level 2:"), Cost 2 and the p. 97 skills');
+  await page.selectOption('#f-cardType', 'Backup');
+  await page.waitForTimeout(150);
+  for (const sel of ['#level-field-wrap', '#stats-fieldset', '#health-fieldset', '#abilities-fieldset', '#backup-option-row']) {
+    assert.strictEqual(await page.isVisible(sel), true, `${sel} visible for Backup (regular character layout)`);
+  }
+  assert.strictEqual(await page.isVisible('#asset-fieldset'), false, 'no Cost/Description fieldset for Backup');
+  assert.strictEqual(await page.isVisible('#type-tag-toggle'), true);
+  const opts = await page.$$eval('#f-backupOption option', els => els.map(e => e.textContent));
+  assert.strictEqual(opts.length, 13, 'twelve Level 1-3 rows plus Level 3: Custom');
+  assert.strictEqual(opts[0], 'Level 1: Brawler');
+  assert.strictEqual(opts[12], 'Level 3: Custom');
+  ok('Backup uses the character layout with a 13-row Backup Type picker (p. 97)');
 
-  // The card carries the BYSTANDERS pill (always on) in the header.
-  const pill = await page.evaluate(() => {
-    const ctx = document.getElementById('card-canvas').getContext('2d');
-    return Array.from(ctx.getImageData(520, 30, 210, 62).data).some((v, i) => i % 4 === 0 && v < 120);
-  });
-  assert(pill, 'Bystanders pill is drawn top-right');
-  ok('Bystanders card prints its type pill');
+  for (const [key, e] of Object.entries(expected)) {
+    await page.selectOption('#f-backupOption', key);
+    await page.waitForTimeout(80);
+    assert.strictEqual(await page.inputValue('#f-level'), e.lvl, `${key} level`);
+    assert.strictEqual(await page.inputValue('#f-healthStart'), e.hp, `${key} health die`);
+    assert.strictEqual(await page.isChecked('#f-healthAsterisk'), e.ast, `${key} health asterisk`);
+    assert.deepStrictEqual(await readStats(), e.st, `${key} stats`);
+    assert.strictEqual(await page.inputValue('#f-name'), key.split(':')[1], `${key} name has no "Level N:"`);
+  }
+  ok('All twelve p. 97 Backup rows fill Level, Health (with asterisk at Level 1) and Stats; name is just the role');
 
-  // Save + reload; not offered for League Rosters.
+  await page.selectOption('#f-backupOption', '3:Custom');
+  assert.strictEqual(await page.inputValue('#f-level'), '3');
+  assert.strictEqual(await page.inputValue('#f-healthStart'), 'd8');
+  ok('Level 3: Custom starts from a Sidekick (Level 3, d8)');
+
+  // Reset Stats restores the picked row; a typed name survives a type change.
+  await page.selectOption('#f-backupOption', '2:Scout');
+  await page.selectOption('.stat-row[data-stat="might"] .stat-n', '4');
+  await page.click('#reset-stats');
+  assert.deepStrictEqual(await readStats(), expected['2:Scout'].st);
+  await page.fill('#f-name', 'Old Pete');
+  await page.selectOption('#f-backupOption', '2:Shooter');
+  assert.strictEqual(await page.inputValue('#f-name'), 'Old Pete');
+  ok('Reset Stats restores the picked Backup row; a hand-typed name is kept');
+
+  // The badge shows the Level, and the tag is opt-in with the type name.
+  await page.selectOption('#f-backupOption', '3:Brawler');
+  await page.uncheck('#f-showCardType');
+  await page.waitForTimeout(120);
+  const bkOff = await tagRegion();
+  await page.check('#f-showCardType');
+  await page.waitForTimeout(120);
+  assert.notStrictEqual(await tagRegion(), bkOff, 'BACKUP tag draws when included');
+  ok('Backup tag is opt-in like other characters');
+
+  // There is no separate Bystanders type: Bystander cards come from Backup's
+  // Level 2 rows.
+  const allTypes = await page.$$eval('#f-cardType option', els => els.map(e => e.value || e.textContent));
+  assert(!allTypes.includes('Bystanders'), 'no Bystanders Card Type');
+  assert(!(await page.$$eval('#gallery-type-filter option', els => els.map(e => e.value))).includes('Bystanders'));
+  await page.selectOption('#f-cardType', 'Backup');
+  await page.selectOption('#f-backupOption', '2:Animal');
+  assert.strictEqual(await page.inputValue('#f-level'), '2');
+  assert.deepStrictEqual(await readStats(), expected['2:Animal'].st);
+  assert(/Bystander/.test(await page.textContent('#backup-hint')), 'hint points Bystander cards at Level 2 Backup');
+  ok('No Bystanders type; Bystander cards are made from Backup Level 2 types');
+
+  // Save -> My Cards -> reload keeps the type and option; roster excludes it.
+  await page.click('#btn-new-card');
+  await page.selectOption('#f-cardType', 'Backup');
+  await page.selectOption('#f-backupOption', '3:Shooter');
+  await page.fill('#f-name', 'Hired Gun');
   await page.click('#btn-save-card');
   await page.waitForTimeout(250);
   await page.click('.tab-btn[data-tab="gallery"]');
   await page.waitForTimeout(300);
-  await page.selectOption('#gallery-type-filter', 'Bystanders');
+  await page.click('.gallery-card:has-text("Hired Gun") [data-act="edit"]');
   await page.waitForTimeout(200);
-  await page.click('.gallery-card:has-text("Animal") [data-act="edit"]');
-  await page.waitForTimeout(200);
-  assert.strictEqual(await page.inputValue('#f-cardType'), 'Bystanders');
-  assert.strictEqual(await page.inputValue('#f-assetCost'), '2');
-  ok('Bystanders card saves, filters and reloads');
+  assert.strictEqual(await page.inputValue('#f-cardType'), 'Backup');
+  assert.strictEqual(await page.inputValue('#f-backupOption'), '3:Shooter');
+  assert.strictEqual(await page.inputValue('#f-level'), '3');
+  assert.deepStrictEqual(await readStats(), expected['3:Shooter'].st);
+  ok('Backup card saves and reloads with its type, Level and Stats');
 
   await page.click('.tab-btn[data-tab="roster"]');
   await page.waitForTimeout(200);
   await page.click('#open-colleague-picker');
   await page.waitForTimeout(250);
-  assert(!/Animal/.test(await page.textContent('#colleague-picker-list')), 'not in the roster picker');
-  ok('Bystanders are not offered in the League Roster picker');
+  const picker = await page.textContent('#colleague-picker-list');
+  assert(!/Hired Gun/.test(picker), 'Backup is not a roster pick');
+  ok('Backup is not offered in the League Roster picker');
+
+  // ---- 9. Old Cost-badge Backup/Bystanders cards convert on load/print. ----
+  const migrated = await page.evaluate(() => [
+    migrateLegacyBackupData({ cardType: 'Backup', name: 'Level 2: Shooter', assetCost: 2, assetDescription: 'x' }),
+    migrateLegacyBackupData({ cardType: 'Bystanders', name: 'Level 2: Animal', assetCost: 2, assetDescription: 'x' }),
+    migrateLegacyBackupData({ cardType: 'Backup', name: 'Odd Name', assetCost: 3 }),
+    migrateLegacyBackupData({ cardType: 'Backup', name: 'Hired Gun', backupOption: '3:Shooter', level: 3 }),
+  ]);
+  assert.strictEqual(migrated[0].backupOption, '2:Shooter');
+  assert.strictEqual(migrated[0].level, 2);
+  assert.strictEqual(migrated[0].name, 'Shooter');
+  assert.strictEqual(migrated[0].stats.shoot.n, 3);
+  assert.strictEqual(migrated[1].cardType, 'Backup', 'old Bystanders cards become Backup');
+  assert.strictEqual(migrated[1].backupOption, '2:Animal');
+  assert.deepStrictEqual(migrated[1].stats.shoot, { n: 0, d: 0 });
+  assert.strictEqual(migrated[2].level, 3, 'unparseable name falls back to Cost as Level');
+  assert.strictEqual(migrated[2].name, 'Odd Name', 'a custom name is kept');
+  assert.strictEqual(migrated[3].level, 3, 'already-converted cards are left alone');
+  ok('Legacy Backup and short-lived Bystanders asset cards convert to the character layout');
 
   console.log('\nAll verify66 checks passed.');
   await browser.close();

@@ -116,9 +116,9 @@ function ok(label) { console.log('OK  ', label); }
   // and the rendered card actually shows the picked Cost/Name/Description
   // (via the Type tag pill, matching the existing convention of always
   // showing the Card Type in a top-right pill). ----
-  await page.selectOption('#f-cardType', 'Backup');
+  await page.selectOption('#f-cardType', 'Minions');
   await page.waitForTimeout(150);
-  await page.fill('#f-name', 'Level 1: Brawler');
+  await page.fill('#f-name', 'Test Minion');
   await page.selectOption('#f-assetCost', '1');
   await page.fill('#f-assetDescription', 'Health: d6*. Skills: Brawl 2d6.');
   await page.waitForTimeout(150);
@@ -127,15 +127,15 @@ function ok(label) { console.log('OK  ', label); }
 
   await page.click('.tab-btn[data-tab="gallery"]');
   await page.waitForTimeout(300);
-  await page.click('.gallery-card:has-text("Level 1: Brawler") [data-act="edit"]');
+  await page.click('.gallery-card:has-text("Test Minion") [data-act="edit"]');
   await page.waitForTimeout(200);
   const reloadedCardType = await page.inputValue('#f-cardType');
   const reloadedCost = await page.inputValue('#f-assetCost');
   const reloadedDesc = await page.inputValue('#f-assetDescription');
-  assert.strictEqual(reloadedCardType, 'Backup', 'expected the saved Card Type (Backup) to round-trip');
+  assert.strictEqual(reloadedCardType, 'Minions', 'expected the saved Card Type (Minions) to round-trip');
   assert.strictEqual(reloadedCost, '1', 'expected the saved Cost to round-trip');
   assert.strictEqual(reloadedDesc, 'Health: d6*. Skills: Brawl 2d6.', 'expected the saved Description to round-trip');
-  assert.strictEqual(await page.locator('#asset-fieldset').isVisible(), true, 'expected reloading a Backup card to show Asset Details again, not Stats/Health');
+  assert.strictEqual(await page.locator('#asset-fieldset').isVisible(), true, 'expected reloading a Minions card to show Asset Details again, not Stats/Health');
   ok('Cost/Description round-trip correctly through Save -> My Cards -> reload, and field visibility is restored on reload too');
 
   // ---- 4. Asset cards are never offered as Colleague picks on a League
@@ -145,7 +145,7 @@ function ok(label) { console.log('OK  ', label); }
   await page.click('#open-colleague-picker');
   await page.waitForTimeout(150);
   const colleagueNames = await page.locator('#colleague-picker-list .library-item-name').allTextContents();
-  assert(!colleagueNames.includes('Level 1: Brawler'), 'expected the saved Backup asset card to NOT appear in the Colleague picker');
+  assert(!colleagueNames.includes('Test Minion'), 'expected the saved Minions asset card to NOT appear in the Colleague picker');
   await page.click('#close-colleague-picker');
   ok('Asset cards (Contacts/Gear/Backup/Minions/Cult/Gifts) are excluded from the League Roster\'s Colleague picker');
 

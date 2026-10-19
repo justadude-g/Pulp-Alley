@@ -1,7 +1,8 @@
 // resourceCardsData.js
 // Data tables for the Resources & Assets chapter (Core Rules p. 93-100):
-// Contacts, Gear, Backup, and — gated by the Dominion perk in the actual
-// rules — Minions, Cult, and Gifts. Tips (p. 93) has no discrete per-item
+// Contacts, Gear, and — gated by the Dominion perk in the actual rules —
+// Minions, Cult, and Gifts. (Backup, p. 97, is a regular character-layout
+// card now; see BACKUP_OPTIONS in cardRenderer.js.) Tips (p. 93) has no discrete per-item
 // table of its own (just 3 always-available bullet rules, not something you
 // pick from a list), so it isn't a pickable Card Type here.
 //
@@ -9,15 +10,15 @@
 // (p. 96) is folded directly into GEAR_ITEMS rather than kept as a separate
 // Card Type — each Gadget's own description leads with "Gadget." and ends
 // with the shared Mishap rule, so the card itself stays self-explanatory
-// without needing a separate data field or on-card icon. Backup and
-// Minions' rulebook tables are shaped Level/Cost/Health/Skills & Abilities
+// without needing a separate data field or on-card icon. Minions'
+// rulebook table is shaped Level/Cost/Health/Skills & Abilities
 // rather than a flat Asset/Cost/Description — their Health and Skills &
 // Abilities columns are folded into `description` as plain text, so every
 // Resource Card Type can share one rendering + picking pipeline (see
 // renderAssetCard in cardRenderer.js and the Asset Library modal in
 // app.js).
 
-const RESOURCE_CARD_TYPES = ['Contacts', 'Gear', 'Backup', 'Minions', 'Cult', 'Gifts'];
+const RESOURCE_CARD_TYPES = ['Contacts', 'Gear', 'Minions', 'Cult', 'Gifts'];
 
 // Shared Mishap explanation appended to every Gadget's own description
 // (p. 96): "Each time you draw to determine the X number for a Gadget,
@@ -93,23 +94,6 @@ const GEAR_ITEMS = [
   { name: 'Hydrocoptic Marzlevane', cost: 3, description: 'Whenever a character within 6" of this model encounters a peril, you may subtract 1 from the challenge.' },
 ];
 
-const BACKUP_ITEMS = [
-  { name: 'Level 1: Brawler', cost: 1, description: `Health: d6*. Skills: Brawl 2d6.\n\n${BACKUP_ASTERISK_NOTE}` },
-  { name: 'Level 1: Shooter', cost: 1, description: `Health: d6*. Skills: Shoot 2d6.\n\n${BACKUP_ASTERISK_NOTE}` },
-  { name: 'Level 1: Scout', cost: 1, description: `Health: d6*. Skills: Dodge 2d6.\n\n${BACKUP_ASTERISK_NOTE}` },
-  { name: 'Level 1: Animal', cost: 1, description: `Health: d6*. Skills: Brawl 2d6, Shoot no-dice, Dodge 2d6.\n\n${BACKUP_ASTERISK_NOTE}` },
-  { name: 'Level 2: Brawler', cost: 2, description: 'Health: d6. Skills: Brawl 3d6, Dodge 2d6.' },
-  { name: 'Level 2: Shooter', cost: 2, description: 'Health: d6. Skills: Shoot 3d6, Dodge 2d6.' },
-  { name: 'Level 2: Scout', cost: 2, description: 'Health: d6. Skills: Dodge 3d6, Finesse 2d6.' },
-  { name: 'Level 2: Animal', cost: 2, description: 'Health: d6. Skills: Brawl 3d6, Shoot no-dice, Dodge 3d6.' },
-  { name: 'Level 2: Gang (Armed)', cost: 2, description: 'Health: as a Gang (see Gangs rules). Ability: Armed.' },
-  { name: 'Level 2: Gang (Dangerous)', cost: 2, description: 'Health: as a Gang (see Gangs rules). Ability: Dangerous.' },
-  { name: 'Level 3: Brawler', cost: 3, description: 'Health: d8. Skills: Brawl 4d8, Shoot 2d6, Dodge 3d8, Might 4d8, Finesse 2d6, Cunning 2d6.' },
-  { name: 'Level 3: Shooter', cost: 3, description: 'Health: d8. Skills: Brawl 2d6, Shoot 4d8, Dodge 3d8, Might 2d6, Finesse 2d6, Cunning 4d8.' },
-  { name: 'Level 3: Scout', cost: 3, description: 'Health: d8. Skills: Brawl 2d6, Shoot 2d6, Dodge 4d8, Might 2d6, Finesse 4d8, Cunning 3d8.' },
-  { name: 'Level 3: Animal', cost: 3, description: 'Health: d8. Skills: Brawl 5d8, Shoot no-dice, Dodge 4d8, Might 3d8, Finesse 2d6, Cunning 2d6.' },
-  { name: 'Level 3: Custom', cost: 4, description: 'Create one Sidekick of your choice.' },
-];
 
 const MINIONS_ITEMS = [
   { name: 'Level 1: Living Dead', cost: 1, description: `Health: d6*. Skills: Dodge no-dice. Ability: Reanimated.\n\n${BACKUP_ASTERISK_NOTE}` },
@@ -153,21 +137,12 @@ const GIFTS_ITEMS = [
   { name: 'Summoning Circle (Leader only)', cost: 4, description: 'During set-up, select one type of level 1 Minion for your summoning. As a full action, place X + 1 of these Minions within 3" of your base. These Minions are under your control and ready to activate this turn.' },
 ];
 
-// Bystanders (p. 91): a recruited Bystander is a random Level 2 Backup, so
-// the Library offers exactly the four Level 2 Backup rows from p. 97.
-// The Cost badge already shows the 2, so the name drops the "Level 2: " prefix.
-const BYSTANDERS_ITEMS = BACKUP_ITEMS
-  .filter(it => /^Level 2: (Brawler|Shooter|Scout|Animal)$/.test(it.name))
-  .map(it => ({ ...it, name: it.name.replace(/^Level 2: /, '') }));
-
 const RESOURCE_ITEMS_BY_TYPE = {
   Contacts: CONTACTS_ITEMS,
   Gear: GEAR_ITEMS,
-  Backup: BACKUP_ITEMS,
   Minions: MINIONS_ITEMS,
   Cult: CULT_ITEMS,
   Gifts: GIFTS_ITEMS,
-  Bystanders: BYSTANDERS_ITEMS,
 };
 
 // General per-table rule reminders (p. 93-100) shown as a hint under the
@@ -175,10 +150,8 @@ const RESOURCE_ITEMS_BY_TYPE = {
 // "explain the rule, don't enforce it" philosophy as every other rules hint
 // in this app.
 const RESOURCE_TYPE_NOTES = {
-  Bystanders: 'Bystanders (p. 91) belong to no league. They wander 1d8" in a random direction at the end of each turn, and a character in contact can try to recruit one as an action. A recruited Bystander becomes a Level 2 Backup (Brawler, Shooter, Animal, or Scout, p. 97): Cost 2, Health d6. Browse the Asset Library for the four options.',
   Contacts: 'All Contacts assets are temporary, purchased for one scenario only. Except where noted, they are not assigned to a specific character. You cannot select a Contacts asset more than once per scenario.',
   Gear: 'All Gear assets are temporary, purchased for one scenario only, and must be assigned to a specific character. You cannot assign an asset more than once to the same character. Gadgets carry a Mishap risk — see their own description.',
-  Backup: 'All Backup assets are temporary, purchased for one scenario only. The Skills & Abilities line only lists skills over 1d6 — anything not listed is 1d6.',
   Minions: 'You cannot select Minions assets unless your league has the Dominion perk. All assets are temporary, purchased for one scenario only. Skills & Abilities only lists skills over 1d6.',
   Cult: 'You cannot select Cult assets unless your league has the Dominion perk. All assets are temporary, purchased for one scenario only. You cannot take the same Cult asset more than once per scenario.',
   Gifts: 'You must have the Dominion perk to select Gifts. All assets are temporary, purchased for one scenario only, and each must be assigned to a specific character — never the same Gifts asset twice to the same character.',

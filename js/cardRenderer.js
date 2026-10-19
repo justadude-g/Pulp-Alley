@@ -25,6 +25,48 @@ const DIE_ORDER = ['d12', 'd10', 'd8', 'd6'];
 const ASSET_ACCENT = '#4b6b3c';
 
 
+// Backup characters (Core Rules p. 97) are temporary characters, so they use
+// the regular character layout: Level badge, Stats, Health, Special. The p. 97 table
+// only lists skills over 1d6, so everything not named below is 1d6. n=0/d=0
+// is "no dice" (printed as "-d-"). Level 1 Backup have an asterisk on
+// Health (knocked out instead of going down).
+const _bkStats = (over) => ({
+  brawl: { n: 1, d: 6 }, shoot: { n: 1, d: 6 }, dodge: { n: 1, d: 6 },
+  might: { n: 1, d: 6 }, finesse: { n: 1, d: 6 }, cunning: { n: 1, d: 6 },
+  ...over,
+});
+const _none = { n: 0, d: 0 };
+const BACKUP_OPTIONS = [
+  { key: '1:Brawler', role: 'Brawler', level: 1, health: 'd6', asterisk: true, stats: _bkStats({ brawl: { n: 2, d: 6 } }) },
+  { key: '1:Shooter', role: 'Shooter', level: 1, health: 'd6', asterisk: true, stats: _bkStats({ shoot: { n: 2, d: 6 } }) },
+  { key: '1:Scout',   role: 'Scout',   level: 1, health: 'd6', asterisk: true, stats: _bkStats({ dodge: { n: 2, d: 6 } }) },
+  { key: '1:Animal',  role: 'Animal',  level: 1, health: 'd6', asterisk: true, stats: _bkStats({ brawl: { n: 2, d: 6 }, shoot: _none, dodge: { n: 2, d: 6 } }) },
+  { key: '2:Brawler', role: 'Brawler', level: 2, health: 'd6', asterisk: false, stats: _bkStats({ brawl: { n: 3, d: 6 }, dodge: { n: 2, d: 6 } }) },
+  { key: '2:Shooter', role: 'Shooter', level: 2, health: 'd6', asterisk: false, stats: _bkStats({ shoot: { n: 3, d: 6 }, dodge: { n: 2, d: 6 } }) },
+  { key: '2:Scout',   role: 'Scout',   level: 2, health: 'd6', asterisk: false, stats: _bkStats({ dodge: { n: 3, d: 6 }, finesse: { n: 2, d: 6 } }) },
+  { key: '2:Animal',  role: 'Animal',  level: 2, health: 'd6', asterisk: false, stats: _bkStats({ brawl: { n: 3, d: 6 }, shoot: _none, dodge: { n: 3, d: 6 } }) },
+  { key: '3:Brawler', role: 'Brawler', level: 3, health: 'd8', asterisk: false, stats: _bkStats({ brawl: { n: 4, d: 8 }, shoot: { n: 2, d: 6 }, dodge: { n: 3, d: 8 }, might: { n: 4, d: 8 }, finesse: { n: 2, d: 6 }, cunning: { n: 2, d: 6 } }) },
+  { key: '3:Shooter', role: 'Shooter', level: 3, health: 'd8', asterisk: false, stats: _bkStats({ brawl: { n: 2, d: 6 }, shoot: { n: 4, d: 8 }, dodge: { n: 3, d: 8 }, might: { n: 2, d: 6 }, finesse: { n: 2, d: 6 }, cunning: { n: 4, d: 8 } }) },
+  { key: '3:Scout',   role: 'Scout',   level: 3, health: 'd8', asterisk: false, stats: _bkStats({ brawl: { n: 2, d: 6 }, shoot: { n: 2, d: 6 }, dodge: { n: 4, d: 8 }, might: { n: 2, d: 6 }, finesse: { n: 4, d: 8 }, cunning: { n: 3, d: 8 } }) },
+  { key: '3:Animal',  role: 'Animal',  level: 3, health: 'd8', asterisk: false, stats: _bkStats({ brawl: { n: 5, d: 8 }, shoot: _none, dodge: { n: 4, d: 8 }, might: { n: 3, d: 8 }, finesse: { n: 2, d: 6 }, cunning: { n: 2, d: 6 } }) },
+  // "Level 3: Custom — create one Sidekick of your choice": Sidekick's own
+  // Level 3 / d8 / stat budget as the starting point, editable like any card.
+  { key: '3:Custom',  role: 'Custom',  level: 3, health: 'd8', asterisk: false, stats: {
+    brawl: { n: 3, d: 8 }, shoot: { n: 3, d: 8 }, might: { n: 3, d: 8 },
+    finesse: { n: 2, d: 6 }, dodge: { n: 2, d: 6 }, cunning: { n: 2, d: 6 } } },
+];
+// Backup gets the whole p. 97 list. A recruited Bystander (p. 91) is a random
+// Level 2 Backup, so Bystander cards are made from Backup's Level 2 rows.
+function backupOptionsForType(cardType) {
+  return cardType === 'Backup' ? BACKUP_OPTIONS : null;
+}
+// Temporary characters: regular card layout, but never roster material.
+function isTemporaryCharacterType(cardType) { return cardType === 'Backup'; }
+// Label as listed on p. 97, e.g. "Level 2: Brawler".
+function backupOptionLabel(cardType, o) {
+  return `Level ${o.level}: ${o.role}`;
+}
+
 // Saturated-but-print-safe accents: dark enough to stay legible as text/line
 // color on a white background, still read fine on the dark theme too.
 // Each default accent corresponds to a Gamegenic Prime Sleeves color, so a
@@ -125,17 +167,14 @@ const TYPE_PRESETS = {
   // Abilities/Flavor for these).
   Contacts: { accent: ASSET_ACCENT, isAsset: true },
   Gear:     { accent: ASSET_ACCENT, isAsset: true },
-  Backup:   { accent: ASSET_ACCENT, isAsset: true },
   Minions:  { accent: ASSET_ACCENT, isAsset: true },
   Cult:     { accent: ASSET_ACCENT, isAsset: true },
   Gifts:    { accent: ASSET_ACCENT, isAsset: true },
-  // Bystanders (Core Rules p. 91 + 97): a recruited Bystander becomes a
-  // random Level 2 Backup character (Brawler, Shooter, Animal, or Scout) for
-  // the scenario, so the card is a Backup-style asset: Cost badge (2 = the
-  // Backup table's Level 2 price, not a regular character Level), Health and
-  // skills in the description, and the Asset Library offers just those four
-  // rows. Shares the asset green like every other resource type.
-  Bystanders: { accent: ASSET_ACCENT, isAsset: true, defaultCost: 2 },
+  // Backup (p. 97): temporary characters with the regular character layout.
+  // Level/Health/Stats come from the chosen BACKUP_OPTIONS row (picked in the
+  // Designer), not from fixed preset values. Bystanders (p. 91) are made from
+  // the Level 2 rows.
+  Backup: { accent: ASSET_ACCENT, level: 1, healthStart: 'd6', healthAsterisk: true, defaultStats: BACKUP_OPTIONS[0].stats },
 };
 
 // The optional top-right Card Type tag (the "include" checkbox beside Card

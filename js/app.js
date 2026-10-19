@@ -630,15 +630,15 @@ document.getElementById('f-cardType').addEventListener('change', (e) => {
   // normal, editable grid afterward for a homebrew exception; no-op for
   // Villain/Creature/Custom (no rulebook default) since Gang is already
   // handled above.
+  updateBackupVisibility(e.target.value);
   applyDefaultStatsForType(e.target.value);
+  if (isTemporaryCharacterType(e.target.value)) applyBackupName();
   updateResetStatsVisibility(e.target.value);
   updateNpcHintVisibility(e.target.value);
   updateNonUniqueVisibility(e.target.value);
   updateAssociateFieldVisibility(e.target.value);
   updateAssetFieldVisibility(e.target.value);
   updateTypeTagToggleVisibility(e.target.value);
-  // Bystanders are Level 2 Backups (p. 97): Cost starts at 2.
-  if (preset && preset.defaultCost !== undefined) document.getElementById('f-assetCost').value = preset.defaultCost;
   updateHealthPreview();
   updatePreview();
 });
@@ -727,7 +727,7 @@ function updateNonUniqueVisibility(cardType) {
   // Meaningless for Asset Card Types too — they're never added to a League
   // Roster in the first place (see the Colleague picker's exclusion),
   // so "can add more than one to a Roster" doesn't apply.
-  const show = cardType !== 'Gang' && !isAssetCardType(cardType);
+  const show = cardType !== 'Gang' && !isAssetCardType(cardType) && !isTemporaryCharacterType(cardType);
   nonUniqueRowEl.style.display = show ? 'flex' : 'none';
 }
 
@@ -791,6 +791,81 @@ function updateAssetFieldVisibility(cardType) {
   assetTypeHintEl.textContent = isAsset ? (RESOURCE_TYPE_NOTES[cardType] || '') : '';
 }
 
+// Backup (p. 97) is a regular character-layout card;
+// the Backup Type picker fills Level, Health and Stats from BACKUP_OPTIONS
+// in cardRenderer.js. The name defaults to the role (the Level badge already
+// shows the number) when the Name is blank or still an earlier auto-name.
+const backupOptionRowEl = document.getElementById('backup-option-row');
+const backupOptionEl = document.getElementById('f-backupOption');
+const backupHintEl = document.getElementById('backup-hint');
+const BACKUP_HINTS = {
+  Backup: 'Backup (p. 97) are temporary characters bought with Backup points for one scenario. Pick a type to fill in its Level, Health and Stats; the table only lists skills over 1d6, everything else is 1d6. Level 1 Backup have an asterisk on Health (knocked out instead of going down). A recruited Bystander (p. 91) becomes a random Level 2 Backup, so make Bystander cards from the Level 2 types. Backup are not added to a League Roster.',
+};
+function populateBackupOptions(cardType, selectedKey) {
+  const opts = backupOptionsForType(cardType) || [];
+  backupOptionEl.innerHTML = opts.map(o =>
+    `<option value="${o.key}">${backupOptionLabel(cardType, o)}</option>`).join('');
+  const fallback = '1:Brawler';
+  backupOptionEl.value = opts.some(o => o.key === selectedKey) ? selectedKey : fallback;
+}
+function updateBackupVisibility(cardType, selectedKey) {
+  const on = isTemporaryCharacterType(cardType);
+  backupOptionRowEl.style.display = on ? 'flex' : 'none';
+  backupHintEl.style.display = on ? 'block' : 'none';
+  backupHintEl.textContent = on ? BACKUP_HINTS[cardType] : '';
+  if (on) populateBackupOptions(cardType, selectedKey);
+  else backupOptionEl.innerHTML = '';
+}
+function currentBackupOption(cardType) {
+  return (backupOptionsForType(cardType) || []).find(o => o.key === backupOptionEl.value) || null;
+}
+function applyBackupName() {
+  const o = currentBackupOption(document.getElementById('f-cardType').value);
+  if (!o) return;
+  const nameEl = document.getElementById('f-name');
+  if (!nameEl.value.trim() || /^(Level \d: )?(Brawler|Shooter|Scout|Animal|Custom)$/.test(nameEl.value.trim())) {
+    nameEl.value = o.role;
+  }
+}
+backupOptionEl.addEventListener('change', () => {
+  const cardType = document.getElementById('f-cardType').value;
+  const o = currentBackupOption(cardType);
+  if (!o) return;
+  document.getElementById('f-level').value = String(o.level);
+  document.getElementById('f-healthStart').value = o.health;
+  document.getElementById('f-healthAsterisk').checked = o.asterisk;
+  applyDefaultStatsForType(cardType);
+  applyBackupName();
+  updateHealthPreview();
+  updatePreview();
+});
+
+// Backup cards (and the short-lived Bystanders type) saved before they got the
+// character layout were Cost-badge asset cards ("Level 2: Brawler", Cost 2, text description).
+// Convert one on the fly from its name/cost so it opens, prints and re-saves
+// as a normal character card. Cards that already carry backupOption are
+// left alone.
+function migrateLegacyBackupData(d) {
+  const legacyBystander = d && d.cardType === 'Bystanders';
+  if (!d || !(legacyBystander || d.cardType === 'Backup') || d.backupOption !== undefined) return d;
+  const opts = BACKUP_OPTIONS;
+  const m = /^\s*(?:Level\s*(\d)\s*:\s*)?(Brawler|Shooter|Scout|Animal)\s*$/i.exec(d.name || '');
+  const role = m ? m[2][0].toUpperCase() + m[2].slice(1).toLowerCase() : 'Brawler';
+  const level = legacyBystander ? 2
+    : (m && m[1] ? +m[1] : Math.max(1, Math.min(3, Math.round(Number(d.assetCost)) || 1)));
+  const o = opts.find(x => x.level === level && x.role === role) || opts.find(x => x.level === level) || opts[0];
+  return {
+    ...d,
+    // A Bystander card type existed briefly; Bystanders are made from Backup.
+    cardType: 'Backup',
+    name: m ? o.role : d.name,
+    backupOption: o.key,
+    level: o.level,
+    stats: o.stats,
+    health: { sequence: healthSequenceFrom(o.health), asterisk: o.asterisk },
+  };
+}
+
 // "(include)" beside Card Type: print the type as a top-right tag. Hidden
 // for the card types that already carry their own label (see
 // cardTypeTagIsOptional in cardRenderer.js).
@@ -803,7 +878,9 @@ function updateTypeTagToggleVisibility(cardType) {
 // button below, so there's exactly one place that knows how to apply a
 // Card Type's default stat allocation.
 function applyDefaultStatsForType(cardType) {
-  const defaults = TYPE_PRESETS[cardType]?.defaultStats;
+  const defaults = isTemporaryCharacterType(cardType)
+    ? (currentBackupOption(cardType) || {}).stats
+    : TYPE_PRESETS[cardType]?.defaultStats;
   if (!defaults) return false;
   Object.entries(defaults).forEach(([key, { n, d }]) => setStatRow(key, n, d));
   return true;
@@ -902,6 +979,8 @@ function collectFormData() {
     // Type). Off by default; cards saved before it existed have no key and
     // stay off.
     showCardType: document.getElementById('f-showCardType').checked,
+    // Backup only: which p. 97 row the card was built from.
+    backupOption: isTemporaryCharacterType(document.getElementById('f-cardType').value) ? backupOptionEl.value : '',
     assetCost: +document.getElementById('f-assetCost').value || 0,
     assetDescription: document.getElementById('f-assetDescription').value,
   };
@@ -1148,6 +1227,7 @@ document.getElementById('btn-new-card').addEventListener('click', () => {
   updateAssociateFieldVisibility(document.getElementById('f-cardType').value);
   updateAssetFieldVisibility(document.getElementById('f-cardType').value);
   updateTypeTagToggleVisibility(document.getElementById('f-cardType').value);
+  updateBackupVisibility(document.getElementById('f-cardType').value);
   // f-portrait (and f-portrait-frame) now live in the preview panel,
   // outside <form id="card-form"> (see index.html), so form.reset() above
   // doesn't touch them — reset explicitly instead. Image Frame defaults
@@ -1530,7 +1610,7 @@ selectAllBtn.addEventListener('click', () => {
 });
 
 async function loadCardIntoForm(record) {
-  const d = record.formData;
+  const d = migrateLegacyBackupData(record.formData);
   document.getElementById('f-cardType').value = d.cardType;
   document.getElementById('f-accentColor').value = d.accentColor;
   document.getElementById('f-theme').value = d.theme || 'ivory';
@@ -1572,6 +1652,7 @@ async function loadCardIntoForm(record) {
   updateAssociateFieldVisibility(d.cardType);
   updateAssetFieldVisibility(d.cardType);
   updateTypeTagToggleVisibility(d.cardType);
+  updateBackupVisibility(d.cardType, d.backupOption);
   document.getElementById('f-showCardType').checked = !!d.showCardType;
   // Cost is a 1-4 dropdown (4 is the p. 93-100 maximum). Clamp anything
   // saved when it was a free 0-20 number so an old card still shows a
@@ -1637,7 +1718,7 @@ function chunkArray(arr, size) {
 // like a cut line drawn across the cards themselves. Returns a canvas,
 // which drawImage() accepts just as readily as an Image.
 async function renderCardForPrintSheet(record) {
-  const data = { ...record.formData };
+  const data = { ...migrateLegacyBackupData(record.formData) };
   data.portraitImg = record.portraitDataURL ? await loadImage(record.portraitDataURL) : null;
   const offscreen = document.createElement('canvas');
   renderAnyCard(offscreen, data, { suppressCutGuideBorder: true });
@@ -2382,7 +2463,7 @@ async function renderColleaguePicker() {
   // cards (Contacts/Gear/Backup/Minions/Cult/Gifts) are one-scenario
   // resources, not crew — they're picked during scenario set-up, not added
   // to a persistent League Roster at all — so they're excluded here too.
-  const nonAssociateCards = cards.filter(c => c.formData?.cardType !== 'Associate' && !isAssetCardType(c.formData?.cardType));
+  const nonAssociateCards = cards.filter(c => c.formData?.cardType !== 'Associate' && !isAssetCardType(c.formData?.cardType) && !isTemporaryCharacterType(c.formData?.cardType));
   const available = nonAssociateCards.filter(c => {
     if (!isRepeatable(c) && addedCounts[c.id]) return false;
     if (searchText && !(c.formData?.name || '').toLowerCase().includes(searchText)) return false;

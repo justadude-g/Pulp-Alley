@@ -1,4 +1,4 @@
-// verify67.js — page footer: GitHub source/issues link, version, community
+// verify67.js — page footer: Feedback (GitHub issues) link, version, community
 // credit with the Pulp Alley link. Appears below every tab, hidden in print.
 const { chromium } = require('playwright');
 const path = require('path');
@@ -19,11 +19,11 @@ function ok(label) { console.log('OK  ', label); }
   await page.waitForTimeout(400);
 
   const text = (await page.textContent('.site-footer')).replace(/\s+/g, ' ').trim();
-  assert(/Source and issues on GitHub · Version \d{4}-\d{2}-\d{2}/.test(text), `footer line 1, got "${text}"`);
+  assert(/Feedback · Version \d{4}-\d{2}-\d{2}/.test(text), `footer line 1, got "${text}"`);
   assert(/Community tool for the Pulp Alley, made with permission from David Phipps\. Pulp Alley/.test(text), `footer line 2, got "${text}"`);
   const links = await page.$$eval('.site-footer a', as => as.map(a => [a.textContent, a.href, a.target, a.rel]));
   assert.deepStrictEqual(links, [
-    ['Source and issues on GitHub', 'https://github.com/justadude-g/Pulp-Alley', '_blank', 'noopener'],
+    ['Feedback', 'https://github.com/justadude-g/Pulp-Alley/issues', '_blank', 'noopener'],
     ['Pulp Alley', 'https://www.pulpalley.com/', '_blank', 'noopener'],
   ]);
   ok('Footer text and both links are correct');

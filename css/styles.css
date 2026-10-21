@@ -125,6 +125,19 @@ body {
 
 main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
 
+.site-footer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 28px 32px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.site-footer p { margin: 0; }
+.site-footer a { color: var(--accent); text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
@@ -797,7 +810,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 }
 
 @media print {
-  header.topbar, #backup-reminder-banner, .panel > .gallery-toolbar, main > .panel > p.hint, #tab-designer, #tab-gallery { display: none !important; }
+  header.topbar, .site-footer, #backup-reminder-banner, .panel > .gallery-toolbar, main > .panel > p.hint, #tab-designer, #tab-gallery { display: none !important; }
   body { background: white; }
   main { padding: 0; max-width: none; }
   .panel { border: none; padding: 0; background: white; }

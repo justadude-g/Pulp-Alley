@@ -397,6 +397,8 @@ accounts, no build step — open `index.html` (or host it on GitHub Pages) and g
   sheets of A4 — no double-siding needed.
 - Fully offline-capable: fonts and the PDF library are bundled in the repo,
   no third-party CDN calls at runtime.
+- **About** - what the tool is, where to buy the official game, how to send
+  feedback through GitHub Issues, and notes on storage and printing.
 
 ## Using it locally
 
@@ -437,7 +439,7 @@ from `file://`.
 ## Project structure
 
 ```
-index.html          Single-page app (Card Designer / My Cards / League Roster / Print Sheet / Quick Reference)
+index.html          Single-page app (Card Designer / My Cards / League Roster / Print Sheet / Quick Reference / About)
 css/styles.css       App UI styling
 css/fonts.css         Self-hosted Inter + Rajdhani font faces
 js/cardRenderer.js    Canvas renderer for a single card (750x1050px portrait; 1050x750px landscape for the Associate Card Type)
